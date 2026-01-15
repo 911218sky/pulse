@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 版本4: 雙音符 - 連音符號 -->
+  <rect width="512" height="512" fill="#000000"/>
+  
+  <!-- 左音符頭 -->
+  <ellipse cx="160" cy="340" rx="50" ry="38" fill="#FFFFFF" transform="rotate(-15, 160, 340)"/>
+  
+  <!-- 右音符頭 -->
+  <ellipse cx="340" cy="320" rx="50" ry="38" fill="#FFFFFF" transform="rotate(-15, 340, 320)"/>
+  
+  <!-- 左音符桿 -->
+  <rect x="195" y="120" width="14" height="220" rx="7" fill="#FFFFFF"/>
+  
+  <!-- 右音符桿 -->
+  <rect x="375" y="100" width="14" height="220" rx="7" fill="#FFFFFF"/>
+  
+  <!-- 連接橫樑 -->
+  <path d="M202,120 L382,100 L382,130 L202,150 Z" fill="#FFFFFF"/>
+</svg>

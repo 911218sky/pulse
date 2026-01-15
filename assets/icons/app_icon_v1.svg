@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 版本1: 唱片風格 - 極簡黑膠唱片 -->
+  <rect width="512" height="512" fill="#000000"/>
+  
+  <!-- 外圈 -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#222222" stroke-width="40"/>
+  
+  <!-- 唱片紋路 -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+  <circle cx="256" cy="256" r="100" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+  
+  <!-- 標籤區 -->
+  <circle cx="256" cy="256" r="70" fill="#111111"/>
+  
+  <!-- 中心孔 -->
+  <circle cx="256" cy="256" r="12" fill="#FFFFFF"/>
+  
+  <!-- 反光效果 -->
+  <path d="M120,180 Q180,120 280,140" fill="none" stroke="#333333" stroke-width="2" opacity="0.5"/>
+</svg>

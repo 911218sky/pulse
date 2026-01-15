@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 版本3: 播放按鈕 - 極簡圓形播放 -->
+  <rect width="512" height="512" fill="#000000"/>
+  
+  <!-- 外圈 - 細線 -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+  
+  <!-- 播放三角形 - 稍微偏右讓視覺居中 -->
+  <path d="M220,160 L220,352 L360,256 Z" fill="#FFFFFF"/>
+</svg>

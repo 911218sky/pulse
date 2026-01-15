@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 版本2: 波形風格 - 抽象音波 -->
+  <rect width="512" height="512" fill="#000000"/>
+  
+  <!-- 音波條 - 漸層高度，居中對齊 -->
+  <g fill="#FFFFFF">
+    <rect x="96" y="224" width="20" height="64" rx="10"/>
+    <rect x="136" y="176" width="20" height="160" rx="10"/>
+    <rect x="176" y="144" width="20" height="224" rx="10"/>
+    <rect x="216" y="112" width="20" height="288" rx="10"/>
+    <rect x="256" y="96" width="20" height="320" rx="10"/>
+    <rect x="296" y="112" width="20" height="288" rx="10"/>
+    <rect x="336" y="144" width="20" height="224" rx="10"/>
+    <rect x="376" y="176" width="20" height="160" rx="10"/>
+    <rect x="416" y="224" width="20" height="64" rx="10"/>
+  </g>
+</svg>
