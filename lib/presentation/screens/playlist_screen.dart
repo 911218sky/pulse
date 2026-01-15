@@ -98,8 +98,16 @@ class _Header extends StatelessWidget {
           end: Alignment.bottomCenter,
           colors:
               isDark
-                  ? [AppColors.black, AppColors.gray900.withValues(alpha: 0.3), AppColors.black]
-                  : [AppColors.white, AppColors.gray50.withValues(alpha: 0.5), AppColors.white],
+                  ? [
+                    AppColors.black,
+                    AppColors.gray900.withValues(alpha: 0.3),
+                    AppColors.black,
+                  ]
+                  : [
+                    AppColors.white,
+                    AppColors.gray50.withValues(alpha: 0.5),
+                    AppColors.white,
+                  ],
           stops: const [0.0, 0.3, 1.0],
         ),
       ),
@@ -118,7 +126,9 @@ class _Header extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.gray900 : AppColors.gray100,
                   borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                  border: Border.all(color: isDark ? AppColors.gray800 : AppColors.gray200),
+                  border: Border.all(
+                    color: isDark ? AppColors.gray800 : AppColors.gray200,
+                  ),
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back_rounded),
@@ -127,7 +137,9 @@ class _Header extends StatelessWidget {
                 ),
               ),
             Container(
-              padding: EdgeInsets.all(isCompact ? AppSpacing.sm : AppSpacing.md),
+              padding: EdgeInsets.all(
+                isCompact ? AppSpacing.sm : AppSpacing.md,
+              ),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
@@ -138,7 +150,11 @@ class _Header extends StatelessWidget {
                   isCompact ? AppSpacing.radiusMd : AppSpacing.radiusLg,
                 ),
                 boxShadow: const [
-                  BoxShadow(color: AppColors.accent, blurRadius: 12, offset: Offset(0, 4)),
+                  BoxShadow(
+                    color: AppColors.accent,
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
                 ],
               ),
               child: Icon(
@@ -212,7 +228,8 @@ class _PlaylistList extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
             boxShadow: [
               BoxShadow(
-                color: (isDark ? AppColors.black : AppColors.gray400).withValues(alpha: 0.05),
+                color: (isDark ? AppColors.black : AppColors.gray400)
+                    .withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -242,27 +259,40 @@ class _PlaylistList extends StatelessWidget {
             backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              side: BorderSide(color: isDark ? AppColors.gray800 : AppColors.gray200),
+              side: BorderSide(
+                color: isDark ? AppColors.gray800 : AppColors.gray200,
+              ),
             ),
             title: Row(
               children: [
-                const Icon(Icons.warning_rounded, color: AppColors.error, size: 24),
+                const Icon(
+                  Icons.warning_rounded,
+                  color: AppColors.error,
+                  size: 24,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Text(l10n.deletePlaylist, style: const TextStyle(color: AppColors.error)),
+                  child: Text(
+                    l10n.deletePlaylist,
+                    style: const TextStyle(color: AppColors.error),
+                  ),
                 ),
               ],
             ),
             content: Text(
               l10n.deletePlaylistConfirm(playlist.name),
-              style: TextStyle(color: isDark ? AppColors.gray400 : AppColors.gray600),
+              style: TextStyle(
+                color: isDark ? AppColors.gray400 : AppColors.gray600,
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
                   l10n.cancel,
-                  style: TextStyle(color: isDark ? AppColors.gray400 : AppColors.gray600),
+                  style: TextStyle(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                  ),
                 ),
               ),
               TextButton(
@@ -279,10 +309,15 @@ class _PlaylistList extends StatelessWidget {
     }
   }
 
-  Future<void> _showRenameDialog(BuildContext context, Playlist playlist) async {
+  Future<void> _showRenameDialog(
+    BuildContext context,
+    Playlist playlist,
+  ) async {
     final newName = await _RenamePlaylistDialog.show(context, playlist.name);
     if (newName != null && newName.isNotEmpty && context.mounted) {
-      context.read<PlaylistBloc>().add(PlaylistRename(playlistId: playlist.id, newName: newName));
+      context.read<PlaylistBloc>().add(
+        PlaylistRename(playlistId: playlist.id, newName: newName),
+      );
     }
   }
 }
@@ -404,7 +439,9 @@ class _PlaylistCardState extends State<_PlaylistCard> {
                   color:
                       widget.isSelected
                           ? AppColors.white
-                          : (widget.isDark ? AppColors.gray500 : AppColors.accent),
+                          : (widget.isDark
+                              ? AppColors.gray500
+                              : AppColors.accent),
                   size: isCompact ? 24 : 28,
                 ),
               ),
@@ -422,16 +459,24 @@ class _PlaylistCardState extends State<_PlaylistCard> {
                         color:
                             widget.isSelected
                                 ? AppColors.accent
-                                : (widget.isDark ? AppColors.white : AppColors.black),
+                                : (widget.isDark
+                                    ? AppColors.white
+                                    : AppColors.black),
                         fontSize: isCompact ? 15 : 16,
-                        fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight:
+                            widget.isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       l10n.songsCount(widget.playlist.fileCount),
                       style: TextStyle(
-                        color: widget.isDark ? AppColors.gray500 : AppColors.gray600,
+                        color:
+                            widget.isDark
+                                ? AppColors.gray500
+                                : AppColors.gray600,
                         fontSize: isCompact ? 12 : 13,
                       ),
                     ),
@@ -498,7 +543,10 @@ class _EmptyState extends StatelessWidget {
               ),
               shape: BoxShape.circle,
               border: Border.all(
-                color: isDark ? AppColors.gray700 : AppColors.accent.withValues(alpha: 0.3),
+                color:
+                    isDark
+                        ? AppColors.gray700
+                        : AppColors.accent.withValues(alpha: 0.3),
               ),
             ),
             child: Icon(
@@ -519,7 +567,10 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             l10n.noPlaylistsHint,
-            style: TextStyle(color: isDark ? AppColors.gray500 : AppColors.gray600, fontSize: 14),
+            style: TextStyle(
+              color: isDark ? AppColors.gray500 : AppColors.gray600,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -530,8 +581,10 @@ class _EmptyState extends StatelessWidget {
 class _CreatePlaylistDialog extends StatefulWidget {
   const _CreatePlaylistDialog();
 
-  static Future<String?> show(BuildContext context) =>
-      showDialog<String>(context: context, builder: (context) => const _CreatePlaylistDialog());
+  static Future<String?> show(BuildContext context) => showDialog<String>(
+    context: context,
+    builder: (context) => const _CreatePlaylistDialog(),
+  );
 
   @override
   State<_CreatePlaylistDialog> createState() => _CreatePlaylistDialogState();
@@ -575,7 +628,11 @@ class _CreatePlaylistDialogState extends State<_CreatePlaylistDialog> {
                     ),
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   ),
-                  child: const Icon(Icons.add_rounded, color: AppColors.white, size: 24),
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: AppColors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -610,7 +667,11 @@ class _CreatePlaylistDialogState extends State<_CreatePlaylistDialog> {
                   onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                VercelButton(label: l10n.create, isDark: isDark, onPressed: _submit),
+                VercelButton(
+                  label: l10n.create,
+                  isDark: isDark,
+                  onPressed: _submit,
+                ),
               ],
             ),
           ],
@@ -629,10 +690,11 @@ class _RenamePlaylistDialog extends StatefulWidget {
 
   final String currentName;
 
-  static Future<String?> show(BuildContext context, String currentName) => showDialog<String>(
-    context: context,
-    builder: (context) => _RenamePlaylistDialog(currentName: currentName),
-  );
+  static Future<String?> show(BuildContext context, String currentName) =>
+      showDialog<String>(
+        context: context,
+        builder: (context) => _RenamePlaylistDialog(currentName: currentName),
+      );
 
   @override
   State<_RenamePlaylistDialog> createState() => _RenamePlaylistDialogState();
@@ -716,7 +778,11 @@ class _RenamePlaylistDialogState extends State<_RenamePlaylistDialog> {
                   onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                VercelButton(label: l10n.save, isDark: isDark, onPressed: _submit),
+                VercelButton(
+                  label: l10n.save,
+                  isDark: isDark,
+                  onPressed: _submit,
+                ),
               ],
             ),
           ],
