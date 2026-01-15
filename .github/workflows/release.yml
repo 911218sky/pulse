@@ -84,7 +84,7 @@ jobs:
         run: flutter pub get
       
       - name: Build macOS
-        run: flutter build macos --release
+        run: flutter build macos --release --split-debug-info=./debug-symbols --obfuscate
       
       - name: Create macOS DMG
         run: |
