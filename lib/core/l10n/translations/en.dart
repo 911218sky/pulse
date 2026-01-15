@@ -43,6 +43,25 @@ class EnTranslations extends Translations {
   String get tryOtherKeywords => 'Try other keywords';
   @override
   String get scanMusic => 'Scan Music';
+  @override
+  String get refreshLibrary => 'Rescan';
+  @override
+  String get clearLibrary => 'Clear Library';
+  @override
+  String get clearLibraryConfirm =>
+      'Clear entire music library?\n\nThis will remove all music file records (actual files will not be deleted).\n\nThis cannot be undone!';
+  @override
+  String get libraryCleared => 'Library cleared';
+  @override
+  String get exploreYourMusic => 'Explore your music collection';
+  @override
+  String get managePlaylist => 'Manage playlists';
+  @override
+  String get scanNewMusic => 'Scan new music';
+  @override
+  String get clearLibraryDesc => 'Clear music library';
+  @override
+  String get quickActions => 'Quick Actions';
 
   // ============== Player Screen ==============
   @override

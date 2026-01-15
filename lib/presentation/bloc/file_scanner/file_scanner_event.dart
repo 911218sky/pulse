@@ -108,3 +108,8 @@ class FileScannerDeleteFiles extends FileScannerEvent {
   @override
   List<Object?> get props => [fileIds];
 }
+
+/// Clear entire music library
+class FileScannerClearLibrary extends FileScannerEvent {
+  const FileScannerClearLibrary();
+}

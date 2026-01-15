@@ -133,3 +133,17 @@ class PlaylistJumpToTrack extends PlaylistEvent {
   @override
   List<Object?> get props => [index];
 }
+
+/// Set a temporary playback queue (for playing from library without creating playlist)
+class PlaylistSetTemporaryQueue extends PlaylistEvent {
+  const PlaylistSetTemporaryQueue({
+    required this.files,
+    required this.startIndex,
+  });
+
+  final List<AudioFile> files;
+  final int startIndex;
+
+  @override
+  List<Object?> get props => [files, startIndex];
+}

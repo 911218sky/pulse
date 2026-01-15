@@ -8,10 +8,23 @@ import 'package:media_kit/media_kit.dart';
 /// Uses media_kit for stable playback on Windows (replaces just_audio)
 class MusicPlayerAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
-  MusicPlayerAudioHandler() {
+  MusicPlayerAudioHandler({this.onSkipToNext, this.onSkipToPrevious}) {
     _player = Player();
     _initPlaybackState();
     _init();
+  }
+
+  /// Callback for skip to next track
+  VoidCallback? onSkipToNext;
+
+  /// Callback for skip to previous track
+  VoidCallback? onSkipToPrevious;
+
+  /// Set callbacks for skip controls (can be called after initialization)
+  void setSkipCallbacks({VoidCallback? onNext, VoidCallback? onPrevious}) {
+    onSkipToNext = onNext;
+    onSkipToPrevious = onPrevious;
+    debugPrint('AudioHandler: Skip callbacks set');
   }
 
   void _initPlaybackState() {
@@ -227,12 +240,14 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
 
   @override
   Future<void> skipToNext() async {
-    // Will be implemented with playlist support
+    debugPrint('AudioHandler: skipToNext() called');
+    onSkipToNext?.call();
   }
 
   @override
   Future<void> skipToPrevious() async {
-    // Will be implemented with playlist support
+    debugPrint('AudioHandler: skipToPrevious() called');
+    onSkipToPrevious?.call();
   }
 
   @override

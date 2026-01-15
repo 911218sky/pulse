@@ -6,6 +6,9 @@ import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/player/player_state.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_bloc.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_event.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_state.dart';
@@ -365,24 +368,53 @@ class _PlayerControls extends StatelessWidget {
         // Playback controls
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: PlaybackControls(
-            isPlaying: state.isPlaying,
-            onPlayPause: () {
-              if (state.isPlaying) {
-                context.read<PlayerBloc>().add(const PlayerPause());
-              } else {
-                context.read<PlayerBloc>().add(const PlayerPlay());
-              }
-            },
-            onPrevious: () {},
-            onNext: () {},
-            onSkipBackward: () {
-              context.read<PlayerBloc>().add(const PlayerSkipBackward());
-            },
-            onSkipForward: () {
-              context.read<PlayerBloc>().add(const PlayerSkipForward());
-            },
-            size: PlaybackControlsSize.large,
+          child: BlocBuilder<PlaylistBloc, PlaylistState>(
+            builder:
+                (context, playlistState) => PlaybackControls(
+                  isPlaying: state.isPlaying,
+                  onPlayPause: () {
+                    if (state.isPlaying) {
+                      context.read<PlayerBloc>().add(const PlayerPause());
+                    } else {
+                      context.read<PlayerBloc>().add(const PlayerPlay());
+                    }
+                  },
+                  onPrevious: () {
+                    context.read<PlaylistBloc>().add(
+                      const PlaylistPlayPrevious(),
+                    );
+                    final prevIndex = playlistState.previousTrackIndex;
+                    if (prevIndex != null &&
+                        playlistState.currentPlaylist != null) {
+                      final prevTrack =
+                          playlistState.currentPlaylist!.files[prevIndex];
+                      context.read<PlayerBloc>().add(
+                        PlayerLoadAudio(prevTrack),
+                      );
+                    }
+                  },
+                  onNext: () {
+                    context.read<PlaylistBloc>().add(const PlaylistPlayNext());
+                    final nextIndex = playlistState.nextTrackIndex;
+                    if (nextIndex != null &&
+                        playlistState.currentPlaylist != null) {
+                      final nextTrack =
+                          playlistState.currentPlaylist!.files[nextIndex];
+                      context.read<PlayerBloc>().add(
+                        PlayerLoadAudio(nextTrack),
+                      );
+                    }
+                  },
+                  onSkipBackward: () {
+                    context.read<PlayerBloc>().add(const PlayerSkipBackward());
+                  },
+                  onSkipForward: () {
+                    context.read<PlayerBloc>().add(const PlayerSkipForward());
+                  },
+                  hasPrevious: playlistState.previousTrackIndex != null,
+                  hasNext: playlistState.nextTrackIndex != null,
+                  size: PlaybackControlsSize.large,
+                ),
           ),
         ),
         const SizedBox(height: AppSpacing.lg),

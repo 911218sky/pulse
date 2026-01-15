@@ -303,19 +303,35 @@ class _CompletedState extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: FolderScanProgress(
-                  currentFolder: l10n.scanComplete,
-                  filesFound: state.totalFilesFound,
-                  isDark: isDark,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              _AddMoreButton(
+              FolderScanProgress(
+                currentFolder: l10n.scanComplete,
+                filesFound: state.totalFilesFound,
                 isDark: isDark,
-                onTap: () => _showImportDialog(context),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              // Buttons row
+              Row(
+                children: [
+                  Expanded(
+                    child: _RescanButton(
+                      isDark: isDark,
+                      onTap: () {
+                        context.read<FileScannerBloc>().add(
+                          const FileScannerStartScan(),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _AddMoreButton(
+                      isDark: isDark,
+                      onTap: () => _showImportDialog(context),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -364,6 +380,86 @@ class _AddMoreButton extends StatefulWidget {
 
   @override
   State<_AddMoreButton> createState() => _AddMoreButtonState();
+}
+
+class _RescanButton extends StatefulWidget {
+  const _RescanButton({required this.isDark, required this.onTap});
+
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  State<_RescanButton> createState() => _RescanButtonState();
+}
+
+class _RescanButtonState extends State<_RescanButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color:
+                _isHovered
+                    ? (widget.isDark
+                        ? AppColors.gray800
+                        : AppColors.accent.withValues(alpha: 0.1))
+                    : (widget.isDark ? AppColors.gray900 : AppColors.gray100),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(
+              color:
+                  _isHovered
+                      ? (widget.isDark ? AppColors.gray600 : AppColors.accent)
+                      : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.refresh_rounded,
+                size: 18,
+                color:
+                    _isHovered
+                        ? (widget.isDark ? AppColors.white : AppColors.accent)
+                        : (widget.isDark
+                            ? AppColors.gray400
+                            : AppColors.gray600),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                l10n.refreshLibrary,
+                style: TextStyle(
+                  color:
+                      _isHovered
+                          ? (widget.isDark ? AppColors.white : AppColors.accent)
+                          : (widget.isDark
+                              ? AppColors.gray400
+                              : AppColors.gray600),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _AddMoreButtonState extends State<_AddMoreButton> {

@@ -226,4 +226,9 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
       return false;
     }
   }
+
+  @override
+  Future<void> clearLibrary() async {
+    await _dataSource.clearAllAudioFiles();
+  }
 }

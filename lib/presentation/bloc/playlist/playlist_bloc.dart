@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pulse/domain/entities/playlist.dart';
 import 'package:pulse/domain/repositories/playlist_repository.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
@@ -25,6 +26,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
     on<PlaylistPlayNext>(_onPlayNext);
     on<PlaylistPlayPrevious>(_onPlayPrevious);
     on<PlaylistJumpToTrack>(_onJumpToTrack);
+    on<PlaylistSetTemporaryQueue>(_onSetTemporaryQueue);
 
     _subscribeToPlaylists();
   }
@@ -364,6 +366,25 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
       );
       emit(state.copyWith(shuffledIndices: shuffled));
     }
+  }
+
+  void _onSetTemporaryQueue(
+    PlaylistSetTemporaryQueue event,
+    Emitter<PlaylistState> emit,
+  ) {
+    // Create a temporary in-memory playlist
+    final tempPlaylist = Playlist.create(
+      id: 'temp_queue',
+      name: 'Now Playing',
+    ).copyWith(files: event.files);
+
+    emit(
+      state.copyWith(
+        currentPlaylist: () => tempPlaylist,
+        currentTrackIndex: event.startIndex,
+        shuffledIndices: const <int>[],
+      ),
+    );
   }
 
   @override
