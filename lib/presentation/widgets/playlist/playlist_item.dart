@@ -184,17 +184,22 @@ class _PlayingIndicatorState extends State<_PlayingIndicator>
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: _controller,
     builder:
-        (context, child) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(
-            3,
-            (index) => Container(
-              width: 3,
-              height: 8 + (_controller.value * 6 * (index.isEven ? 1 : -1)),
-              margin: const EdgeInsets.symmetric(horizontal: 1),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(1),
+        (context, child) => SizedBox(
+          width: 16,
+          height: 16,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(
+              3,
+              (index) => Container(
+                width: 3,
+                height: 4 + (_controller.value * 8 * (index.isEven ? 1 : 0.5)),
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(1),
+                ),
               ),
             ),
           ),

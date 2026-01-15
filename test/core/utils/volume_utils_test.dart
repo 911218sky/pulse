@@ -93,19 +93,16 @@ void main() {
         expect(VolumeUtils.fromPercentage(100), equals(1));
       });
 
-      test(
-        'percentage round-trip preserves value (100 iterations)',
-        () {
-          PropertyTest.forAll(
-            generator: () => PropertyTest.randomInt(max: 101),
-            property: (percentage) {
-              final volume = VolumeUtils.fromPercentage(percentage);
-              final restored = VolumeUtils.toPercentage(volume);
-              expect(restored, equals(percentage));
-            },
-          );
-        },
-      );
+      test('percentage round-trip preserves value (100 iterations)', () {
+        PropertyTest.forAll(
+          generator: () => PropertyTest.randomInt(max: 101),
+          property: (percentage) {
+            final volume = VolumeUtils.fromPercentage(percentage);
+            final restored = VolumeUtils.toPercentage(volume);
+            expect(restored, equals(percentage));
+          },
+        );
+      });
     });
 
     group('utility methods', () {
@@ -133,7 +130,10 @@ void main() {
         expect(VolumeUtils.calculateFadeOutVolume(1, 0), equals(1));
         expect(VolumeUtils.calculateFadeOutVolume(1, 0.5), equals(0.5));
         expect(VolumeUtils.calculateFadeOutVolume(1, 1), equals(0));
-        expect(VolumeUtils.calculateFadeOutVolume(0.8, 0.5), closeTo(0.4, 0.001));
+        expect(
+          VolumeUtils.calculateFadeOutVolume(0.8, 0.5),
+          closeTo(0.4, 0.001),
+        );
       });
     });
   });

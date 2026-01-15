@@ -1,6 +1,26 @@
-# Pulse
+<p align="center">
+  <img src="assets/icons/app_icon_v5.png" alt="Pulse" width="128" height="128">
+</p>
 
-A minimalist local music player built with Flutter. Works on Windows, macOS, Linux, and Android.
+<h1 align="center">Pulse</h1>
+
+<p align="center">
+  A minimalist local music player built with Flutter. Works on Windows, macOS, Linux, and Android.
+</p>
+
+## Screenshots
+
+<p align="center">
+  <img src="assets/screenshots/player.png" alt="Player" width="180">&nbsp;&nbsp;
+  <img src="assets/screenshots/sleep_timer.png" alt="Sleep Timer" width="180">&nbsp;&nbsp;
+  <img src="assets/screenshots/settings.png" alt="Settings" width="180">
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/scan_music.png" alt="Scan Music" width="180">&nbsp;&nbsp;
+  <img src="assets/screenshots/scan_result.png" alt="Scan Result" width="180">&nbsp;&nbsp;
+  <img src="assets/screenshots/jump_to_time.png" alt="Jump to Time" width="180">
+</p>
 
 ## Features
 
@@ -13,7 +33,7 @@ A minimalist local music player built with Flutter. Works on Windows, macOS, Lin
 
 ## Download
 
-Get the latest release from [Releases](https://github.com/user/pulse/releases).
+Get the latest release from [Releases](https://github.com/911218sky/pulse/releases).
 
 | Platform | File |
 |----------|------|
@@ -34,7 +54,7 @@ Get the latest release from [Releases](https://github.com/user/pulse/releases).
 ### Setup
 
 ```bash
-git clone https://github.com/user/pulse.git
+git clone https://github.com/911218sky/pulse.git
 cd pulse
 flutter pub get
 flutter run
@@ -75,10 +95,6 @@ lib/
 - **Router**: go_router
 - **DI**: get_it
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
 ## License
 
-[MIT](LICENSE)
+[GNU](LICENSE)

@@ -16,10 +16,11 @@ void main() {
       'Property 12.1: Remaining time calculation is correct (100 iterations)',
       () {
         PropertyTest.forAll(
-          generator: () => (
-            PropertyTest.randomDuration(maxHours: 2), // total duration
-            PropertyTest.randomDuration(maxHours: 2), // elapsed time
-          ),
+          generator:
+              () => (
+                PropertyTest.randomDuration(maxHours: 2), // total duration
+                PropertyTest.randomDuration(maxHours: 2), // elapsed time
+              ),
           property: (input) {
             final (totalDuration, elapsed) = input;
 
@@ -32,8 +33,10 @@ void main() {
             expect(clampedRemaining.inMilliseconds, greaterThanOrEqualTo(0));
 
             // Remaining should not exceed total
-            expect(clampedRemaining.inMilliseconds,
-                lessThanOrEqualTo(totalDuration.inMilliseconds));
+            expect(
+              clampedRemaining.inMilliseconds,
+              lessThanOrEqualTo(totalDuration.inMilliseconds),
+            );
           },
         );
       },
@@ -43,10 +46,11 @@ void main() {
       'Property 12.2: Progress calculation is bounded [0, 1] (100 iterations)',
       () {
         PropertyTest.forAll(
-          generator: () => (
-            PropertyTest.randomDuration(maxHours: 2), // total duration
-            PropertyTest.randomDuration(maxHours: 2), // elapsed time
-          ),
+          generator:
+              () => (
+                PropertyTest.randomDuration(maxHours: 2), // total duration
+                PropertyTest.randomDuration(maxHours: 2), // elapsed time
+              ),
           property: (input) {
             final (totalDuration, elapsed) = input;
 

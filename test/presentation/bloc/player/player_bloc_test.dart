@@ -19,57 +19,57 @@ import '../../../helpers/property_test_helper.dart';
 
 void main() {
   group('Skip Forward/Backward Bounds', () {
-    test(
-      'Property 7.1: Skip forward clamps to duration (100 iterations)',
-      () {
-        PropertyTest.forAll(
-          generator: () => (
-            PropertyTest.randomDuration(maxHours: 2), // current position
-            PropertyTest.randomDuration(maxHours: 3), // total duration
-            PropertyTest.randomInt(min: 5, max: 60), // skip seconds
-          ),
-          property: (input) {
-            final (position, duration, skipSeconds) = input;
+    test('Property 7.1: Skip forward clamps to duration (100 iterations)', () {
+      PropertyTest.forAll(
+        generator:
+            () => (
+              PropertyTest.randomDuration(maxHours: 2), // current position
+              PropertyTest.randomDuration(maxHours: 3), // total duration
+              PropertyTest.randomInt(min: 5, max: 60), // skip seconds
+            ),
+        property: (input) {
+          final (position, duration, skipSeconds) = input;
 
-            // Calculate expected new position
-            final newPosition = position + Duration(seconds: skipSeconds);
-            final clampedPosition =
-                newPosition > duration ? duration : newPosition;
+          // Calculate expected new position
+          final newPosition = position + Duration(seconds: skipSeconds);
+          final clampedPosition =
+              newPosition > duration ? duration : newPosition;
 
-            // Verify clamping behavior
-            expect(clampedPosition.inMilliseconds,
-                lessThanOrEqualTo(duration.inMilliseconds));
-            // Clamped position should be >= 0
-            expect(clampedPosition.inMilliseconds, greaterThanOrEqualTo(0));
-          },
-        );
-      },
-    );
+          // Verify clamping behavior
+          expect(
+            clampedPosition.inMilliseconds,
+            lessThanOrEqualTo(duration.inMilliseconds),
+          );
+          // Clamped position should be >= 0
+          expect(clampedPosition.inMilliseconds, greaterThanOrEqualTo(0));
+        },
+      );
+    });
 
-    test(
-      'Property 7.2: Skip backward clamps to zero (100 iterations)',
-      () {
-        PropertyTest.forAll(
-          generator: () => (
-            PropertyTest.randomDuration(maxHours: 2), // current position
-            PropertyTest.randomInt(min: 5, max: 60), // skip seconds
-          ),
-          property: (input) {
-            final (position, skipSeconds) = input;
+    test('Property 7.2: Skip backward clamps to zero (100 iterations)', () {
+      PropertyTest.forAll(
+        generator:
+            () => (
+              PropertyTest.randomDuration(maxHours: 2), // current position
+              PropertyTest.randomInt(min: 5, max: 60), // skip seconds
+            ),
+        property: (input) {
+          final (position, skipSeconds) = input;
 
-            // Calculate expected new position
-            final newPosition = position - Duration(seconds: skipSeconds);
-            final clampedPosition =
-                newPosition.isNegative ? Duration.zero : newPosition;
+          // Calculate expected new position
+          final newPosition = position - Duration(seconds: skipSeconds);
+          final clampedPosition =
+              newPosition.isNegative ? Duration.zero : newPosition;
 
-            // Verify clamping behavior
-            expect(clampedPosition.inMilliseconds, greaterThanOrEqualTo(0));
-            expect(clampedPosition.inMilliseconds,
-                lessThanOrEqualTo(position.inMilliseconds));
-          },
-        );
-      },
-    );
+          // Verify clamping behavior
+          expect(clampedPosition.inMilliseconds, greaterThanOrEqualTo(0));
+          expect(
+            clampedPosition.inMilliseconds,
+            lessThanOrEqualTo(position.inMilliseconds),
+          );
+        },
+      );
+    });
 
     test('Skip forward at end of track stays at end', () {
       const duration = Duration(minutes: 5);
@@ -111,8 +111,7 @@ void main() {
             final (position, duration) = input;
 
             // Position should be valid (within bounds)
-            final isValid =
-                position >= Duration.zero && position <= duration;
+            final isValid = position >= Duration.zero && position <= duration;
             expect(isValid, isTrue);
           },
         );
@@ -127,8 +126,9 @@ void main() {
             final duration = PropertyTest.randomDuration(maxHours: 2);
             // Generate a position beyond the duration
             final extraMs = PropertyTest.randomInt(min: 1, max: 100000);
-            final position =
-                Duration(milliseconds: duration.inMilliseconds + extraMs);
+            final position = Duration(
+              milliseconds: duration.inMilliseconds + extraMs,
+            );
             return (position, duration);
           },
           property: (input) {
@@ -147,9 +147,10 @@ void main() {
       'Property 3.3: Negative position is clamped to zero (100 iterations)',
       () {
         PropertyTest.forAll(
-          generator: () => Duration(
-            milliseconds: -PropertyTest.randomInt(min: 1, max: 100000),
-          ),
+          generator:
+              () => Duration(
+                milliseconds: -PropertyTest.randomInt(min: 1, max: 100000),
+              ),
           property: (position) {
             // Clamp to zero
             final clampedPosition =

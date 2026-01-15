@@ -40,26 +40,27 @@ void main() {
     }
 
     AudioFile generateRandomAudioFile() => AudioFile(
-          id: PropertyTest.randomNonEmptyString(),
-          path: '/music/${PropertyTest.randomNonEmptyString()}.mp3',
-          title: PropertyTest.randomNonEmptyString(),
-          artist: PropertyTest.randomBool()
+      id: PropertyTest.randomNonEmptyString(),
+      path: '/music/${PropertyTest.randomNonEmptyString()}.mp3',
+      title: PropertyTest.randomNonEmptyString(),
+      artist:
+          PropertyTest.randomBool()
               ? PropertyTest.randomNonEmptyString()
               : null,
-          album: PropertyTest.randomBool()
+      album:
+          PropertyTest.randomBool()
               ? PropertyTest.randomNonEmptyString()
               : null,
-          duration: PropertyTest.randomDuration(maxHours: 1),
-          fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 10000000),
-        );
+      duration: PropertyTest.randomDuration(maxHours: 1),
+      fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 10000000),
+    );
 
     test(
       'Property 9.1: All results contain query in title, artist, or album (100 iterations)',
       () {
         PropertyTest.forAll(
           generator: () {
-            final files =
-                List.generate(20, (_) => generateRandomAudioFile());
+            final files = List.generate(20, (_) => generateRandomAudioFile());
             final query = PropertyTest.randomNonEmptyString(maxLength: 5);
             return (files, query);
           },
@@ -72,8 +73,7 @@ void main() {
               expect(
                 matchesQuery(file, query),
                 isTrue,
-                reason:
-                    'File "${file.title}" should match query "$query"',
+                reason: 'File "${file.title}" should match query "$query"',
               );
             }
           },
@@ -86,8 +86,7 @@ void main() {
       () {
         PropertyTest.forAll(
           generator: () {
-            final files =
-                List.generate(20, (_) => generateRandomAudioFile());
+            final files = List.generate(20, (_) => generateRandomAudioFile());
             final query = PropertyTest.randomNonEmptyString(maxLength: 5);
             return (files, query);
           },
@@ -106,21 +105,17 @@ void main() {
       },
     );
 
-    test(
-      'Property 9.3: Empty query returns all files (100 iterations)',
-      () {
-        PropertyTest.forAll(
-          generator: () =>
-              List.generate(20, (_) => generateRandomAudioFile()),
-          property: (files) {
-            final results = filterFiles(files, '');
+    test('Property 9.3: Empty query returns all files (100 iterations)', () {
+      PropertyTest.forAll(
+        generator: () => List.generate(20, (_) => generateRandomAudioFile()),
+        property: (files) {
+          final results = filterFiles(files, '');
 
-            // Should return all files
-            expect(results.length, equals(files.length));
-          },
-        );
-      },
-    );
+          // Should return all files
+          expect(results.length, equals(files.length));
+        },
+      );
+    });
 
     test('Search is case-insensitive', () {
       const file = AudioFile(

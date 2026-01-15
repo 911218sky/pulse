@@ -150,8 +150,7 @@ void main() {
       const repeatAll = true;
 
       const nextIndex = currentIndex + 1;
-      const wrappedIndex =
-          repeatAll && nextIndex >= fileCount ? 0 : nextIndex;
+      const wrappedIndex = repeatAll && nextIndex >= fileCount ? 0 : nextIndex;
 
       expect(wrappedIndex, equals(0));
     });

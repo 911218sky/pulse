@@ -14,17 +14,16 @@ import '../../helpers/property_test_helper.dart';
 /// - Reordering SHALL preserve all files (same count, same IDs, different order)
 
 AudioFile generateRandomAudioFile() => AudioFile(
-      id: PropertyTest.randomNonEmptyString(),
-      path: '/music/${PropertyTest.randomNonEmptyString()}.mp3',
-      title: PropertyTest.randomNonEmptyString(),
-      artist:
-          PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
-      album:
-          PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
-      duration: PropertyTest.randomDuration(maxHours: 2),
-      fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 100000000),
-      addedAt: PropertyTest.randomDateTime(),
-    );
+  id: PropertyTest.randomNonEmptyString(),
+  path: '/music/${PropertyTest.randomNonEmptyString()}.mp3',
+  title: PropertyTest.randomNonEmptyString(),
+  artist:
+      PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
+  album: PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
+  duration: PropertyTest.randomDuration(maxHours: 2),
+  fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 100000000),
+  addedAt: PropertyTest.randomDateTime(),
+);
 
 Playlist generateRandomPlaylist({int minFiles = 0, int maxFiles = 10}) {
   final fileCount = PropertyTest.randomInt(min: minFiles, max: maxFiles);
@@ -74,13 +73,14 @@ void main() {
       'Property 4.2: Adding N files increases file count by N (100 iterations)',
       () {
         PropertyTest.forAll(
-          generator: () => (
-            generateRandomPlaylist(maxFiles: 5),
-            List.generate(
-              PropertyTest.randomInt(min: 1, max: 5),
-              (_) => generateRandomAudioFile(),
-            ),
-          ),
+          generator:
+              () => (
+                generateRandomPlaylist(maxFiles: 5),
+                List.generate(
+                  PropertyTest.randomInt(min: 1, max: 5),
+                  (_) => generateRandomAudioFile(),
+                ),
+              ),
           property: (input) {
             final (playlist, filesToAdd) = input;
             final initialCount = playlist.fileCount;
@@ -111,13 +111,14 @@ void main() {
       'Property 4.2b: Adding multiple files at once increases file count correctly (100 iterations)',
       () {
         PropertyTest.forAll(
-          generator: () => (
-            generateRandomPlaylist(maxFiles: 5),
-            List.generate(
-              PropertyTest.randomInt(min: 1, max: 5),
-              (_) => generateRandomAudioFile(),
-            ),
-          ),
+          generator:
+              () => (
+                generateRandomPlaylist(maxFiles: 5),
+                List.generate(
+                  PropertyTest.randomInt(min: 1, max: 5),
+                  (_) => generateRandomAudioFile(),
+                ),
+              ),
           property: (input) {
             final (playlist, filesToAdd) = input;
             final initialCount = playlist.fileCount;

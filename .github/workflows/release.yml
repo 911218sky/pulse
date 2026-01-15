@@ -21,7 +21,6 @@ jobs:
       
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: 'stable'
           cache: true
       
@@ -52,7 +51,6 @@ jobs:
       
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: 'stable'
           cache: true
       
@@ -79,7 +77,6 @@ jobs:
       
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: 'stable'
           cache: true
       
@@ -104,22 +101,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
       
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.0'
-          channel: 'stable'
-          cache: true
+      - name: Setup Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+      
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Accept Android licenses
+        run: yes 2>/dev/null | sdkmanager --licenses || true
       
       - name: Install dependencies
         run: flutter pub get
       
       - name: Build APK (split per ABI)
-        run: flutter build apk --release --split-per-abi
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          retry_wait_seconds: 60
+          command: flutter build apk --release --split-per-abi --no-tree-shake-icons
       
       - name: Rename APKs
         run: |

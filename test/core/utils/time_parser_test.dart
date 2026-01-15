@@ -37,11 +37,12 @@ void main() {
       'Property 11b: fromHMS round-trip preserves components (100 iterations)',
       () {
         PropertyTest.forAll(
-          generator: () => (
-            PropertyTest.randomInt(max: 100), // hours
-            PropertyTest.randomInt(max: 59), // minutes
-            PropertyTest.randomInt(max: 59), // seconds
-          ),
+          generator:
+              () => (
+                PropertyTest.randomInt(max: 100), // hours
+                PropertyTest.randomInt(max: 59), // minutes
+                PropertyTest.randomInt(max: 59), // seconds
+              ),
           property: (input) {
             final (hours, minutes, seconds) = input;
 
@@ -79,21 +80,12 @@ void main() {
           TimeParser.parse('05:30'),
           equals(const Duration(minutes: 5, seconds: 30)),
         );
-        expect(
-          TimeParser.parse('00:00'),
-          equals(Duration.zero),
-        );
+        expect(TimeParser.parse('00:00'), equals(Duration.zero));
       });
 
       test('parses SS format', () {
-        expect(
-          TimeParser.parse('45'),
-          equals(const Duration(seconds: 45)),
-        );
-        expect(
-          TimeParser.parse('0'),
-          equals(Duration.zero),
-        );
+        expect(TimeParser.parse('45'), equals(const Duration(seconds: 45)));
+        expect(TimeParser.parse('0'), equals(Duration.zero));
       });
 
       test('returns null for invalid formats', () {
@@ -123,10 +115,7 @@ void main() {
           TimeParser.format(const Duration(minutes: 5, seconds: 30)),
           equals('05:30'),
         );
-        expect(
-          TimeParser.format(Duration.zero),
-          equals('00:00'),
-        );
+        expect(TimeParser.format(Duration.zero), equals('00:00'));
       });
 
       test('handles negative durations', () {

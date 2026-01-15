@@ -11,17 +11,17 @@ import '../../helpers/property_test_helper.dart';
 /// equivalent Settings with all fields preserved.
 
 Settings generateRandomSettings() => Settings(
-      darkMode: PropertyTest.randomBool(),
-      defaultVolume: PropertyTest.randomDouble(),
-      defaultPlaybackSpeed: PropertyTest.randomDouble(min: 0.5, max: 2),
-      autoResume: PropertyTest.randomBool(),
-      skipForwardSeconds: PropertyTest.randomInt(min: 5, max: 60),
-      skipBackwardSeconds: PropertyTest.randomInt(min: 5, max: 60),
-      monitoredFolders: List.generate(
-        PropertyTest.randomInt(max: 5),
-        (_) => '/music/${PropertyTest.randomNonEmptyString()}',
-      ),
-    );
+  darkMode: PropertyTest.randomBool(),
+  defaultVolume: PropertyTest.randomDouble(),
+  defaultPlaybackSpeed: PropertyTest.randomDouble(min: 0.5, max: 2),
+  autoResume: PropertyTest.randomBool(),
+  skipForwardSeconds: PropertyTest.randomInt(min: 5, max: 60),
+  skipBackwardSeconds: PropertyTest.randomInt(min: 5, max: 60),
+  monitoredFolders: List.generate(
+    PropertyTest.randomInt(max: 5),
+    (_) => '/music/${PropertyTest.randomNonEmptyString()}',
+  ),
+);
 
 void main() {
   group('SettingsModel', () {

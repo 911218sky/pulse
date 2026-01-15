@@ -216,7 +216,6 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
     crossAxisCount: 3,
     mainAxisSpacing: AppSpacing.md,
     crossAxisSpacing: AppSpacing.md,
-    childAspectRatio: 1.2,
     physics: const NeverScrollableScrollPhysics(),
     children:
         SleepTimerPreset.values.map((preset) {

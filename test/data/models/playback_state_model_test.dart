@@ -12,12 +12,12 @@ import '../../helpers/property_test_helper.dart';
 /// position, volume, and playbackSpeed.
 
 PlaybackState generateRandomPlaybackState() => PlaybackState(
-      audioFilePath: '/music/${PropertyTest.randomNonEmptyString()}.mp3',
-      position: PropertyTest.randomDuration(),
-      savedAt: PropertyTest.randomDateTime(),
-      volume: PropertyTest.randomDouble(),
-      playbackSpeed: PropertyTest.randomDouble(min: 0.5, max: 2),
-    );
+  audioFilePath: '/music/${PropertyTest.randomNonEmptyString()}.mp3',
+  position: PropertyTest.randomDuration(),
+  savedAt: PropertyTest.randomDateTime(),
+  volume: PropertyTest.randomDouble(),
+  playbackSpeed: PropertyTest.randomDouble(min: 0.5, max: 2),
+);
 
 void main() {
   group('PlaybackStateModel', () {

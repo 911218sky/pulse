@@ -13,18 +13,15 @@ import '../../helpers/property_test_helper.dart';
 
 void main() {
   group('PlaybackSpeedUtils', () {
-    test(
-      'Property 6: Speed clamp preserves valid values (100 iterations)',
-      () {
-        PropertyTest.forAll(
-          generator: () => PropertyTest.randomDouble(min: 0.5, max: 2),
-          property: (speed) {
-            final clamped = PlaybackSpeedUtils.clamp(speed);
-            expect(clamped, closeTo(speed, 0.0001));
-          },
-        );
-      },
-    );
+    test('Property 6: Speed clamp preserves valid values (100 iterations)', () {
+      PropertyTest.forAll(
+        generator: () => PropertyTest.randomDouble(min: 0.5, max: 2),
+        property: (speed) {
+          final clamped = PlaybackSpeedUtils.clamp(speed);
+          expect(clamped, closeTo(speed, 0.0001));
+        },
+      );
+    });
 
     test(
       'Property 6: Speed clamp returns 0.5 for values < 0.5 (100 iterations)',
@@ -120,7 +117,10 @@ void main() {
       test('previousPreset cycles through presets', () {
         expect(PlaybackSpeedUtils.previousPreset(1), equals(0.75));
         expect(PlaybackSpeedUtils.previousPreset(0.75), equals(0.5));
-        expect(PlaybackSpeedUtils.previousPreset(0.5), equals(2)); // Wraps around
+        expect(
+          PlaybackSpeedUtils.previousPreset(0.5),
+          equals(2),
+        ); // Wraps around
       });
     });
 
