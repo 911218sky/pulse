@@ -71,6 +71,15 @@ class AppLocalizations {
   String get noResults => _t.noResults;
   String get tryOtherKeywords => _t.tryOtherKeywords;
   String get scanMusic => _t.scanMusic;
+  String get refreshLibrary => _t.refreshLibrary;
+  String get clearLibrary => _t.clearLibrary;
+  String get clearLibraryConfirm => _t.clearLibraryConfirm;
+  String get libraryCleared => _t.libraryCleared;
+  String get exploreYourMusic => _t.exploreYourMusic;
+  String get managePlaylist => _t.managePlaylist;
+  String get scanNewMusic => _t.scanNewMusic;
+  String get clearLibraryDesc => _t.clearLibraryDesc;
+  String get quickActions => _t.quickActions;
 
   // ============== Player Screen ==============
   String get nowPlaying => _t.nowPlaying;
@@ -238,6 +247,15 @@ abstract class Translations {
   String get noResults;
   String get tryOtherKeywords;
   String get scanMusic;
+  String get refreshLibrary;
+  String get clearLibrary;
+  String get clearLibraryConfirm;
+  String get libraryCleared;
+  String get exploreYourMusic;
+  String get managePlaylist;
+  String get scanNewMusic;
+  String get clearLibraryDesc;
+  String get quickActions;
 
   // ============== Player Screen ==============
   String get nowPlaying;

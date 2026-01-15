@@ -710,6 +710,8 @@ class _ActionTileState extends State<_ActionTile> {
                 children: [
                   Text(
                     widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color:
                           widget.isDanger
@@ -725,6 +727,8 @@ class _ActionTileState extends State<_ActionTile> {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       widget.subtitle!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color:
                             widget.isDark
@@ -737,6 +741,7 @@ class _ActionTileState extends State<_ActionTile> {
                 ],
               ),
             ),
+            const SizedBox(width: AppSpacing.sm),
             Icon(
               Icons.chevron_right_rounded,
               color: widget.isDark ? AppColors.gray600 : AppColors.gray400,

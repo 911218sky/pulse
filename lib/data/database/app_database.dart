@@ -258,6 +258,8 @@ class AppDatabase extends _$AppDatabase {
   Future<int> deleteAudioFile(String id) =>
       (delete(audioFilesTable)..where((t) => t.id.equals(id))).go();
 
+  Future<int> clearAllAudioFiles() => delete(audioFilesTable).go();
+
   // ============== Playlist Operations ==============
 
   Future<List<PlaylistsTableData>> getAllPlaylists() =>

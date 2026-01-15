@@ -25,6 +25,7 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
     on<FileScannerLoadLibrary>(_onLoadLibrary);
     on<FileScannerDeleteFile>(_onDeleteFile);
     on<FileScannerDeleteFiles>(_onDeleteFiles);
+    on<FileScannerClearLibrary>(_onClearLibrary);
   }
 
   final FileScannerRepository _fileScannerRepository;
@@ -348,6 +349,30 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
     Emitter<FileScannerState> emit,
   ) async {
     add(const FileScannerStartScan());
+  }
+
+  Future<void> _onClearLibrary(
+    FileScannerClearLibrary event,
+    Emitter<FileScannerState> emit,
+  ) async {
+    try {
+      await _fileScannerRepository.clearLibrary();
+
+      emit(
+        state.copyWith(
+          folders: const [],
+          libraryFiles: const [],
+          status: FileScannerStatus.initial,
+        ),
+      );
+    } on Exception catch (e) {
+      emit(
+        state.copyWith(
+          status: FileScannerStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
   }
 
   Future<void> _onImportFiles(

@@ -43,6 +43,9 @@ abstract class FileScannerRepository {
   /// Deletes an audio file from disk and library
   Future<bool> deleteFileFromDisk(String fileId, String filePath);
 
+  /// Clears entire music library
+  Future<void> clearLibrary();
+
   /// Supported audio file extensions
   static const List<String> supportedExtensions = [
     '.mp3',

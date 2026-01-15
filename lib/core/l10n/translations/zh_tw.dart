@@ -43,6 +43,25 @@ class ZhTwTranslations extends Translations {
   String get tryOtherKeywords => '試試其他關鍵字';
   @override
   String get scanMusic => '掃描音樂';
+  @override
+  String get refreshLibrary => '重新掃描';
+  @override
+  String get clearLibrary => '清空音樂庫';
+  @override
+  String get clearLibraryConfirm =>
+      '確定要清空整個音樂庫嗎？\n\n這將移除所有音樂檔案的紀錄（不會刪除實際檔案）。\n\n此操作無法復原！';
+  @override
+  String get libraryCleared => '音樂庫已清空';
+  @override
+  String get exploreYourMusic => '探索你的音樂收藏';
+  @override
+  String get managePlaylist => '管理播放清單';
+  @override
+  String get scanNewMusic => '掃描新音樂';
+  @override
+  String get clearLibraryDesc => '清空音樂庫';
+  @override
+  String get quickActions => '快速操作';
 
   // ============== Player Screen ==============
   @override

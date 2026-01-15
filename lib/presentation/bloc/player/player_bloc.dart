@@ -118,6 +118,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
       // Start auto-save timer
       _startAutoSaveTimer();
+
+      // Auto-play the loaded audio
+      await _audioRepository.play();
+      emit(state.copyWith(status: PlayerStatus.playing));
     } on Exception catch (e) {
       emit(
         state.copyWith(status: PlayerStatus.error, errorMessage: e.toString()),

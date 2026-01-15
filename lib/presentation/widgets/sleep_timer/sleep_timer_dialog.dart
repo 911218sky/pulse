@@ -128,6 +128,8 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context);
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 400;
 
     return Dialog(
       backgroundColor: isDark ? AppColors.black : AppColors.white,
@@ -135,87 +137,116 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
         borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
         side: BorderSide(color: isDark ? AppColors.gray800 : AppColors.gray200),
       ),
-      child: Container(
-        width: 380,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? AppSpacing.md : AppSpacing.xl,
+        vertical: AppSpacing.xl,
+      ),
+      child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxWidth: 380,
+          maxHeight: screenSize.height * 0.85,
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHeader(isDark, l10n),
-              const SizedBox(height: AppSpacing.xl),
-              _buildPresetGrid(isDark, l10n),
-              const SizedBox(height: AppSpacing.md),
-              _buildCustomOption(isDark, l10n),
-              if (_isCustom) ...[
-                const SizedBox(height: AppSpacing.md),
-                _buildCustomPicker(isDark, l10n),
-              ],
-              const SizedBox(height: AppSpacing.xl),
-              _buildActions(isDark, l10n),
-            ],
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(
+                  isSmallScreen ? AppSpacing.lg : AppSpacing.xl,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildHeader(isDark, l10n, isSmallScreen),
+                    SizedBox(
+                      height: isSmallScreen ? AppSpacing.lg : AppSpacing.xl,
+                    ),
+                    _buildPresetGrid(isDark, l10n, isSmallScreen),
+                    const SizedBox(height: AppSpacing.md),
+                    _buildCustomOption(isDark, l10n),
+                    if (_isCustom) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      _buildCustomPicker(isDark, l10n, isSmallScreen),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                isSmallScreen ? AppSpacing.md : AppSpacing.xl,
+                AppSpacing.md,
+                isSmallScreen ? AppSpacing.md : AppSpacing.xl,
+                isSmallScreen ? AppSpacing.md : AppSpacing.xl,
+              ),
+              child: _buildActions(isDark, l10n, isSmallScreen),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(bool isDark, AppLocalizations l10n) => Column(
-    children: [
-      Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors:
-                isDark
-                    ? [AppColors.gray800, AppColors.gray900]
-                    : [
-                      AppColors.accentLight.withValues(alpha: 0.2),
-                      AppColors.accent.withValues(alpha: 0.3),
-                    ],
+  Widget _buildHeader(bool isDark, AppLocalizations l10n, bool isSmallScreen) =>
+      Column(
+        children: [
+          Container(
+            width: isSmallScreen ? 48 : 56,
+            height: isSmallScreen ? 48 : 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors:
+                    isDark
+                        ? [AppColors.gray800, AppColors.gray900]
+                        : [
+                          AppColors.accentLight.withValues(alpha: 0.2),
+                          AppColors.accent.withValues(alpha: 0.3),
+                        ],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.bedtime_rounded,
+              color: isDark ? AppColors.white : AppColors.accent,
+              size: isSmallScreen ? 24 : 28,
+            ),
           ),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          Icons.bedtime_rounded,
-          color: isDark ? AppColors.white : AppColors.accent,
-          size: 28,
-        ),
-      ),
-      const SizedBox(height: AppSpacing.md),
-      Text(
-        l10n.sleepTimerTitle,
-        style: TextStyle(
-          color: isDark ? AppColors.white : AppColors.black,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      const SizedBox(height: AppSpacing.xs),
-      Text(
-        widget.isActive ? l10n.sleepTimerActive : l10n.sleepTimerSetTime,
-        style: TextStyle(
-          color:
-              widget.isActive
-                  ? (isDark ? AppColors.success : AppColors.accent)
-                  : (isDark ? AppColors.gray500 : AppColors.gray600),
-          fontSize: 13,
-        ),
-      ),
-    ],
-  );
+          SizedBox(height: isSmallScreen ? AppSpacing.sm : AppSpacing.md),
+          Text(
+            l10n.sleepTimerTitle,
+            style: TextStyle(
+              color: isDark ? AppColors.white : AppColors.black,
+              fontSize: isSmallScreen ? 18 : 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            widget.isActive ? l10n.sleepTimerActive : l10n.sleepTimerSetTime,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color:
+                  widget.isActive
+                      ? (isDark ? AppColors.success : AppColors.accent)
+                      : (isDark ? AppColors.gray500 : AppColors.gray600),
+              fontSize: isSmallScreen ? 12 : 13,
+            ),
+          ),
+        ],
+      );
 
-  Widget _buildPresetGrid(bool isDark, AppLocalizations l10n) => GridView.count(
+  Widget _buildPresetGrid(
+    bool isDark,
+    AppLocalizations l10n,
+    bool isSmallScreen,
+  ) => GridView.count(
     shrinkWrap: true,
     crossAxisCount: 3,
-    mainAxisSpacing: AppSpacing.md,
-    crossAxisSpacing: AppSpacing.md,
+    mainAxisSpacing: isSmallScreen ? AppSpacing.sm : AppSpacing.md,
+    crossAxisSpacing: isSmallScreen ? AppSpacing.sm : AppSpacing.md,
+    childAspectRatio: isSmallScreen ? 1.0 : 1.1,
     physics: const NeverScrollableScrollPhysics(),
     children:
         SleepTimerPreset.values.map((preset) {
@@ -226,6 +257,7 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
             unit: unit,
             isSelected: isSelected,
             isDark: isDark,
+            isSmallScreen: isSmallScreen,
             onTap: () => _selectPreset(preset),
           );
         }).toList(),
@@ -254,8 +286,12 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
         l10n: l10n,
       );
 
-  Widget _buildCustomPicker(bool isDark, AppLocalizations l10n) => Container(
-    padding: const EdgeInsets.all(AppSpacing.md),
+  Widget _buildCustomPicker(
+    bool isDark,
+    AppLocalizations l10n,
+    bool isSmallScreen,
+  ) => Container(
+    padding: EdgeInsets.all(isSmallScreen ? AppSpacing.sm : AppSpacing.md),
     decoration: BoxDecoration(
       color: isDark ? AppColors.gray900 : AppColors.gray100,
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -270,15 +306,19 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
             maxValue: 23,
             label: l10n.hour,
             isDark: isDark,
+            isSmallScreen: isSmallScreen,
             onChanged: (v) => setState(() => _customHours = v),
           ),
         ),
-        Text(
-          ':',
-          style: TextStyle(
-            color: isDark ? AppColors.gray500 : AppColors.gray400,
-            fontSize: 24,
-            fontWeight: FontWeight.w300,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 2 : 4),
+          child: Text(
+            ':',
+            style: TextStyle(
+              color: isDark ? AppColors.gray500 : AppColors.gray400,
+              fontSize: isSmallScreen ? 20 : 24,
+              fontWeight: FontWeight.w300,
+            ),
           ),
         ),
         Expanded(
@@ -287,15 +327,19 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
             maxValue: 59,
             label: l10n.minute,
             isDark: isDark,
+            isSmallScreen: isSmallScreen,
             onChanged: (v) => setState(() => _customMinutes = v),
           ),
         ),
-        Text(
-          ':',
-          style: TextStyle(
-            color: isDark ? AppColors.gray500 : AppColors.gray400,
-            fontSize: 24,
-            fontWeight: FontWeight.w300,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 2 : 4),
+          child: Text(
+            ':',
+            style: TextStyle(
+              color: isDark ? AppColors.gray500 : AppColors.gray400,
+              fontSize: isSmallScreen ? 20 : 24,
+              fontWeight: FontWeight.w300,
+            ),
           ),
         ),
         Expanded(
@@ -304,6 +348,7 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
             maxValue: 59,
             label: l10n.second,
             isDark: isDark,
+            isSmallScreen: isSmallScreen,
             onChanged: (v) => setState(() => _customSeconds = v),
           ),
         ),
@@ -316,14 +361,15 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
     required int maxValue,
     required String label,
     required bool isDark,
+    required bool isSmallScreen,
     required ValueChanged<int> onChanged,
   }) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
       SizedBox(
-        height: 100,
+        height: isSmallScreen ? 80 : 100,
         child: ListWheelScrollView.useDelegate(
-          itemExtent: 36,
+          itemExtent: isSmallScreen ? 30 : 36,
           perspective: 0.005,
           diameterRatio: 1.2,
           physics: const FixedExtentScrollPhysics(),
@@ -341,7 +387,10 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
                         isSelected
                             ? (isDark ? AppColors.white : AppColors.accent)
                             : (isDark ? AppColors.gray600 : AppColors.gray400),
-                    fontSize: isSelected ? 22 : 16,
+                    fontSize:
+                        isSelected
+                            ? (isSmallScreen ? 18 : 22)
+                            : (isSmallScreen ? 14 : 16),
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
@@ -355,13 +404,17 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
         label,
         style: TextStyle(
           color: isDark ? AppColors.gray500 : AppColors.gray600,
-          fontSize: 11,
+          fontSize: isSmallScreen ? 10 : 11,
         ),
       ),
     ],
   );
 
-  Widget _buildActions(bool isDark, AppLocalizations l10n) => Row(
+  Widget _buildActions(
+    bool isDark,
+    AppLocalizations l10n,
+    bool isSmallScreen,
+  ) => Row(
     children: [
       if (widget.isActive) ...[
         Expanded(
@@ -374,7 +427,7 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
             onPressed: _stop,
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
+        SizedBox(width: isSmallScreen ? AppSpacing.sm : AppSpacing.md),
       ],
       Expanded(
         child: VercelButton(
@@ -385,7 +438,7 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
           onPressed: _cancel,
         ),
       ),
-      const SizedBox(width: AppSpacing.md),
+      SizedBox(width: isSmallScreen ? AppSpacing.sm : AppSpacing.md),
       Expanded(
         child: VercelButton(
           label: widget.isActive ? l10n.update : l10n.start,
@@ -409,6 +462,7 @@ class _PresetCard extends StatefulWidget {
     required this.unit,
     required this.isSelected,
     required this.isDark,
+    required this.isSmallScreen,
     required this.onTap,
   });
 
@@ -416,6 +470,7 @@ class _PresetCard extends StatefulWidget {
   final String unit;
   final bool isSelected;
   final bool isDark;
+  final bool isSmallScreen;
   final VoidCallback onTap;
 
   @override
@@ -462,11 +517,11 @@ class _PresetCardState extends State<_PresetCard> {
                     widget.isSelected
                         ? (widget.isDark ? AppColors.black : AppColors.white)
                         : (widget.isDark ? AppColors.white : AppColors.black),
-                fontSize: 24,
+                fontSize: widget.isSmallScreen ? 20 : 24,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: widget.isSmallScreen ? 1 : 2),
             Text(
               widget.unit,
               style: TextStyle(
@@ -478,7 +533,7 @@ class _PresetCardState extends State<_PresetCard> {
                         : (widget.isDark
                             ? AppColors.gray500
                             : AppColors.gray600),
-                fontSize: 12,
+                fontSize: widget.isSmallScreen ? 11 : 12,
               ),
             ),
           ],

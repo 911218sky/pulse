@@ -37,6 +37,10 @@ class LocalStorageDataSource {
     }
   }
 
+  Future<void> clearAllAudioFiles() async {
+    await _db.clearAllAudioFiles();
+  }
+
   // Playback State Operations
 
   Future<void> savePlaybackState(PlaybackStateModel state) async {

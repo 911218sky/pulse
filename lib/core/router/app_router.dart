@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pulse/core/di/service_locator.dart';
+import 'package:pulse/main.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_state.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 import 'package:pulse/presentation/bloc/search/search_bloc.dart';
 import 'package:pulse/presentation/bloc/search/search_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
@@ -22,6 +25,7 @@ class AppRoutes {
   static const String home = '/';
   static const String player = '/player';
   static const String playlist = '/playlist';
+  static const String playlistDetail = '/playlist/:id';
   static const String settings = '/settings';
   static const String scanner = '/scanner';
 }
@@ -38,11 +42,30 @@ class AppRouter {
         builder:
             (context, state) => HomeScreen(
               onTrackSelected: (file) {
+                // Get all files from SearchBloc
+                final searchState = context.read<SearchBloc>().state;
+                final allFiles = searchState.results;
+
+                if (allFiles.isNotEmpty) {
+                  // Find the index of the selected file
+                  final index = allFiles.indexWhere((f) => f.id == file.id);
+
+                  // Set temporary playback queue
+                  context.read<PlaylistBloc>().add(
+                    PlaylistSetTemporaryQueue(
+                      files: allFiles,
+                      startIndex: index >= 0 ? index : 0,
+                    ),
+                  );
+                }
+
                 // Load the audio file into PlayerBloc
                 context.read<PlayerBloc>().add(PlayerLoadAudio(file));
+
                 // Navigate to player screen
                 context.push(AppRoutes.player);
               },
+              onPlaylistPressed: () => context.push(AppRoutes.playlist),
               onSettingsPressed: () => context.push(AppRoutes.settings),
               onScanPressed: () => context.push(AppRoutes.scanner),
             ),
@@ -72,10 +95,26 @@ class AppRouter {
                 }
               },
               onPlaylistSelected: (playlist) {
-                // Select playlist and navigate to player
-                context.push(AppRoutes.player);
+                // Navigate to playlist detail screen
+                context.push('/playlist/${playlist.id}');
               },
             ),
+      ),
+      GoRoute(
+        path: '/playlist/:id',
+        builder: (context, state) {
+          final playlistId = state.pathParameters['id']!;
+          return PlaylistDetailScreen(
+            playlistId: playlistId,
+            onBack: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(AppRoutes.playlist);
+              }
+            },
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.settings,
@@ -135,7 +174,11 @@ class AppBlocProviders extends StatelessWidget {
       ),
       BlocProvider<FileScannerBloc>(create: (_) => sl<FileScannerBloc>()),
     ],
-    child: _SleepTimerProvider(child: _FileScannerToSearchSync(child: child)),
+    child: _SleepTimerProvider(
+      child: _FileScannerToSearchSync(
+        child: _PlaylistAudioHandlerSync(child: child),
+      ),
+    ),
   );
 }
 
@@ -220,6 +263,117 @@ class _FileScannerToSearchSyncState extends State<_FileScannerToSearchSync> {
 
           // Update SearchBloc with the new files
           context.read<SearchBloc>().add(SearchSourceUpdated(allFiles));
+
+          // Auto-create playlists for each scanned folder
+          if (state.status == FileScannerStatus.completed &&
+              state.selectedFolders.isNotEmpty) {
+            final playlistBloc = context.read<PlaylistBloc>();
+
+            // Create a playlist for each selected folder
+            for (final folder in state.selectedFolders) {
+              if (folder.files.isEmpty) continue;
+
+              // Check if playlist for this folder already exists
+              final existingPlaylist =
+                  playlistBloc.state.playlists
+                      .where((p) => p.name == folder.name)
+                      .firstOrNull;
+
+              if (existingPlaylist == null) {
+                // Create new playlist for this folder
+                playlistBloc.add(PlaylistCreate(folder.name));
+
+                // Wait a bit for playlist creation, then add files
+                Future.delayed(const Duration(milliseconds: 150), () {
+                  if (!context.mounted) return;
+
+                  final newPlaylist =
+                      playlistBloc.state.playlists
+                          .where((p) => p.name == folder.name)
+                          .firstOrNull;
+
+                  if (newPlaylist != null && folder.files.isNotEmpty) {
+                    playlistBloc.add(
+                      PlaylistAddFiles(
+                        playlistId: newPlaylist.id,
+                        files: folder.files,
+                      ),
+                    );
+                  }
+                });
+              } else {
+                // Update existing playlist with current folder files
+                playlistBloc.add(
+                  PlaylistAddFiles(
+                    playlistId: existingPlaylist.id,
+                    files: folder.files,
+                  ),
+                );
+              }
+            }
+          }
+        },
+        child: widget.child,
+      );
+}
+
+/// Syncs PlaylistBloc with AudioHandler for next/previous track controls
+class _PlaylistAudioHandlerSync extends StatefulWidget {
+  const _PlaylistAudioHandlerSync({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_PlaylistAudioHandlerSync> createState() =>
+      _PlaylistAudioHandlerSyncState();
+}
+
+class _PlaylistAudioHandlerSyncState extends State<_PlaylistAudioHandlerSync> {
+  @override
+  void initState() {
+    super.initState();
+    _setupAudioHandlerCallbacks();
+  }
+
+  void _setupAudioHandlerCallbacks() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final handler = audioHandler;
+      if (handler == null) {
+        debugPrint('AudioHandler not available for skip callbacks');
+        return;
+      }
+
+      // Set up callbacks for next/previous track
+      handler.setSkipCallbacks(
+        onNext: () {
+          if (!mounted) return;
+          debugPrint('Skip to next triggered from notification');
+          context.read<PlaylistBloc>().add(const PlaylistPlayNext());
+        },
+        onPrevious: () {
+          if (!mounted) return;
+          debugPrint('Skip to previous triggered from notification');
+          context.read<PlaylistBloc>().add(const PlaylistPlayPrevious());
+        },
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocListener<PlaylistBloc, PlaylistState>(
+        listenWhen:
+            (previous, current) =>
+                previous.currentTrackIndex != current.currentTrackIndex ||
+                previous.currentPlaylist?.id != current.currentPlaylist?.id,
+        listener: (context, state) {
+          // When playlist track changes, load it into PlayerBloc
+          final currentTrack = state.currentTrack;
+          if (currentTrack != null) {
+            context.read<PlayerBloc>().add(PlayerLoadAudio(currentTrack));
+          }
         },
         child: widget.child,
       );
