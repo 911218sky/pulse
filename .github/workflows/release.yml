@@ -38,6 +38,7 @@ jobs:
         with:
           name: windows-build
           path: Pulse-windows-x64.zip
+          retention-days: 1
 
   build-linux:
     runs-on: ubuntu-latest
@@ -69,6 +70,7 @@ jobs:
         with:
           name: linux-build
           path: Pulse-linux-x64.tar.gz
+          retention-days: 1
 
   build-macos:
     runs-on: macos-latest
@@ -95,6 +97,7 @@ jobs:
         with:
           name: macos-build
           path: Pulse-macos.zip
+          retention-days: 1
 
   build-android:
     runs-on: ubuntu-latest
@@ -110,9 +113,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      
-      - name: Setup Gradle (with cache)
-        uses: gradle/actions/setup-gradle@v4
+          cache: 'gradle'
       
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -141,6 +142,7 @@ jobs:
         with:
           name: android-build
           path: Pulse-android-*.apk
+          retention-days: 1
 
   release:
     needs: [build-windows, build-linux, build-macos, build-android]
