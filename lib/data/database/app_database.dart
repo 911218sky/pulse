@@ -243,6 +243,36 @@ class AppDatabase extends _$AppDatabase {
   Future<int> clearFilePosition(String path) =>
       (delete(filePositionsTable)..where((t) => t.filePath.equals(path))).go();
 
+  /// Clears file positions for multiple paths
+  Future<void> clearFilePositions(List<String> paths) async {
+    for (final path in paths) {
+      await clearFilePosition(path);
+    }
+  }
+
+  /// Gets all file paths from audio_files table
+  Future<List<String>> getAllAudioFilePaths() async {
+    final results = await select(audioFilesTable).get();
+    return results.map((r) => r.filePath).toList();
+  }
+
+  /// Gets all file paths from file_positions table
+  Future<List<String>> getAllFilePositionPaths() async {
+    final results = await select(filePositionsTable).get();
+    return results.map((r) => r.filePath).toList();
+  }
+
+  /// Deletes audio files by their file paths
+  Future<int> deleteAudioFilesByPaths(List<String> paths) async {
+    var count = 0;
+    for (final path in paths) {
+      count +=
+          await (delete(audioFilesTable)
+            ..where((t) => t.filePath.equals(path))).go();
+    }
+    return count;
+  }
+
   // ============== Audio File Operations ==============
 
   Future<List<AudioFilesTableData>> getAllAudioFiles() =>

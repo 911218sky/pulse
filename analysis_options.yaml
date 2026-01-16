@@ -19,8 +19,15 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "**/*.mocks.dart"
-    - "build/**"
     - "lib/generated/**"
+    - "build/**"
+    - "android/**"
+    - "ios/**"
+    - "linux/**"
+    - "macos/**"
+    - "windows/**"
+    - "web/**"
+    - ".dart_tool/**"
 
 linter:
   rules:

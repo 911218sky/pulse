@@ -231,4 +231,42 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
   Future<void> clearLibrary() async {
     await _dataSource.clearAllAudioFiles();
   }
+
+  @override
+  Future<int> cleanupOrphanedEntries() async {
+    var removedCount = 0;
+
+    // 1. Clean up audio_files table - remove entries where file no longer exists
+    final audioPaths = await _dataSource.getAllAudioFilePaths();
+    final missingAudioPaths = <String>[];
+
+    for (final path in audioPaths) {
+      if (!File(path).existsSync()) {
+        missingAudioPaths.add(path);
+      }
+    }
+
+    if (missingAudioPaths.isNotEmpty) {
+      removedCount += await _dataSource.deleteAudioFilesByPaths(
+        missingAudioPaths,
+      );
+    }
+
+    // 2. Clean up file_positions table - remove entries where file no longer exists
+    final positionPaths = await _dataSource.getAllFilePositionPaths();
+    final missingPositionPaths = <String>[];
+
+    for (final path in positionPaths) {
+      if (!File(path).existsSync()) {
+        missingPositionPaths.add(path);
+      }
+    }
+
+    if (missingPositionPaths.isNotEmpty) {
+      await _dataSource.clearFilePositions(missingPositionPaths);
+      removedCount += missingPositionPaths.length;
+    }
+
+    return removedCount;
+  }
 }
