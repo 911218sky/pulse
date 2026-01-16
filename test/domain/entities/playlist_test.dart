@@ -17,8 +17,7 @@ AudioFile generateRandomAudioFile() => AudioFile(
   id: PropertyTest.randomNonEmptyString(),
   path: '/music/${PropertyTest.randomNonEmptyString()}.mp3',
   title: PropertyTest.randomNonEmptyString(),
-  artist:
-      PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
+  artist: PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
   album: PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
   duration: PropertyTest.randomDuration(maxHours: 2),
   fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 100000000),
@@ -39,73 +38,78 @@ Playlist generateRandomPlaylist({int minFiles = 0, int maxFiles = 10}) {
 
 void main() {
   group('Playlist Operations', () {
-    test(
-      'Property 4.1: Creating a playlist assigns a unique non-empty ID (100 iterations)',
-      () {
-        final ids = <String>{};
+    test('Property 4.1: Creating a playlist assigns a unique non-empty ID (100 iterations)', () {
+      final ids = <String>{};
 
-        PropertyTest.forAll(
-          generator: PropertyTest.randomNonEmptyString,
-          property: (name) {
-            final playlist = Playlist.create(
-              id: PropertyTest.randomNonEmptyString(),
-              name: name,
-            );
+      PropertyTest.forAll(
+        generator: PropertyTest.randomNonEmptyString,
+        property: (name) {
+          final playlist = Playlist.create(id: PropertyTest.randomNonEmptyString(), name: name);
 
-            // ID should be non-empty
-            expect(playlist.id, isNotEmpty);
+          // ID should be non-empty
+          expect(playlist.id, isNotEmpty);
 
-            // ID should be unique (not seen before in this test)
-            expect(ids.contains(playlist.id), isFalse);
-            ids.add(playlist.id);
+          // ID should be unique (not seen before in this test)
+          expect(ids.contains(playlist.id), isFalse);
+          ids.add(playlist.id);
 
-            // Name should match
-            expect(playlist.name, equals(name));
+          // Name should match
+          expect(playlist.name, equals(name));
 
-            // Should start empty
-            expect(playlist.files, isEmpty);
-          },
-        );
-      },
-    );
+          // Should start empty
+          expect(playlist.files, isEmpty);
+        },
+      );
+    });
 
-    test(
-      'Property 4.2: Adding N files increases file count by N (100 iterations)',
-      () {
-        PropertyTest.forAll(
-          generator:
-              () => (
-                generateRandomPlaylist(maxFiles: 5),
-                List.generate(
-                  PropertyTest.randomInt(min: 1, max: 5),
-                  (_) => generateRandomAudioFile(),
+    test('Property 4.2: Adding N files increases file count by N (100 iterations)', () {
+      PropertyTest.forAll(
+        generator:
+            () => (
+              generateRandomPlaylist(maxFiles: 5),
+              List.generate(
+                PropertyTest.randomInt(min: 1, max: 5),
+                (i) => AudioFile(
+                  id: PropertyTest.randomNonEmptyString(),
+                  path: '/music/unique_${PropertyTest.randomNonEmptyString()}_$i.mp3',
+                  title: PropertyTest.randomNonEmptyString(),
+                  artist: PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
+                  album: PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
+                  duration: PropertyTest.randomDuration(maxHours: 2),
+                  fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 100000000),
+                  addedAt: PropertyTest.randomDateTime(),
                 ),
               ),
-          property: (input) {
-            final (playlist, filesToAdd) = input;
-            final initialCount = playlist.fileCount;
+            ),
+        property: (input) {
+          final (playlist, filesToAdd) = input;
+          final initialCount = playlist.fileCount;
+          final existingPaths = playlist.files.map((f) => f.path).toSet();
 
-            // Add files one by one
-            var updated = playlist;
-            for (final file in filesToAdd) {
-              updated = updated.addFile(file);
-            }
+          // Filter out files that would be duplicates
+          final uniqueFilesToAdd =
+              filesToAdd.where((f) => !existingPaths.contains(f.path)).toList();
 
-            // File count should increase by number of files added
-            expect(updated.fileCount, equals(initialCount + filesToAdd.length));
+          // Add files one by one
+          var updated = playlist;
+          for (final file in filesToAdd) {
+            updated = updated.addFile(file);
+          }
 
-            // All added files should be in the playlist
-            for (final file in filesToAdd) {
-              expect(
-                updated.files.any((f) => f.id == file.id),
-                isTrue,
-                reason: 'File ${file.id} should be in playlist',
-              );
-            }
-          },
-        );
-      },
-    );
+          // File count should increase by number of unique files added
+          expect(updated.fileCount, equals(initialCount + uniqueFilesToAdd.length));
+
+          // All unique added files should be in the playlist
+          for (final file in uniqueFilesToAdd) {
+            expect(
+              updated.files.any((f) => f.id == file.id),
+              isTrue,
+              reason: 'File ${file.id} should be in playlist',
+            );
+          }
+        },
+      );
+    });
 
     test(
       'Property 4.2b: Adding multiple files at once increases file count correctly (100 iterations)',
@@ -116,18 +120,32 @@ void main() {
                 generateRandomPlaylist(maxFiles: 5),
                 List.generate(
                   PropertyTest.randomInt(min: 1, max: 5),
-                  (_) => generateRandomAudioFile(),
+                  (i) => AudioFile(
+                    id: PropertyTest.randomNonEmptyString(),
+                    path: '/music/batch_${PropertyTest.randomNonEmptyString()}_$i.mp3',
+                    title: PropertyTest.randomNonEmptyString(),
+                    artist: PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
+                    album: PropertyTest.randomBool() ? PropertyTest.randomNonEmptyString() : null,
+                    duration: PropertyTest.randomDuration(maxHours: 2),
+                    fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 100000000),
+                    addedAt: PropertyTest.randomDateTime(),
+                  ),
                 ),
               ),
           property: (input) {
             final (playlist, filesToAdd) = input;
             final initialCount = playlist.fileCount;
+            final existingPaths = playlist.files.map((f) => f.path).toSet();
+
+            // Filter out files that would be duplicates
+            final uniqueFilesToAdd =
+                filesToAdd.where((f) => !existingPaths.contains(f.path)).toList();
 
             // Add all files at once
             final updated = playlist.addFiles(filesToAdd);
 
-            // File count should increase by number of files added
-            expect(updated.fileCount, equals(initialCount + filesToAdd.length));
+            // File count should increase by number of unique files added
+            expect(updated.fileCount, equals(initialCount + uniqueFilesToAdd.length));
           },
         );
       },
@@ -160,33 +178,30 @@ void main() {
       },
     );
 
-    test(
-      'Property 4.4: Reordering preserves all files with same IDs (100 iterations)',
-      () {
-        PropertyTest.forAll(
-          generator: () => generateRandomPlaylist(minFiles: 2),
-          property: (playlist) {
-            final fileCount = playlist.fileCount;
-            final originalIds = playlist.files.map((f) => f.id).toSet();
+    test('Property 4.4: Reordering preserves all files with same IDs (100 iterations)', () {
+      PropertyTest.forAll(
+        generator: () => generateRandomPlaylist(minFiles: 2),
+        property: (playlist) {
+          final fileCount = playlist.fileCount;
+          final originalIds = playlist.files.map((f) => f.id).toSet();
 
-            // Pick random indices to swap
-            final oldIndex = PropertyTest.randomInt(max: fileCount);
-            var newIndex = PropertyTest.randomInt(max: fileCount);
-            if (newIndex > oldIndex) newIndex--; // Adjust for removal
+          // Pick random indices to swap
+          final oldIndex = PropertyTest.randomInt(max: fileCount);
+          var newIndex = PropertyTest.randomInt(max: fileCount);
+          if (newIndex > oldIndex) newIndex--; // Adjust for removal
 
-            // Reorder
-            final updated = playlist.reorder(oldIndex, newIndex);
+          // Reorder
+          final updated = playlist.reorder(oldIndex, newIndex);
 
-            // File count should be the same
-            expect(updated.fileCount, equals(fileCount));
+          // File count should be the same
+          expect(updated.fileCount, equals(fileCount));
 
-            // All original IDs should still be present
-            final newIds = updated.files.map((f) => f.id).toSet();
-            expect(newIds, equals(originalIds));
-          },
-        );
-      },
-    );
+          // All original IDs should still be present
+          final newIds = updated.files.map((f) => f.id).toSet();
+          expect(newIds, equals(originalIds));
+        },
+      );
+    });
 
     test('Playlist.totalDuration sums all file durations', () {
       final files = [
@@ -221,10 +236,7 @@ void main() {
         updatedAt: DateTime.now(),
       );
 
-      expect(
-        playlist.totalDuration,
-        equals(const Duration(minutes: 10, seconds: 30)),
-      );
+      expect(playlist.totalDuration, equals(const Duration(minutes: 10, seconds: 30)));
     });
   });
 
@@ -266,9 +278,7 @@ void main() {
             );
 
             // Only one file with that path should exist
-            final filesWithPath = updated.files.where(
-              (f) => f.path == existingFile.path,
-            );
+            final filesWithPath = updated.files.where((f) => f.path == existingFile.path);
             expect(
               filesWithPath.length,
               equals(1),
@@ -279,97 +289,83 @@ void main() {
       },
     );
 
-    test(
-      'Property 1.2: Adding multiple files filters out duplicates by path (100 iterations)',
-      () {
-        PropertyTest.forAll(
-          generator: () => generateRandomPlaylist(minFiles: 2, maxFiles: 5),
-          property: (playlist) {
-            final initialCount = playlist.fileCount;
-            final existingPaths = playlist.files.map((f) => f.path).toSet();
+    test('Property 1.2: Adding multiple files filters out duplicates by path (100 iterations)', () {
+      PropertyTest.forAll(
+        generator: () => generateRandomPlaylist(minFiles: 2, maxFiles: 5),
+        property: (playlist) {
+          final initialCount = playlist.fileCount;
+          final existingPaths = playlist.files.map((f) => f.path).toSet();
 
-            // Create a mix of new and duplicate files
-            final newFiles = <AudioFile>[];
-            final uniqueNewPaths = <String>{};
+          // Create a mix of new and duplicate files
+          final newFiles = <AudioFile>[];
+          final uniqueNewPaths = <String>{};
 
-            // Add some duplicates
-            for (var i = 0; i < 2; i++) {
-              final existingFile = PropertyTest.randomElement(playlist.files);
+          // Add some duplicates
+          for (var i = 0; i < 2; i++) {
+            final existingFile = PropertyTest.randomElement(playlist.files);
+            newFiles.add(
+              AudioFile(
+                id: PropertyTest.randomNonEmptyString(),
+                path: existingFile.path,
+                title: PropertyTest.randomNonEmptyString(),
+                duration: PropertyTest.randomDuration(maxHours: 2),
+                fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 100000000),
+              ),
+            );
+          }
+
+          // Add some unique new files
+          for (var i = 0; i < 3; i++) {
+            final newPath = '/music/${PropertyTest.randomNonEmptyString()}_unique_$i.mp3';
+            if (!existingPaths.contains(newPath)) {
+              uniqueNewPaths.add(newPath);
               newFiles.add(
                 AudioFile(
                   id: PropertyTest.randomNonEmptyString(),
-                  path: existingFile.path,
+                  path: newPath,
                   title: PropertyTest.randomNonEmptyString(),
                   duration: PropertyTest.randomDuration(maxHours: 2),
-                  fileSizeBytes: PropertyTest.randomInt(
-                    min: 1000,
-                    max: 100000000,
-                  ),
+                  fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 100000000),
                 ),
               );
             }
+          }
 
-            // Add some unique new files
-            for (var i = 0; i < 3; i++) {
-              final newPath =
-                  '/music/${PropertyTest.randomNonEmptyString()}_unique_$i.mp3';
-              if (!existingPaths.contains(newPath)) {
-                uniqueNewPaths.add(newPath);
-                newFiles.add(
-                  AudioFile(
-                    id: PropertyTest.randomNonEmptyString(),
-                    path: newPath,
-                    title: PropertyTest.randomNonEmptyString(),
-                    duration: PropertyTest.randomDuration(maxHours: 2),
-                    fileSizeBytes: PropertyTest.randomInt(
-                      min: 1000,
-                      max: 100000000,
-                    ),
-                  ),
-                );
-              }
-            }
+          // Add all files
+          final updated = playlist.addFiles(newFiles);
 
-            // Add all files
-            final updated = playlist.addFiles(newFiles);
+          // File count should only increase by unique new files
+          expect(
+            updated.fileCount,
+            equals(initialCount + uniqueNewPaths.length),
+            reason: 'Only unique new files should be added',
+          );
+        },
+      );
+    });
 
-            // File count should only increase by unique new files
-            expect(
-              updated.fileCount,
-              equals(initialCount + uniqueNewPaths.length),
-              reason: 'Only unique new files should be added',
-            );
-          },
-        );
-      },
-    );
+    test('Property 1.3: containsPath correctly identifies existing files (100 iterations)', () {
+      PropertyTest.forAll(
+        generator: () => generateRandomPlaylist(minFiles: 1, maxFiles: 5),
+        property: (playlist) {
+          // Existing path should return true
+          final existingFile = PropertyTest.randomElement(playlist.files);
+          expect(
+            playlist.containsPath(existingFile.path),
+            isTrue,
+            reason: 'containsPath should return true for existing path',
+          );
 
-    test(
-      'Property 1.3: containsPath correctly identifies existing files (100 iterations)',
-      () {
-        PropertyTest.forAll(
-          generator: () => generateRandomPlaylist(minFiles: 1, maxFiles: 5),
-          property: (playlist) {
-            // Existing path should return true
-            final existingFile = PropertyTest.randomElement(playlist.files);
-            expect(
-              playlist.containsPath(existingFile.path),
-              isTrue,
-              reason: 'containsPath should return true for existing path',
-            );
-
-            // Non-existing path should return false
-            final nonExistingPath =
-                '/music/${PropertyTest.randomNonEmptyString()}_nonexistent.mp3';
-            expect(
-              playlist.containsPath(nonExistingPath),
-              isFalse,
-              reason: 'containsPath should return false for non-existing path',
-            );
-          },
-        );
-      },
-    );
+          // Non-existing path should return false
+          final nonExistingPath = '/music/${PropertyTest.randomNonEmptyString()}_nonexistent.mp3';
+          expect(
+            playlist.containsPath(nonExistingPath),
+            isFalse,
+            reason: 'containsPath should return false for non-existing path',
+          );
+        },
+      );
+    });
 
     test(
       'Property 1.4: Adding same file multiple times does not create duplicates (100 iterations)',
@@ -391,8 +387,7 @@ void main() {
             expect(
               playlist.fileCount,
               equals(1),
-              reason:
-                  'Adding same file multiple times should result in only one file',
+              reason: 'Adding same file multiple times should result in only one file',
             );
           },
         );
