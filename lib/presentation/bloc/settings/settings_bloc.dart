@@ -25,6 +25,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsReset>(_onReset);
     on<SettingsResetAll>(_onResetAll);
     on<SettingsUpdateLocale>(_onUpdateLocale);
+    on<SettingsUpdateNavigateToPlayerOnResume>(
+      _onUpdateNavigateToPlayerOnResume,
+    );
 
     _subscribeToSettings();
   }
@@ -171,6 +174,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async =>
       _updateSettings(emit, state.settings.copyWith(locale: event.locale));
+
+  Future<void> _onUpdateNavigateToPlayerOnResume(
+    SettingsUpdateNavigateToPlayerOnResume event,
+    Emitter<SettingsState> emit,
+  ) async => _updateSettings(
+    emit,
+    state.settings.copyWith(navigateToPlayerOnResume: event.enabled),
+  );
 
   Future<void> _updateSettings(
     Emitter<SettingsState> emit,

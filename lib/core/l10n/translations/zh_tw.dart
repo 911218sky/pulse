@@ -115,6 +115,10 @@ class ZhTwTranslations extends Translations {
   @override
   String get autoResumeDesc => '開啟應用程式時自動繼續上次的播放';
   @override
+  String get navigateToPlayerOnResume => '恢復時跳轉到播放器';
+  @override
+  String get navigateToPlayerOnResumeDesc => '當應用程式從背景恢復且有音樂播放時，自動跳轉到播放器畫面';
+  @override
   String get skipSettings => '快進/快退';
   @override
   String get skipForward => '快進秒數';

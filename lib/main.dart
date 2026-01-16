@@ -9,8 +9,10 @@ import 'package:media_kit/media_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pulse/core/di/service_locator.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/router/app_bloc_providers.dart';
 import 'package:pulse/core/router/app_router.dart';
 import 'package:pulse/core/theme/app_theme.dart';
+import 'package:pulse/core/utils/app_logger.dart';
 import 'package:pulse/data/database/app_database.dart';
 import 'package:pulse/data/services/audio_handler.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
@@ -30,8 +32,12 @@ Future<void> main() async {
       MediaKit.ensureInitialized();
 
       FlutterError.onError = (details) {
-        debugPrint('Flutter error: ${details.exception}');
-        debugPrint('Stack trace: ${details.stack}');
+        AppLogger.e(
+          'Flutter',
+          'Error: ${details.exception}',
+          details.exception,
+          details.stack,
+        );
       };
 
       if (Platform.isAndroid) {
@@ -44,8 +50,10 @@ Future<void> main() async {
 
       // Initialize audio service for background playback
       try {
-        debugPrint('Initializing AudioService...');
-        debugPrint('Platform: ${Platform.operatingSystem}');
+        AppLogger.i(
+          'Main',
+          'Initializing AudioService on ${Platform.operatingSystem}',
+        );
 
         audioHandler = await AudioService.init(
           builder: MusicPlayerAudioHandler.new,
@@ -57,24 +65,21 @@ Future<void> main() async {
             notificationColor: Color(0xFF000000),
           ),
         );
-        debugPrint('AudioService initialized successfully');
+        AppLogger.i('Main', 'AudioService initialized successfully');
       } on Exception catch (e, stackTrace) {
-        debugPrint('======== AudioService init FAILED ========');
-        debugPrint('Error type: ${e.runtimeType}');
-        debugPrint('Error message: $e');
-        debugPrint('Stack trace: $stackTrace');
-        debugPrint('==========================================');
+        AppLogger.e('Main', 'AudioService init FAILED', e, stackTrace);
         // Create handler directly without AudioService wrapper
         audioHandler = MusicPlayerAudioHandler();
-        debugPrint('Fallback audio handler created (no background playback)');
+        AppLogger.w(
+          'Main',
+          'Fallback audio handler created (no background playback)',
+        );
       }
 
       if (audioHandler == null) {
-        debugPrint('WARNING: audioHandler is still null, creating fallback');
+        AppLogger.w('Main', 'audioHandler is still null, creating fallback');
         audioHandler = MusicPlayerAudioHandler();
       }
-
-      debugPrint('audioHandler initialized: ${audioHandler != null}');
 
       database = AppDatabase();
 
@@ -83,8 +88,7 @@ Future<void> main() async {
       runApp(const PulseApp());
     },
     (error, stack) {
-      debugPrint('Uncaught error: $error');
-      debugPrint('Stack trace: $stack');
+      AppLogger.e('Main', 'Uncaught error', error, stack);
     },
   );
 }

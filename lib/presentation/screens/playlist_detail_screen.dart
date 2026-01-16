@@ -16,6 +16,7 @@ import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
+import 'package:pulse/presentation/widgets/playing_indicator.dart';
 
 /// Screen showing playlist details with all tracks
 class PlaylistDetailScreen extends StatelessWidget {
@@ -433,8 +434,7 @@ class _TrackTileState extends State<_TrackTile> {
                 width: isCompact ? 28 : 32,
                 child:
                     isPlaying
-                        ? Icon(
-                          Icons.equalizer_rounded,
+                        ? PlayingIndicator(
                           color: AppColors.accent,
                           size: isCompact ? 18 : 20,
                         )

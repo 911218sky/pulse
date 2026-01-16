@@ -118,3 +118,28 @@ class PlayerSaveState extends PlayerEvent {
 class PlayerRestoreState extends PlayerEvent {
   const PlayerRestoreState();
 }
+
+/// Set temporary volume for sleep timer fade out (doesn't affect saved volume)
+class PlayerSetSleepFadeVolume extends PlayerEvent {
+  const PlayerSetSleepFadeVolume(this.volume);
+
+  final double volume;
+
+  @override
+  List<Object?> get props => [volume];
+}
+
+/// Restore volume after sleep timer expires
+class PlayerRestoreVolumeAfterSleep extends PlayerEvent {
+  const PlayerRestoreVolumeAfterSleep();
+}
+
+/// Clear saved position for a completed track
+class PlayerClearCompletedTrackPosition extends PlayerEvent {
+  const PlayerClearCompletedTrackPosition(this.filePath);
+
+  final String filePath;
+
+  @override
+  List<Object?> get props => [filePath];
+}

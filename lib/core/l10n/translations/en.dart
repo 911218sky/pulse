@@ -115,6 +115,11 @@ class EnTranslations extends Translations {
   @override
   String get autoResumeDesc => 'Resume playback when app opens';
   @override
+  String get navigateToPlayerOnResume => 'Navigate to Player on Resume';
+  @override
+  String get navigateToPlayerOnResumeDesc =>
+      'Automatically go to player screen when app resumes with music playing';
+  @override
   String get skipSettings => 'Skip Forward/Backward';
   @override
   String get skipForward => 'Skip Forward';

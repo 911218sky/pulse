@@ -14,6 +14,7 @@ import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 import 'package:pulse/presentation/widgets/common/vercel_text_field.dart';
+import 'package:pulse/presentation/widgets/playing_indicator.dart';
 
 /// Screen for managing playlists
 class PlaylistScreen extends StatelessWidget {
@@ -423,8 +424,7 @@ class _PlaylistCardState extends State<_PlaylistCard> {
                 width: isCompact ? 28 : 32,
                 child:
                     isPlaying
-                        ? Icon(
-                          Icons.equalizer_rounded,
+                        ? PlayingIndicator(
                           color: AppColors.accent,
                           size: isCompact ? 18 : 20,
                         )

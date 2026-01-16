@@ -13,10 +13,11 @@ class Settings extends Equatable {
     this.monitoredFolders = const [],
     this.sleepTimerFadeOutEnabled = true,
     this.sleepTimerFadeOutSeconds = 5,
+    this.navigateToPlayerOnResume = false,
   });
 
   final bool darkMode;
-  final String locale; // 'zh_TW' or 'en'
+  final String locale;
   final double defaultVolume;
   final double defaultPlaybackSpeed;
   final bool autoResume;
@@ -25,11 +26,10 @@ class Settings extends Equatable {
   final List<String> monitoredFolders;
   final bool sleepTimerFadeOutEnabled;
   final int sleepTimerFadeOutSeconds;
+  final bool navigateToPlayerOnResume;
 
-  /// Default settings
   static const Settings defaults = Settings();
 
-  /// Creates a copy with updated fields
   Settings copyWith({
     bool? darkMode,
     String? locale,
@@ -41,6 +41,7 @@ class Settings extends Equatable {
     List<String>? monitoredFolders,
     bool? sleepTimerFadeOutEnabled,
     int? sleepTimerFadeOutSeconds,
+    bool? navigateToPlayerOnResume,
   }) => Settings(
     darkMode: darkMode ?? this.darkMode,
     locale: locale ?? this.locale,
@@ -54,6 +55,8 @@ class Settings extends Equatable {
         sleepTimerFadeOutEnabled ?? this.sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds:
         sleepTimerFadeOutSeconds ?? this.sleepTimerFadeOutSeconds,
+    navigateToPlayerOnResume:
+        navigateToPlayerOnResume ?? this.navigateToPlayerOnResume,
   );
 
   @override
@@ -68,5 +71,6 @@ class Settings extends Equatable {
     monitoredFolders,
     sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds,
+    navigateToPlayerOnResume,
   ];
 }

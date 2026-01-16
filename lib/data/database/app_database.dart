@@ -50,6 +50,8 @@ class SettingsTable extends Table {
       boolean().withDefault(const Constant(true))();
   IntColumn get sleepTimerFadeOutSeconds =>
       integer().withDefault(const Constant(5))();
+  BoolColumn get navigateToPlayerOnResume =>
+      boolean().withDefault(const Constant(false))();
 }
 
 /// Playback state table (single row for last state)
@@ -124,54 +126,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
-
-  @override
-  MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (Migrator m) => m.createAll(),
-    onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) {
-        // Add sleep timer settings columns
-        try {
-          await m.addColumn(
-            settingsTable,
-            settingsTable.sleepTimerFadeOutEnabled,
-          );
-        } on Exception {
-          // Column might already exist
-        }
-        try {
-          await m.addColumn(
-            settingsTable,
-            settingsTable.sleepTimerFadeOutSeconds,
-          );
-        } on Exception {
-          // Column might already exist
-        }
-      }
-      if (from < 3) {
-        // Add locale column
-        try {
-          await m.addColumn(settingsTable, settingsTable.locale);
-        } on Exception {
-          // Column might already exist
-        }
-      }
-    },
-    beforeOpen: (details) async {
-      // Ensure all columns exist (for corrupted migrations)
-      if (details.wasCreated) return;
-
-      try {
-        // Try to add locale column if it doesn't exist
-        await customStatement(
-          "ALTER TABLE settings ADD COLUMN locale TEXT NOT NULL DEFAULT 'zh_TW'",
-        );
-      } on Exception {
-        // Column already exists, ignore
-      }
-    },
-  );
+  int get schemaVersion => 1;
 
   static LazyDatabase _openConnection() => LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();

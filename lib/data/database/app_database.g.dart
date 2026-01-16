@@ -716,6 +716,21 @@ class $SettingsTableTable extends SettingsTable
         requiredDuringInsert: false,
         defaultValue: const Constant(5),
       );
+  static const VerificationMeta _navigateToPlayerOnResumeMeta =
+      const VerificationMeta('navigateToPlayerOnResume');
+  @override
+  late final GeneratedColumn<bool> navigateToPlayerOnResume =
+      GeneratedColumn<bool>(
+        'navigate_to_player_on_resume',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("navigate_to_player_on_resume" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -729,6 +744,7 @@ class $SettingsTableTable extends SettingsTable
     monitoredFolders,
     sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds,
+    navigateToPlayerOnResume,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -826,6 +842,15 @@ class $SettingsTableTable extends SettingsTable
         ),
       );
     }
+    if (data.containsKey('navigate_to_player_on_resume')) {
+      context.handle(
+        _navigateToPlayerOnResumeMeta,
+        navigateToPlayerOnResume.isAcceptableOrUnknown(
+          data['navigate_to_player_on_resume']!,
+          _navigateToPlayerOnResumeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -890,6 +915,11 @@ class $SettingsTableTable extends SettingsTable
             DriftSqlType.int,
             data['${effectivePrefix}sleep_timer_fade_out_seconds'],
           )!,
+      navigateToPlayerOnResume:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}navigate_to_player_on_resume'],
+          )!,
     );
   }
 
@@ -912,6 +942,7 @@ class SettingsTableData extends DataClass
   final String monitoredFolders;
   final bool sleepTimerFadeOutEnabled;
   final int sleepTimerFadeOutSeconds;
+  final bool navigateToPlayerOnResume;
   const SettingsTableData({
     required this.id,
     required this.darkMode,
@@ -924,6 +955,7 @@ class SettingsTableData extends DataClass
     required this.monitoredFolders,
     required this.sleepTimerFadeOutEnabled,
     required this.sleepTimerFadeOutSeconds,
+    required this.navigateToPlayerOnResume,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -943,6 +975,9 @@ class SettingsTableData extends DataClass
     map['sleep_timer_fade_out_seconds'] = Variable<int>(
       sleepTimerFadeOutSeconds,
     );
+    map['navigate_to_player_on_resume'] = Variable<bool>(
+      navigateToPlayerOnResume,
+    );
     return map;
   }
 
@@ -959,6 +994,7 @@ class SettingsTableData extends DataClass
       monitoredFolders: Value(monitoredFolders),
       sleepTimerFadeOutEnabled: Value(sleepTimerFadeOutEnabled),
       sleepTimerFadeOutSeconds: Value(sleepTimerFadeOutSeconds),
+      navigateToPlayerOnResume: Value(navigateToPlayerOnResume),
     );
   }
 
@@ -987,6 +1023,9 @@ class SettingsTableData extends DataClass
       sleepTimerFadeOutSeconds: serializer.fromJson<int>(
         json['sleepTimerFadeOutSeconds'],
       ),
+      navigateToPlayerOnResume: serializer.fromJson<bool>(
+        json['navigateToPlayerOnResume'],
+      ),
     );
   }
   @override
@@ -1008,6 +1047,9 @@ class SettingsTableData extends DataClass
       'sleepTimerFadeOutSeconds': serializer.toJson<int>(
         sleepTimerFadeOutSeconds,
       ),
+      'navigateToPlayerOnResume': serializer.toJson<bool>(
+        navigateToPlayerOnResume,
+      ),
     };
   }
 
@@ -1023,6 +1065,7 @@ class SettingsTableData extends DataClass
     String? monitoredFolders,
     bool? sleepTimerFadeOutEnabled,
     int? sleepTimerFadeOutSeconds,
+    bool? navigateToPlayerOnResume,
   }) => SettingsTableData(
     id: id ?? this.id,
     darkMode: darkMode ?? this.darkMode,
@@ -1037,6 +1080,8 @@ class SettingsTableData extends DataClass
         sleepTimerFadeOutEnabled ?? this.sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds:
         sleepTimerFadeOutSeconds ?? this.sleepTimerFadeOutSeconds,
+    navigateToPlayerOnResume:
+        navigateToPlayerOnResume ?? this.navigateToPlayerOnResume,
   );
   SettingsTableData copyWithCompanion(SettingsTableCompanion data) {
     return SettingsTableData(
@@ -1073,6 +1118,10 @@ class SettingsTableData extends DataClass
           data.sleepTimerFadeOutSeconds.present
               ? data.sleepTimerFadeOutSeconds.value
               : this.sleepTimerFadeOutSeconds,
+      navigateToPlayerOnResume:
+          data.navigateToPlayerOnResume.present
+              ? data.navigateToPlayerOnResume.value
+              : this.navigateToPlayerOnResume,
     );
   }
 
@@ -1089,7 +1138,8 @@ class SettingsTableData extends DataClass
           ..write('skipBackwardSeconds: $skipBackwardSeconds, ')
           ..write('monitoredFolders: $monitoredFolders, ')
           ..write('sleepTimerFadeOutEnabled: $sleepTimerFadeOutEnabled, ')
-          ..write('sleepTimerFadeOutSeconds: $sleepTimerFadeOutSeconds')
+          ..write('sleepTimerFadeOutSeconds: $sleepTimerFadeOutSeconds, ')
+          ..write('navigateToPlayerOnResume: $navigateToPlayerOnResume')
           ..write(')'))
         .toString();
   }
@@ -1107,6 +1157,7 @@ class SettingsTableData extends DataClass
     monitoredFolders,
     sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds,
+    navigateToPlayerOnResume,
   );
   @override
   bool operator ==(Object other) =>
@@ -1122,7 +1173,8 @@ class SettingsTableData extends DataClass
           other.skipBackwardSeconds == this.skipBackwardSeconds &&
           other.monitoredFolders == this.monitoredFolders &&
           other.sleepTimerFadeOutEnabled == this.sleepTimerFadeOutEnabled &&
-          other.sleepTimerFadeOutSeconds == this.sleepTimerFadeOutSeconds);
+          other.sleepTimerFadeOutSeconds == this.sleepTimerFadeOutSeconds &&
+          other.navigateToPlayerOnResume == this.navigateToPlayerOnResume);
 }
 
 class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
@@ -1137,6 +1189,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
   final Value<String> monitoredFolders;
   final Value<bool> sleepTimerFadeOutEnabled;
   final Value<int> sleepTimerFadeOutSeconds;
+  final Value<bool> navigateToPlayerOnResume;
   const SettingsTableCompanion({
     this.id = const Value.absent(),
     this.darkMode = const Value.absent(),
@@ -1149,6 +1202,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     this.monitoredFolders = const Value.absent(),
     this.sleepTimerFadeOutEnabled = const Value.absent(),
     this.sleepTimerFadeOutSeconds = const Value.absent(),
+    this.navigateToPlayerOnResume = const Value.absent(),
   });
   SettingsTableCompanion.insert({
     this.id = const Value.absent(),
@@ -1162,6 +1216,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     this.monitoredFolders = const Value.absent(),
     this.sleepTimerFadeOutEnabled = const Value.absent(),
     this.sleepTimerFadeOutSeconds = const Value.absent(),
+    this.navigateToPlayerOnResume = const Value.absent(),
   });
   static Insertable<SettingsTableData> custom({
     Expression<int>? id,
@@ -1175,6 +1230,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     Expression<String>? monitoredFolders,
     Expression<bool>? sleepTimerFadeOutEnabled,
     Expression<int>? sleepTimerFadeOutSeconds,
+    Expression<bool>? navigateToPlayerOnResume,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1193,6 +1249,8 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
         'sleep_timer_fade_out_enabled': sleepTimerFadeOutEnabled,
       if (sleepTimerFadeOutSeconds != null)
         'sleep_timer_fade_out_seconds': sleepTimerFadeOutSeconds,
+      if (navigateToPlayerOnResume != null)
+        'navigate_to_player_on_resume': navigateToPlayerOnResume,
     });
   }
 
@@ -1208,6 +1266,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     Value<String>? monitoredFolders,
     Value<bool>? sleepTimerFadeOutEnabled,
     Value<int>? sleepTimerFadeOutSeconds,
+    Value<bool>? navigateToPlayerOnResume,
   }) {
     return SettingsTableCompanion(
       id: id ?? this.id,
@@ -1223,6 +1282,8 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
           sleepTimerFadeOutEnabled ?? this.sleepTimerFadeOutEnabled,
       sleepTimerFadeOutSeconds:
           sleepTimerFadeOutSeconds ?? this.sleepTimerFadeOutSeconds,
+      navigateToPlayerOnResume:
+          navigateToPlayerOnResume ?? this.navigateToPlayerOnResume,
     );
   }
 
@@ -1268,6 +1329,11 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
         sleepTimerFadeOutSeconds.value,
       );
     }
+    if (navigateToPlayerOnResume.present) {
+      map['navigate_to_player_on_resume'] = Variable<bool>(
+        navigateToPlayerOnResume.value,
+      );
+    }
     return map;
   }
 
@@ -1284,7 +1350,8 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
           ..write('skipBackwardSeconds: $skipBackwardSeconds, ')
           ..write('monitoredFolders: $monitoredFolders, ')
           ..write('sleepTimerFadeOutEnabled: $sleepTimerFadeOutEnabled, ')
-          ..write('sleepTimerFadeOutSeconds: $sleepTimerFadeOutSeconds')
+          ..write('sleepTimerFadeOutSeconds: $sleepTimerFadeOutSeconds, ')
+          ..write('navigateToPlayerOnResume: $navigateToPlayerOnResume')
           ..write(')'))
         .toString();
   }
@@ -3014,6 +3081,7 @@ typedef $$SettingsTableTableCreateCompanionBuilder =
       Value<String> monitoredFolders,
       Value<bool> sleepTimerFadeOutEnabled,
       Value<int> sleepTimerFadeOutSeconds,
+      Value<bool> navigateToPlayerOnResume,
     });
 typedef $$SettingsTableTableUpdateCompanionBuilder =
     SettingsTableCompanion Function({
@@ -3028,6 +3096,7 @@ typedef $$SettingsTableTableUpdateCompanionBuilder =
       Value<String> monitoredFolders,
       Value<bool> sleepTimerFadeOutEnabled,
       Value<int> sleepTimerFadeOutSeconds,
+      Value<bool> navigateToPlayerOnResume,
     });
 
 class $$SettingsTableTableFilterComposer
@@ -3091,6 +3160,11 @@ class $$SettingsTableTableFilterComposer
 
   ColumnFilters<int> get sleepTimerFadeOutSeconds => $composableBuilder(
     column: $table.sleepTimerFadeOutSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get navigateToPlayerOnResume => $composableBuilder(
+    column: $table.navigateToPlayerOnResume,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3158,6 +3232,11 @@ class $$SettingsTableTableOrderingComposer
     column: $table.sleepTimerFadeOutSeconds,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get navigateToPlayerOnResume => $composableBuilder(
+    column: $table.navigateToPlayerOnResume,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SettingsTableTableAnnotationComposer
@@ -3217,6 +3296,11 @@ class $$SettingsTableTableAnnotationComposer
     column: $table.sleepTimerFadeOutSeconds,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get navigateToPlayerOnResume => $composableBuilder(
+    column: $table.navigateToPlayerOnResume,
+    builder: (column) => column,
+  );
 }
 
 class $$SettingsTableTableTableManager
@@ -3269,6 +3353,7 @@ class $$SettingsTableTableTableManager
                 Value<String> monitoredFolders = const Value.absent(),
                 Value<bool> sleepTimerFadeOutEnabled = const Value.absent(),
                 Value<int> sleepTimerFadeOutSeconds = const Value.absent(),
+                Value<bool> navigateToPlayerOnResume = const Value.absent(),
               }) => SettingsTableCompanion(
                 id: id,
                 darkMode: darkMode,
@@ -3281,6 +3366,7 @@ class $$SettingsTableTableTableManager
                 monitoredFolders: monitoredFolders,
                 sleepTimerFadeOutEnabled: sleepTimerFadeOutEnabled,
                 sleepTimerFadeOutSeconds: sleepTimerFadeOutSeconds,
+                navigateToPlayerOnResume: navigateToPlayerOnResume,
               ),
           createCompanionCallback:
               ({
@@ -3295,6 +3381,7 @@ class $$SettingsTableTableTableManager
                 Value<String> monitoredFolders = const Value.absent(),
                 Value<bool> sleepTimerFadeOutEnabled = const Value.absent(),
                 Value<int> sleepTimerFadeOutSeconds = const Value.absent(),
+                Value<bool> navigateToPlayerOnResume = const Value.absent(),
               }) => SettingsTableCompanion.insert(
                 id: id,
                 darkMode: darkMode,
@@ -3307,6 +3394,7 @@ class $$SettingsTableTableTableManager
                 monitoredFolders: monitoredFolders,
                 sleepTimerFadeOutEnabled: sleepTimerFadeOutEnabled,
                 sleepTimerFadeOutSeconds: sleepTimerFadeOutSeconds,
+                navigateToPlayerOnResume: navigateToPlayerOnResume,
               ),
           withReferenceMapper:
               (p0) =>

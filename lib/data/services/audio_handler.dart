@@ -3,16 +3,13 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:pulse/core/utils/app_logger.dart';
 
 /// Audio handler for background playback with notification controls
 /// Uses media_kit for stable playback on Windows (replaces just_audio)
 class MusicPlayerAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
-  MusicPlayerAudioHandler({
-    this.onSkipToNext,
-    this.onSkipToPrevious,
-    this.onNotificationClick,
-  }) {
+  MusicPlayerAudioHandler({this.onSkipToNext, this.onSkipToPrevious}) {
     _player = Player();
     _initPlaybackState();
     _init();
@@ -24,20 +21,11 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   /// Callback for skip to previous track
   VoidCallback? onSkipToPrevious;
 
-  /// Callback for notification click
-  VoidCallback? onNotificationClick;
-
-  /// Set callbacks for skip controls (can be called after initialization)
+  /// Set callbacks for skip controls
   void setSkipCallbacks({VoidCallback? onNext, VoidCallback? onPrevious}) {
     onSkipToNext = onNext;
     onSkipToPrevious = onPrevious;
-    debugPrint('AudioHandler: Skip callbacks set');
-  }
-
-  /// Set callback for notification click
-  void setNotificationClickCallback(VoidCallback? callback) {
-    onNotificationClick = callback;
-    debugPrint('AudioHandler: Notification click callback set');
+    AppLogger.d('AudioHandler', 'Skip callbacks set');
   }
 
   void _initPlaybackState() {
@@ -191,7 +179,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       // Broadcast initial state to show notification
       _broadcastState();
     } on Exception catch (e) {
-      debugPrint('Error loading audio: $e');
+      AppLogger.e('AudioHandler', 'Error loading audio', e);
       rethrow;
     }
   }
@@ -199,27 +187,27 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   @override
   Future<void> play() async {
     try {
-      debugPrint('AudioHandler: play() called, current playing: $_playing');
+      AppLogger.d('AudioHandler', 'play() called, current playing: $_playing');
 
       // media_kit needs playOrPause for toggle behavior
       if (!_player.state.playing) {
         await _player.play();
       }
     } on Exception catch (e) {
-      debugPrint('Error playing: $e');
+      AppLogger.e('AudioHandler', 'Error playing', e);
     }
   }
 
   @override
   Future<void> pause() async {
     try {
-      debugPrint('AudioHandler: pause() called, current playing: $_playing');
+      AppLogger.d('AudioHandler', 'pause() called, current playing: $_playing');
 
       if (_player.state.playing) {
         await _player.pause();
       }
     } on Exception catch (e) {
-      debugPrint('Error pausing: $e');
+      AppLogger.e('AudioHandler', 'Error pausing', e);
     }
   }
 
@@ -230,7 +218,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       _playing = false;
       _broadcastState();
     } on Exception catch (e) {
-      debugPrint('Error stopping: $e');
+      AppLogger.e('AudioHandler', 'Error stopping', e);
     }
   }
 
@@ -247,19 +235,19 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
         await _player.play();
       }
     } on Exception catch (e) {
-      debugPrint('Error seeking: $e');
+      AppLogger.e('AudioHandler', 'Error seeking', e);
     }
   }
 
   @override
   Future<void> skipToNext() async {
-    debugPrint('AudioHandler: skipToNext() called');
+    AppLogger.d('AudioHandler', 'skipToNext() called');
     onSkipToNext?.call();
   }
 
   @override
   Future<void> skipToPrevious() async {
-    debugPrint('AudioHandler: skipToPrevious() called');
+    AppLogger.d('AudioHandler', 'skipToPrevious() called');
     onSkipToPrevious?.call();
   }
 
@@ -277,9 +265,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
 
   @override
   Future<void> click([MediaButton button = MediaButton.media]) async {
-    debugPrint('AudioHandler: click() called with button: $button');
-    // When notification is clicked, navigate to player screen
-    onNotificationClick?.call();
+    AppLogger.d('AudioHandler', 'click() called with button: $button');
   }
 
   @override
@@ -287,7 +273,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     try {
       await _player.setRate(speed);
     } on Exception catch (e) {
-      debugPrint('Error setting speed: $e');
+      AppLogger.e('AudioHandler', 'Error setting speed', e);
     }
   }
 
@@ -295,7 +281,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     try {
       await _player.setVolume(volume * 100); // media_kit uses 0-100
     } on Exception catch (e) {
-      debugPrint('Error setting volume: $e');
+      AppLogger.e('AudioHandler', 'Error setting volume', e);
     }
   }
 
@@ -329,7 +315,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       _completedSub = null;
       await _player.dispose();
     } on Exception catch (e) {
-      debugPrint('Error disposing audio handler: $e');
+      AppLogger.e('AudioHandler', 'Error disposing', e);
     }
   }
 }

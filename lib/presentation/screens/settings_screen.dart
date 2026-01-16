@@ -130,6 +130,17 @@ class _SettingsContent extends StatelessWidget {
           );
         },
       ),
+      _SwitchTile(
+        title: l10n.navigateToPlayerOnResume,
+        subtitle: l10n.navigateToPlayerOnResumeDesc,
+        value: state.settings.navigateToPlayerOnResume,
+        isDark: isDark,
+        onChanged: (value) {
+          context.read<SettingsBloc>().add(
+            SettingsUpdateNavigateToPlayerOnResume(enabled: value),
+          );
+        },
+      ),
       const SizedBox(height: AppSpacing.xl),
       _SectionHeader(title: l10n.skipSettings, isDark: isDark),
       _SliderTile(
