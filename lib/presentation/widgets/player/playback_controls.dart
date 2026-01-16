@@ -263,39 +263,82 @@ class _SkipButtonState extends State<_SkipButton> {
   bool get _isEnabled => widget.onTap != null;
 
   @override
-  Widget build(BuildContext context) => MouseRegion(
-    onEnter: (_) => setState(() => _isHovered = true),
-    onExit: (_) => setState(() => _isHovered = false),
-    cursor: _isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-    child: GestureDetector(
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: AppDurations.fast,
-        width: widget.size,
-        height: widget.size,
-        decoration: BoxDecoration(
-          color:
-              _isHovered && _isEnabled
-                  ? (widget.isDark ? AppColors.gray800 : AppColors.gray200)
-                  : Colors.transparent,
-          shape: BoxShape.circle,
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(
-              widget.isForward
-                  ? Icons.forward_10_rounded
-                  : Icons.replay_10_rounded,
-              color:
-                  _isEnabled
-                      ? (widget.isDark ? AppColors.white : AppColors.gray800)
-                      : (widget.isDark ? AppColors.gray600 : AppColors.gray400),
-              size: widget.size * 0.6,
-            ),
-          ],
+  Widget build(BuildContext context) {
+    final color =
+        _isEnabled
+            ? (widget.isDark ? AppColors.white : AppColors.gray800)
+            : (widget.isDark ? AppColors.gray600 : AppColors.gray400);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: _isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: AppDurations.fast,
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            color:
+                _isHovered && _isEnabled
+                    ? (widget.isDark ? AppColors.gray800 : AppColors.gray200)
+                    : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          // Always use double arrow design with seconds below
+          child: _CustomSkipIcon(
+            seconds: widget.seconds,
+            isForward: widget.isForward,
+            color: color,
+            size: widget.size * 0.7,
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Custom skip icon for non-standard seconds values
+/// Uses double arrow design with seconds below (like fast_rewind/fast_forward)
+class _CustomSkipIcon extends StatelessWidget {
+  const _CustomSkipIcon({
+    required this.seconds,
+    required this.isForward,
+    required this.color,
+    required this.size,
+  });
+
+  final int seconds;
+  final bool isForward;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: size,
+    height: size,
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Double arrow icon
+        Icon(
+          isForward ? Icons.fast_forward_rounded : Icons.fast_rewind_rounded,
+          color: color,
+          size: size * 0.55,
+        ),
+        // Seconds text below
+        Text(
+          '${seconds}s',
+          style: TextStyle(
+            color: color,
+            fontSize: size * 0.3,
+            fontWeight: FontWeight.w600,
+            height: 1,
+          ),
+        ),
+      ],
     ),
   );
 }

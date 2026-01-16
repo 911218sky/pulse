@@ -44,12 +44,28 @@ class Playlist extends Equatable {
     updatedAt: updatedAt ?? DateTime.now(),
   );
 
-  /// Adds a file to the playlist
-  Playlist addFile(AudioFile file) => copyWith(files: [...files, file]);
+  /// Adds a file to the playlist (prevents duplicates by path)
+  Playlist addFile(AudioFile file) {
+    // Check if file already exists by path
+    if (files.any((f) => f.path == file.path)) {
+      return this; // Return unchanged if duplicate
+    }
+    return copyWith(files: [...files, file]);
+  }
 
-  /// Adds multiple files to the playlist
-  Playlist addFiles(List<AudioFile> newFiles) =>
-      copyWith(files: [...files, ...newFiles]);
+  /// Adds multiple files to the playlist (filters out duplicates by path)
+  Playlist addFiles(List<AudioFile> newFiles) {
+    final existingPaths = files.map((f) => f.path).toSet();
+    final uniqueNewFiles =
+        newFiles.where((f) => !existingPaths.contains(f.path)).toList();
+    if (uniqueNewFiles.isEmpty) {
+      return this; // Return unchanged if all are duplicates
+    }
+    return copyWith(files: [...files, ...uniqueNewFiles]);
+  }
+
+  /// Checks if a file with the given path already exists in the playlist
+  bool containsPath(String path) => files.any((f) => f.path == path);
 
   /// Removes a file from the playlist by ID
   Playlist removeFile(String fileId) =>

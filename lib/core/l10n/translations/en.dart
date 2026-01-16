@@ -237,6 +237,8 @@ class EnTranslations extends Translations {
   @override
   String get deletePlaylist => 'Delete Playlist';
   @override
+  String get playlistDeleted => 'Playlist deleted';
+  @override
   String get renamePlaylist => 'Rename';
   @override
   String get playlistName => 'Name';
@@ -249,6 +251,18 @@ class EnTranslations extends Translations {
   @override
   String deletePlaylistConfirm(String name) =>
       'Delete "$name"? This cannot be undone.';
+  @override
+  String get addSongs => 'Add Songs';
+  @override
+  String get add => 'Add';
+  @override
+  String get tapToAddSongs => 'Tap the button below to add songs';
+  @override
+  String get noSongsAvailable => 'No songs available to add';
+  @override
+  String songsAdded(int n) => '$n songs added';
+  @override
+  String selectedCount(int n) => '$n selected';
 
   // ============== Keyboard Shortcuts ==============
   @override

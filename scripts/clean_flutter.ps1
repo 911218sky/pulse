@@ -7,6 +7,13 @@ Write-Host "Starting Flutter project cleanup..." -ForegroundColor Cyan
 Write-Host "`nRunning flutter clean..." -ForegroundColor Yellow
 flutter clean
 
+# Clean Flutter global cache
+Write-Host "`nCleaning Flutter pub cache..." -ForegroundColor Yellow
+flutter pub cache clean
+
+Write-Host "Repairing Flutter pub cache..." -ForegroundColor Yellow
+flutter pub cache repair
+
 # Remove build folder
 if (Test-Path "build") {
     Write-Host "Removing build folder..." -ForegroundColor Yellow

@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 class Settings extends Equatable {
   const Settings({
     this.darkMode = true,
-    this.locale = 'zh_TW',
+    this.locale = 'en',
     this.defaultVolume = 1.0,
     this.defaultPlaybackSpeed = 1.0,
     this.autoResume = true,

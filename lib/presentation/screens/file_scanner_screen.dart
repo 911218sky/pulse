@@ -10,6 +10,7 @@ import 'package:pulse/domain/entities/scanned_folder.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_state.dart';
+import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 import 'package:pulse/presentation/widgets/file_scanner/file_import_dialog.dart';
 import 'package:pulse/presentation/widgets/file_scanner/folder_scan_progress.dart';
@@ -143,12 +144,7 @@ class _InitialState extends StatelessWidget {
     if (manageStatus.isGranted) return true;
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.storagePermissionRequired),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      AppToast.error(context, l10n.storagePermissionRequired);
     }
     return false;
   }

@@ -112,3 +112,13 @@ class SettingsUpdateLocale extends SettingsEvent {
   @override
   List<Object?> get props => [locale];
 }
+
+/// Update sleep timer duration
+class SettingsUpdateSleepTimer extends SettingsEvent {
+  const SettingsUpdateSleepTimer(this.duration);
+
+  final Duration duration;
+
+  @override
+  List<Object?> get props => [duration];
+}

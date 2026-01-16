@@ -227,4 +227,176 @@ void main() {
       );
     });
   });
+
+  /// Property 1: Playlist Duplicate Prevention
+  /// **Validates: Requirements 3.1, 3.2, 3.3**
+  ///
+  /// For any playlist:
+  /// - Adding a file with the same path SHALL NOT create duplicates
+  /// - Adding multiple files SHALL filter out files with existing paths
+  /// - containsPath SHALL correctly identify existing files
+  group('Playlist Duplicate Prevention', () {
+    test(
+      'Property 1.1: Adding a file with same path does not create duplicates (100 iterations)',
+      () {
+        PropertyTest.forAll(
+          generator: () => generateRandomPlaylist(minFiles: 1, maxFiles: 5),
+          property: (playlist) {
+            // Pick an existing file
+            final existingFile = PropertyTest.randomElement(playlist.files);
+            final initialCount = playlist.fileCount;
+
+            // Create a new file with the same path but different ID
+            final duplicateFile = AudioFile(
+              id: PropertyTest.randomNonEmptyString(),
+              path: existingFile.path, // Same path
+              title: PropertyTest.randomNonEmptyString(),
+              duration: PropertyTest.randomDuration(maxHours: 2),
+              fileSizeBytes: PropertyTest.randomInt(min: 1000, max: 100000000),
+            );
+
+            // Add the duplicate file
+            final updated = playlist.addFile(duplicateFile);
+
+            // File count should remain the same
+            expect(
+              updated.fileCount,
+              equals(initialCount),
+              reason: 'Adding duplicate path should not increase file count',
+            );
+
+            // Only one file with that path should exist
+            final filesWithPath = updated.files.where(
+              (f) => f.path == existingFile.path,
+            );
+            expect(
+              filesWithPath.length,
+              equals(1),
+              reason: 'Only one file with the same path should exist',
+            );
+          },
+        );
+      },
+    );
+
+    test(
+      'Property 1.2: Adding multiple files filters out duplicates by path (100 iterations)',
+      () {
+        PropertyTest.forAll(
+          generator: () => generateRandomPlaylist(minFiles: 2, maxFiles: 5),
+          property: (playlist) {
+            final initialCount = playlist.fileCount;
+            final existingPaths = playlist.files.map((f) => f.path).toSet();
+
+            // Create a mix of new and duplicate files
+            final newFiles = <AudioFile>[];
+            final uniqueNewPaths = <String>{};
+
+            // Add some duplicates
+            for (var i = 0; i < 2; i++) {
+              final existingFile = PropertyTest.randomElement(playlist.files);
+              newFiles.add(
+                AudioFile(
+                  id: PropertyTest.randomNonEmptyString(),
+                  path: existingFile.path,
+                  title: PropertyTest.randomNonEmptyString(),
+                  duration: PropertyTest.randomDuration(maxHours: 2),
+                  fileSizeBytes: PropertyTest.randomInt(
+                    min: 1000,
+                    max: 100000000,
+                  ),
+                ),
+              );
+            }
+
+            // Add some unique new files
+            for (var i = 0; i < 3; i++) {
+              final newPath =
+                  '/music/${PropertyTest.randomNonEmptyString()}_unique_$i.mp3';
+              if (!existingPaths.contains(newPath)) {
+                uniqueNewPaths.add(newPath);
+                newFiles.add(
+                  AudioFile(
+                    id: PropertyTest.randomNonEmptyString(),
+                    path: newPath,
+                    title: PropertyTest.randomNonEmptyString(),
+                    duration: PropertyTest.randomDuration(maxHours: 2),
+                    fileSizeBytes: PropertyTest.randomInt(
+                      min: 1000,
+                      max: 100000000,
+                    ),
+                  ),
+                );
+              }
+            }
+
+            // Add all files
+            final updated = playlist.addFiles(newFiles);
+
+            // File count should only increase by unique new files
+            expect(
+              updated.fileCount,
+              equals(initialCount + uniqueNewPaths.length),
+              reason: 'Only unique new files should be added',
+            );
+          },
+        );
+      },
+    );
+
+    test(
+      'Property 1.3: containsPath correctly identifies existing files (100 iterations)',
+      () {
+        PropertyTest.forAll(
+          generator: () => generateRandomPlaylist(minFiles: 1, maxFiles: 5),
+          property: (playlist) {
+            // Existing path should return true
+            final existingFile = PropertyTest.randomElement(playlist.files);
+            expect(
+              playlist.containsPath(existingFile.path),
+              isTrue,
+              reason: 'containsPath should return true for existing path',
+            );
+
+            // Non-existing path should return false
+            final nonExistingPath =
+                '/music/${PropertyTest.randomNonEmptyString()}_nonexistent.mp3';
+            expect(
+              playlist.containsPath(nonExistingPath),
+              isFalse,
+              reason: 'containsPath should return false for non-existing path',
+            );
+          },
+        );
+      },
+    );
+
+    test(
+      'Property 1.4: Adding same file multiple times does not create duplicates (100 iterations)',
+      () {
+        PropertyTest.forAll(
+          generator: generateRandomAudioFile,
+          property: (file) {
+            var playlist = Playlist.create(
+              id: PropertyTest.randomNonEmptyString(),
+              name: PropertyTest.randomNonEmptyString(),
+            );
+
+            // Add the same file multiple times
+            for (var i = 0; i < 5; i++) {
+              playlist = playlist.addFile(file);
+            }
+
+            // Should only have one file
+            expect(
+              playlist.fileCount,
+              equals(1),
+              reason:
+                  'Adding same file multiple times should result in only one file',
+            );
+          },
+        );
+      },
+    );
+  });
 }

@@ -6,7 +6,7 @@ import 'package:pulse/domain/entities/playlist.dart';
 enum RepeatMode { off, all, one }
 
 /// Status of playlist operations
-enum PlaylistStatus { initial, loading, loaded, error }
+enum PlaylistStatus { initial, loading, loaded, error, playlistDeleted }
 
 /// State for PlaylistBloc
 class PlaylistState extends Equatable {

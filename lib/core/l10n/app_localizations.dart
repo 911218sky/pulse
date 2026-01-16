@@ -169,12 +169,19 @@ class AppLocalizations {
   String get noPlaylistsHint => _t.noPlaylistsHint;
   String get createPlaylist => _t.createPlaylist;
   String get deletePlaylist => _t.deletePlaylist;
+  String get playlistDeleted => _t.playlistDeleted;
   String get renamePlaylist => _t.renamePlaylist;
   String get playlistName => _t.playlistName;
   String get playlistNameHint => _t.playlistNameHint;
   String get create => _t.create;
   String songsCount(int n) => _t.songsCount(n);
   String deletePlaylistConfirm(String name) => _t.deletePlaylistConfirm(name);
+  String get addSongs => _t.addSongs;
+  String get add => _t.add;
+  String get tapToAddSongs => _t.tapToAddSongs;
+  String get noSongsAvailable => _t.noSongsAvailable;
+  String songsAdded(int n) => _t.songsAdded(n);
+  String selectedCount(int n) => _t.selectedCount(n);
 
   // ============== Keyboard Shortcuts ==============
   String get keyboardShortcuts => _t.keyboardShortcuts;
@@ -345,12 +352,19 @@ abstract class Translations {
   String get noPlaylistsHint;
   String get createPlaylist;
   String get deletePlaylist;
+  String get playlistDeleted;
   String get renamePlaylist;
   String get playlistName;
   String get playlistNameHint;
   String get create;
   String songsCount(int n);
   String deletePlaylistConfirm(String name);
+  String get addSongs;
+  String get add;
+  String get tapToAddSongs;
+  String get noSongsAvailable;
+  String songsAdded(int n);
+  String selectedCount(int n);
 
   // ============== Keyboard Shortcuts ==============
   String get keyboardShortcuts;
