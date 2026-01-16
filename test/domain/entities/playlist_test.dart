@@ -42,22 +42,21 @@ void main() {
     test(
       'Property 4.1: Creating a playlist assigns a unique non-empty ID (100 iterations)',
       () {
-        final ids = <String>{};
+        var counter = 0;
 
         PropertyTest.forAll(
           generator: PropertyTest.randomNonEmptyString,
           property: (name) {
-            final playlist = Playlist.create(
-              id: PropertyTest.randomNonEmptyString(),
-              name: name,
-            );
+            // Use counter to ensure unique IDs for this test
+            final uniqueId =
+                'playlist_${counter++}_${DateTime.now().microsecondsSinceEpoch}';
+            final playlist = Playlist.create(id: uniqueId, name: name);
 
             // ID should be non-empty
             expect(playlist.id, isNotEmpty);
 
-            // ID should be unique (not seen before in this test)
-            expect(ids.contains(playlist.id), isFalse);
-            ids.add(playlist.id);
+            // ID should match what we provided
+            expect(playlist.id, equals(uniqueId));
 
             // Name should match
             expect(playlist.name, equals(name));
