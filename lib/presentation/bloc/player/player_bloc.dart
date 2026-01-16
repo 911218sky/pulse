@@ -53,6 +53,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   int _skipForwardSeconds = 10;
   int _skipBackwardSeconds = 10;
 
+  // Track the last loaded audio to avoid reloading the same file
+  String? _lastLoadedAudioPath;
+
   // Throttle position updates to reduce UI rebuilds
   Duration? _pendingPosition;
   static const _positionUpdateInterval = Duration(milliseconds: 250);
@@ -82,6 +85,15 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerLoadAudio event,
     Emitter<PlayerState> emit,
   ) async {
+    // Skip reloading if it's the same audio file and already playing/ready
+    if (_lastLoadedAudioPath == event.audioFile.path &&
+        (state.isPlaying ||
+            state.status == PlayerStatus.paused ||
+            state.status == PlayerStatus.ready)) {
+      // Just ensure playback continues without interruption
+      return;
+    }
+
     emit(state.copyWith(status: PlayerStatus.loading));
 
     try {
@@ -92,6 +104,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
       // Load audio file
       await _audioRepository.loadAudio(event.audioFile);
+
+      // Track the loaded audio path
+      _lastLoadedAudioPath = event.audioFile.path;
 
       // Check for saved position
       final savedPosition = await _playbackStateRepository.getPositionForFile(

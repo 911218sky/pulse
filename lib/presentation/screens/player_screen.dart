@@ -9,6 +9,8 @@ import 'package:pulse/presentation/bloc/player/player_state.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
+import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
+import 'package:pulse/presentation/bloc/settings/settings_state.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_bloc.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_event.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_state.dart';
@@ -368,52 +370,68 @@ class _PlayerControls extends StatelessWidget {
         // Playback controls
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: BlocBuilder<PlaylistBloc, PlaylistState>(
+          child: BlocBuilder<SettingsBloc, SettingsState>(
             builder:
-                (context, playlistState) => PlaybackControls(
-                  isPlaying: state.isPlaying,
-                  onPlayPause: () {
-                    if (state.isPlaying) {
-                      context.read<PlayerBloc>().add(const PlayerPause());
-                    } else {
-                      context.read<PlayerBloc>().add(const PlayerPlay());
-                    }
-                  },
-                  onPrevious: () {
-                    context.read<PlaylistBloc>().add(
-                      const PlaylistPlayPrevious(),
-                    );
-                    final prevIndex = playlistState.previousTrackIndex;
-                    if (prevIndex != null &&
-                        playlistState.currentPlaylist != null) {
-                      final prevTrack =
-                          playlistState.currentPlaylist!.files[prevIndex];
-                      context.read<PlayerBloc>().add(
-                        PlayerLoadAudio(prevTrack),
-                      );
-                    }
-                  },
-                  onNext: () {
-                    context.read<PlaylistBloc>().add(const PlaylistPlayNext());
-                    final nextIndex = playlistState.nextTrackIndex;
-                    if (nextIndex != null &&
-                        playlistState.currentPlaylist != null) {
-                      final nextTrack =
-                          playlistState.currentPlaylist!.files[nextIndex];
-                      context.read<PlayerBloc>().add(
-                        PlayerLoadAudio(nextTrack),
-                      );
-                    }
-                  },
-                  onSkipBackward: () {
-                    context.read<PlayerBloc>().add(const PlayerSkipBackward());
-                  },
-                  onSkipForward: () {
-                    context.read<PlayerBloc>().add(const PlayerSkipForward());
-                  },
-                  hasPrevious: playlistState.previousTrackIndex != null,
-                  hasNext: playlistState.nextTrackIndex != null,
-                  size: PlaybackControlsSize.large,
+                (
+                  context,
+                  settingsState,
+                ) => BlocBuilder<PlaylistBloc, PlaylistState>(
+                  builder:
+                      (context, playlistState) => PlaybackControls(
+                        isPlaying: state.isPlaying,
+                        onPlayPause: () {
+                          if (state.isPlaying) {
+                            context.read<PlayerBloc>().add(const PlayerPause());
+                          } else {
+                            context.read<PlayerBloc>().add(const PlayerPlay());
+                          }
+                        },
+                        onPrevious: () {
+                          context.read<PlaylistBloc>().add(
+                            const PlaylistPlayPrevious(),
+                          );
+                          final prevIndex = playlistState.previousTrackIndex;
+                          if (prevIndex != null &&
+                              playlistState.currentPlaylist != null) {
+                            final prevTrack =
+                                playlistState.currentPlaylist!.files[prevIndex];
+                            context.read<PlayerBloc>().add(
+                              PlayerLoadAudio(prevTrack),
+                            );
+                          }
+                        },
+                        onNext: () {
+                          context.read<PlaylistBloc>().add(
+                            const PlaylistPlayNext(),
+                          );
+                          final nextIndex = playlistState.nextTrackIndex;
+                          if (nextIndex != null &&
+                              playlistState.currentPlaylist != null) {
+                            final nextTrack =
+                                playlistState.currentPlaylist!.files[nextIndex];
+                            context.read<PlayerBloc>().add(
+                              PlayerLoadAudio(nextTrack),
+                            );
+                          }
+                        },
+                        onSkipBackward: () {
+                          context.read<PlayerBloc>().add(
+                            const PlayerSkipBackward(),
+                          );
+                        },
+                        onSkipForward: () {
+                          context.read<PlayerBloc>().add(
+                            const PlayerSkipForward(),
+                          );
+                        },
+                        hasPrevious: playlistState.previousTrackIndex != null,
+                        hasNext: playlistState.nextTrackIndex != null,
+                        skipBackwardSeconds:
+                            settingsState.settings.skipBackwardSeconds,
+                        skipForwardSeconds:
+                            settingsState.settings.skipForwardSeconds,
+                        size: PlaybackControlsSize.large,
+                      ),
                 ),
           ),
         ),
@@ -595,6 +613,7 @@ class _SpeedButtonState extends State<_SpeedButton> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: isDark ? AppColors.black : AppColors.white,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusXl),
@@ -602,42 +621,59 @@ class _SpeedButtonState extends State<_SpeedButton> {
       ),
       builder:
           (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.gray700 : AppColors.gray300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Text(
-                    l10n.playbackSpeed,
-                    style: TextStyle(
-                      color: isDark ? AppColors.white : AppColors.gray900,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.7,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(top: AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.gray700 : AppColors.gray300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                ),
-                ...speeds.map(
-                  (speed) => _SpeedOption(
-                    speed: speed,
-                    isSelected: speed == widget.speed,
-                    isDark: isDark,
-                    onTap: () {
-                      context.read<PlayerBloc>().add(PlayerSetSpeed(speed));
-                      Navigator.pop(context);
-                    },
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Text(
+                      l10n.playbackSpeed,
+                      style: TextStyle(
+                        color: isDark ? AppColors.white : AppColors.gray900,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-              ],
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children:
+                            speeds
+                                .map(
+                                  (speed) => _SpeedOption(
+                                    speed: speed,
+                                    isSelected: speed == widget.speed,
+                                    isDark: isDark,
+                                    onTap: () {
+                                      context.read<PlayerBloc>().add(
+                                        PlayerSetSpeed(speed),
+                                      );
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                )
+                                .toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
+              ),
             ),
           ),
     );

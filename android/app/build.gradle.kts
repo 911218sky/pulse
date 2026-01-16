@@ -35,8 +35,39 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            
+            // Enable code shrinking and resource optimization
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            
+            // Additional optimization flags
+            ndk {
+                debugSymbolLevel = "full"
+            }
         }
     }
+    
+    // Bundle configuration for better compression
+    bundle {
+        language {
+            enableSplit = true
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
+    }
+}
+
+dependencies {
+    // Google Play Core library for split install support
+    implementation("com.google.android.play:core:1.10.3")
 }
 
 flutter {

@@ -116,7 +116,7 @@ class _VolumeSliderState extends State<VolumeSlider> {
             onTapUp: (details) => _onTap(details, widget.width),
             child: SizedBox(
               width: widget.width,
-              height: 24,
+              height: 48, // Increased touch area height
               child: _buildSliderTrack(isDark),
             ),
           ),
@@ -142,7 +142,7 @@ class _VolumeSliderState extends State<VolumeSlider> {
             onVerticalDragEnd: _onDragEnd,
             onTapUp: (details) => _onTap(details, widget.width),
             child: SizedBox(
-              width: 24,
+              width: 48, // Increased touch area width
               height: widget.width,
               child: _buildVerticalSliderTrack(isDark),
             ),
@@ -162,7 +162,7 @@ class _VolumeSliderState extends State<VolumeSlider> {
   Widget _buildSliderTrack(bool isDark) => Center(
     child: AnimatedContainer(
       duration: AppDurations.fast,
-      height: _isHovered || _isDragging ? 6 : 4,
+      height: _isHovered || _isDragging ? 8 : 6, // Increased track height
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -170,7 +170,7 @@ class _VolumeSliderState extends State<VolumeSlider> {
           Container(
             decoration: BoxDecoration(
               color: isDark ? AppColors.gray700 : AppColors.gray300,
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
           // Volume level
@@ -179,31 +179,30 @@ class _VolumeSliderState extends State<VolumeSlider> {
             child: Container(
               decoration: BoxDecoration(
                 color: isDark ? AppColors.white : AppColors.blue,
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
           ),
-          // Thumb
-          if (_isHovered || _isDragging)
-            Positioned(
-              left: (_displayVolume.clamp(0.0, 1.0) * widget.width) - 6,
-              top: -3,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.white : AppColors.blue,
-                  shape: BoxShape.circle,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
+          // Thumb - always visible for better touch feedback
+          Positioned(
+            left: (_displayVolume.clamp(0.0, 1.0) * widget.width) - 12,
+            top: -8,
+            child: Container(
+              width: 24, // Increased thumb size
+              height: 24,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.white : AppColors.blue,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: _isHovered || _isDragging ? 6 : 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
             ),
+          ),
         ],
       ),
     ),
@@ -212,7 +211,7 @@ class _VolumeSliderState extends State<VolumeSlider> {
   Widget _buildVerticalSliderTrack(bool isDark) => Center(
     child: AnimatedContainer(
       duration: AppDurations.fast,
-      width: _isHovered || _isDragging ? 6 : 4,
+      width: _isHovered || _isDragging ? 8 : 6, // Increased track width
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -220,7 +219,7 @@ class _VolumeSliderState extends State<VolumeSlider> {
           Container(
             decoration: BoxDecoration(
               color: isDark ? AppColors.gray700 : AppColors.gray300,
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
           // Volume level
@@ -231,32 +230,31 @@ class _VolumeSliderState extends State<VolumeSlider> {
               child: Container(
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.white : AppColors.blue,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ),
           ),
-          // Thumb
-          if (_isHovered || _isDragging)
-            Positioned(
-              left: -3,
-              bottom: (_displayVolume.clamp(0.0, 1.0) * widget.width) - 6,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.white : AppColors.blue,
-                  shape: BoxShape.circle,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
+          // Thumb - always visible for better touch feedback
+          Positioned(
+            left: -8,
+            bottom: (_displayVolume.clamp(0.0, 1.0) * widget.width) - 12,
+            child: Container(
+              width: 24, // Increased thumb size
+              height: 24,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.white : AppColors.blue,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: _isHovered || _isDragging ? 6 : 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
             ),
+          ),
         ],
       ),
     ),

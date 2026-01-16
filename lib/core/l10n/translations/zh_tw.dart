@@ -232,6 +232,8 @@ class ZhTwTranslations extends Translations {
   @override
   String get deletePlaylist => '刪除播放清單';
   @override
+  String get playlistDeleted => '播放清單已刪除';
+  @override
   String get renamePlaylist => '重新命名';
   @override
   String get playlistName => '名稱';
@@ -243,6 +245,18 @@ class ZhTwTranslations extends Translations {
   String songsCount(int n) => '$n 首歌曲';
   @override
   String deletePlaylistConfirm(String name) => '確定要刪除「$name」嗎？此操作無法復原。';
+  @override
+  String get addSongs => '新增歌曲';
+  @override
+  String get add => '新增';
+  @override
+  String get tapToAddSongs => '點擊下方按鈕新增歌曲';
+  @override
+  String get noSongsAvailable => '沒有可新增的歌曲';
+  @override
+  String songsAdded(int n) => '已新增 $n 首歌曲';
+  @override
+  String selectedCount(int n) => '已選擇 $n 首';
 
   // ============== Keyboard Shortcuts ==============
   @override

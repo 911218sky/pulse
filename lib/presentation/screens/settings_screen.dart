@@ -6,18 +6,13 @@ import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
 import 'package:pulse/presentation/bloc/settings/settings_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
+import 'package:pulse/presentation/widgets/common/app_toast.dart';
 
 /// Settings screen
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({
-    super.key,
-    this.onBack,
-    this.onSleepTimerPressed,
-    this.onFolderScanPressed,
-  });
+  const SettingsScreen({super.key, this.onBack, this.onFolderScanPressed});
 
   final VoidCallback? onBack;
-  final VoidCallback? onSleepTimerPressed;
   final VoidCallback? onFolderScanPressed;
 
   @override
@@ -48,7 +43,6 @@ class SettingsScreen extends StatelessWidget {
                     state: state,
                     l10n: l10n,
                     isDark: isDark,
-                    onSleepTimerPressed: onSleepTimerPressed,
                     onFolderScanPressed: onFolderScanPressed,
                   );
                 },
@@ -66,14 +60,12 @@ class _SettingsContent extends StatelessWidget {
     required this.state,
     required this.l10n,
     required this.isDark,
-    this.onSleepTimerPressed,
     this.onFolderScanPressed,
   });
 
   final SettingsState state;
   final AppLocalizations l10n;
   final bool isDark;
-  final VoidCallback? onSleepTimerPressed;
   final VoidCallback? onFolderScanPressed;
 
   @override
@@ -170,14 +162,6 @@ class _SettingsContent extends StatelessWidget {
       ),
       const SizedBox(height: AppSpacing.xl),
       _SectionHeader(title: l10n.features, isDark: isDark),
-      if (onSleepTimerPressed != null)
-        _ActionTile(
-          title: l10n.sleepTimer,
-          subtitle: l10n.sleepTimerDesc,
-          icon: Icons.bedtime_rounded,
-          isDark: isDark,
-          onTap: onSleepTimerPressed!,
-        ),
       if (onFolderScanPressed != null)
         _ActionTile(
           title: l10n.scanFolders,
@@ -251,13 +235,7 @@ class _SettingsContent extends StatelessWidget {
 
     if ((confirmed ?? false) && context.mounted) {
       context.read<SettingsBloc>().add(const SettingsReset());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.settingsReset),
-          backgroundColor: AppColors.gray800,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.success(context, l10n.settingsReset);
     }
   }
 
@@ -302,13 +280,7 @@ class _SettingsContent extends StatelessWidget {
 
     if ((confirmed ?? false) && context.mounted) {
       context.read<SettingsBloc>().add(const SettingsResetAll());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.allDataCleared),
-          backgroundColor: AppColors.gray800,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.warning(context, l10n.allDataCleared);
     }
   }
 }
@@ -674,80 +646,88 @@ class _ActionTileState extends State<_ActionTile> {
     onEnter: (_) => setState(() => _isHovered = true),
     onExit: (_) => setState(() => _isHovered = false),
     cursor: SystemMouseCursors.click,
-    child: GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color:
-              _isHovered
-                  ? (widget.isDark ? AppColors.gray800 : AppColors.gray200)
-                  : (widget.isDark ? AppColors.gray900 : AppColors.gray100),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          border: Border.all(
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        splashColor: AppColors.accent.withValues(alpha: 0.1),
+        highlightColor: AppColors.accent.withValues(alpha: 0.05),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
             color:
                 _isHovered
-                    ? (widget.isDark ? AppColors.gray700 : AppColors.gray300)
-                    : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              widget.icon,
+                    ? (widget.isDark ? AppColors.gray800 : AppColors.gray200)
+                    : (widget.isDark ? AppColors.gray900 : AppColors.gray100),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(
               color:
-                  widget.isDanger
-                      ? AppColors.error
-                      : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
-              size: 22,
+                  _isHovered
+                      ? (widget.isDark ? AppColors.gray700 : AppColors.gray300)
+                      : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color:
-                          widget.isDanger
-                              ? AppColors.error
-                              : (widget.isDark
-                                  ? AppColors.white
-                                  : AppColors.black),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (widget.subtitle != null) ...[
-                    const SizedBox(height: AppSpacing.xs),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                widget.icon,
+                color:
+                    widget.isDanger
+                        ? AppColors.error
+                        : (widget.isDark
+                            ? AppColors.gray400
+                            : AppColors.gray600),
+                size: 22,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      widget.subtitle!,
-                      maxLines: 2,
+                      widget.title,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color:
-                            widget.isDark
-                                ? AppColors.gray500
-                                : AppColors.gray600,
-                        fontSize: 13,
+                            widget.isDanger
+                                ? AppColors.error
+                                : (widget.isDark
+                                    ? AppColors.white
+                                    : AppColors.black),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
+                    if (widget.subtitle != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        widget.subtitle!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color:
+                              widget.isDark
+                                  ? AppColors.gray500
+                                  : AppColors.gray600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: widget.isDark ? AppColors.gray600 : AppColors.gray400,
-              size: 22,
-            ),
-          ],
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: widget.isDark ? AppColors.gray600 : AppColors.gray400,
+                size: 22,
+              ),
+            ],
+          ),
         ),
       ),
     ),

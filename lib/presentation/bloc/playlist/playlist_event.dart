@@ -96,12 +96,13 @@ class PlaylistReorder extends PlaylistEvent {
 
 /// Select a playlist for playback
 class PlaylistSelect extends PlaylistEvent {
-  const PlaylistSelect(this.playlistId);
+  const PlaylistSelect(this.playlistId, {this.startIndex = 0});
 
   final String playlistId;
+  final int startIndex;
 
   @override
-  List<Object?> get props => [playlistId];
+  List<Object?> get props => [playlistId, startIndex];
 }
 
 /// Toggle shuffle mode

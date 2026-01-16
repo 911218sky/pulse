@@ -127,9 +127,6 @@ class AppRouter {
                   context.go(AppRoutes.home);
                 }
               },
-              onSleepTimerPressed: () {
-                // Show sleep timer dialog
-              },
               onFolderScanPressed: () => context.push(AppRoutes.scanner),
             ),
       ),
@@ -227,94 +224,96 @@ class _FileScannerToSearchSyncState extends State<_FileScannerToSearchSync> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      BlocListener<FileScannerBloc, FileScannerState>(
-        listenWhen: (previous, current) {
-          // Always listen when status becomes completed
-          if (current.status == FileScannerStatus.completed) {
-            // Check if folders changed or status just became completed
-            if (previous.status != FileScannerStatus.completed) {
-              return true;
-            }
-            // Check if selected folders changed
-            final prevSelected = previous.selectedFolders;
-            final currSelected = current.selectedFolders;
-            if (prevSelected.length != currSelected.length) {
-              return true;
-            }
-            // Check if any folder selection changed
-            for (var i = 0; i < current.folders.length; i++) {
-              if (i >= previous.folders.length ||
-                  previous.folders[i].isSelected !=
-                      current.folders[i].isSelected) {
-                return true;
-              }
-            }
-            // Check if library files changed (for delete operations)
-            if (previous.libraryFiles.length != current.libraryFiles.length) {
-              return true;
-            }
+  Widget build(
+    BuildContext context,
+  ) => BlocListener<FileScannerBloc, FileScannerState>(
+    listenWhen: (previous, current) {
+      // Always listen when status becomes completed
+      if (current.status == FileScannerStatus.completed) {
+        // Check if folders changed or status just became completed
+        if (previous.status != FileScannerStatus.completed) {
+          return true;
+        }
+        // Check if selected folders changed
+        final prevSelected = previous.selectedFolders;
+        final currSelected = current.selectedFolders;
+        if (prevSelected.length != currSelected.length) {
+          return true;
+        }
+        // Check if any folder selection changed
+        for (var i = 0; i < current.folders.length; i++) {
+          if (i >= previous.folders.length ||
+              previous.folders[i].isSelected != current.folders[i].isSelected) {
+            return true;
           }
-          return false;
-        },
-        listener: (context, state) {
-          // Use allFiles which includes library files
-          final allFiles = state.allFiles;
+        }
+        // Check if library files changed (for delete operations)
+        if (previous.libraryFiles.length != current.libraryFiles.length) {
+          return true;
+        }
+      }
+      return false;
+    },
+    listener: (context, state) {
+      // Use allFiles which includes library files
+      final allFiles = state.allFiles;
 
-          // Update SearchBloc with the new files
-          context.read<SearchBloc>().add(SearchSourceUpdated(allFiles));
+      // Update SearchBloc with the new files
+      context.read<SearchBloc>().add(SearchSourceUpdated(allFiles));
 
-          // Auto-create playlists for each scanned folder
-          if (state.status == FileScannerStatus.completed &&
-              state.selectedFolders.isNotEmpty) {
-            final playlistBloc = context.read<PlaylistBloc>();
+      // Auto-create playlists for each scanned folder
+      if (state.status == FileScannerStatus.completed &&
+          state.selectedFolders.isNotEmpty) {
+        final playlistBloc = context.read<PlaylistBloc>();
 
-            // Create a playlist for each selected folder
-            for (final folder in state.selectedFolders) {
-              if (folder.files.isEmpty) continue;
+        // Create a playlist for each selected folder
+        for (final folder in state.selectedFolders) {
+          if (folder.files.isEmpty) continue;
 
-              // Check if playlist for this folder already exists
-              final existingPlaylist =
-                  playlistBloc.state.playlists
-                      .where((p) => p.name == folder.name)
-                      .firstOrNull;
+          // Check if playlist for this folder already exists
+          final existingPlaylist =
+              playlistBloc.state.playlists
+                  .where((p) => p.name == folder.name)
+                  .firstOrNull;
 
-              if (existingPlaylist == null) {
-                // Create new playlist for this folder
-                playlistBloc.add(PlaylistCreate(folder.name));
-
-                // Wait a bit for playlist creation, then add files
-                Future.delayed(const Duration(milliseconds: 150), () {
-                  if (!context.mounted) return;
-
-                  final newPlaylist =
-                      playlistBloc.state.playlists
-                          .where((p) => p.name == folder.name)
-                          .firstOrNull;
-
-                  if (newPlaylist != null && folder.files.isNotEmpty) {
-                    playlistBloc.add(
-                      PlaylistAddFiles(
-                        playlistId: newPlaylist.id,
-                        files: folder.files,
-                      ),
-                    );
-                  }
-                });
-              } else {
-                // Update existing playlist with current folder files
-                playlistBloc.add(
-                  PlaylistAddFiles(
-                    playlistId: existingPlaylist.id,
-                    files: folder.files,
-                  ),
-                );
-              }
-            }
+          if (existingPlaylist != null) {
+            // Delete existing playlist first to avoid duplicates
+            playlistBloc.add(PlaylistDelete(existingPlaylist.id));
           }
-        },
-        child: widget.child,
-      );
+
+          // Create new playlist for this folder (with small delay if we deleted one)
+          Future.delayed(
+            Duration(milliseconds: existingPlaylist != null ? 100 : 0),
+            () {
+              if (!context.mounted) return;
+
+              playlistBloc.add(PlaylistCreate(folder.name));
+
+              // Wait a bit for playlist creation, then add files
+              Future.delayed(const Duration(milliseconds: 150), () {
+                if (!context.mounted) return;
+
+                final newPlaylist =
+                    playlistBloc.state.playlists
+                        .where((p) => p.name == folder.name)
+                        .firstOrNull;
+
+                if (newPlaylist != null && folder.files.isNotEmpty) {
+                  playlistBloc.add(
+                    PlaylistAddFiles(
+                      playlistId: newPlaylist.id,
+                      files: folder.files,
+                    ),
+                  );
+                }
+              });
+            },
+          );
+        }
+      }
+    },
+    child: widget.child,
+  );
 }
 
 /// Syncs PlaylistBloc with AudioHandler for next/previous track controls
@@ -328,11 +327,53 @@ class _PlaylistAudioHandlerSync extends StatefulWidget {
       _PlaylistAudioHandlerSyncState();
 }
 
-class _PlaylistAudioHandlerSyncState extends State<_PlaylistAudioHandlerSync> {
+class _PlaylistAudioHandlerSyncState extends State<_PlaylistAudioHandlerSync>
+    with WidgetsBindingObserver {
+  bool _wasInBackground = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _setupAudioHandlerCallbacks();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _wasInBackground = true;
+    } else if (state == AppLifecycleState.resumed && _wasInBackground) {
+      _wasInBackground = false;
+      // When app resumes from background, check if music is playing
+      // and navigate to player screen
+      _checkAndNavigateToPlayer();
+    }
+  }
+
+  void _checkAndNavigateToPlayer() {
+    final handler = audioHandler;
+    if (handler == null) return;
+
+    // If there's a current media item (music is loaded), navigate to player
+    if (handler.mediaItem.value != null) {
+      // Small delay to ensure app is fully resumed
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (!mounted) return;
+        // Only navigate if not already on player screen
+        final currentLocation =
+            AppRouter.router.routerDelegate.currentConfiguration.fullPath;
+        if (currentLocation != AppRoutes.player) {
+          debugPrint('App resumed with music loaded - navigating to player');
+          AppRouter.router.push(AppRoutes.player);
+        }
+      });
+    }
   }
 
   void _setupAudioHandlerCallbacks() {
@@ -346,18 +387,23 @@ class _PlaylistAudioHandlerSyncState extends State<_PlaylistAudioHandlerSync> {
       }
 
       // Set up callbacks for next/previous track
-      handler.setSkipCallbacks(
-        onNext: () {
-          if (!mounted) return;
-          debugPrint('Skip to next triggered from notification');
-          context.read<PlaylistBloc>().add(const PlaylistPlayNext());
-        },
-        onPrevious: () {
-          if (!mounted) return;
-          debugPrint('Skip to previous triggered from notification');
-          context.read<PlaylistBloc>().add(const PlaylistPlayPrevious());
-        },
-      );
+      handler
+        ..setSkipCallbacks(
+          onNext: () {
+            if (!mounted) return;
+            debugPrint('Skip to next triggered from notification');
+            context.read<PlaylistBloc>().add(const PlaylistPlayNext());
+          },
+          onPrevious: () {
+            if (!mounted) return;
+            debugPrint('Skip to previous triggered from notification');
+            context.read<PlaylistBloc>().add(const PlaylistPlayPrevious());
+          },
+        )
+        ..setNotificationClickCallback(() {
+          debugPrint('Notification clicked - navigating to player');
+          AppRouter.router.push(AppRoutes.player);
+        });
     });
   }
 

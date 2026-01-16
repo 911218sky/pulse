@@ -8,7 +8,11 @@ import 'package:media_kit/media_kit.dart';
 /// Uses media_kit for stable playback on Windows (replaces just_audio)
 class MusicPlayerAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
-  MusicPlayerAudioHandler({this.onSkipToNext, this.onSkipToPrevious}) {
+  MusicPlayerAudioHandler({
+    this.onSkipToNext,
+    this.onSkipToPrevious,
+    this.onNotificationClick,
+  }) {
     _player = Player();
     _initPlaybackState();
     _init();
@@ -20,11 +24,20 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   /// Callback for skip to previous track
   VoidCallback? onSkipToPrevious;
 
+  /// Callback for notification click
+  VoidCallback? onNotificationClick;
+
   /// Set callbacks for skip controls (can be called after initialization)
   void setSkipCallbacks({VoidCallback? onNext, VoidCallback? onPrevious}) {
     onSkipToNext = onNext;
     onSkipToPrevious = onPrevious;
     debugPrint('AudioHandler: Skip callbacks set');
+  }
+
+  /// Set callback for notification click
+  void setNotificationClickCallback(VoidCallback? callback) {
+    onNotificationClick = callback;
+    debugPrint('AudioHandler: Notification click callback set');
   }
 
   void _initPlaybackState() {
@@ -260,6 +273,13 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   Future<void> rewind() async {
     final newPosition = _position - const Duration(seconds: 10);
     await seek(newPosition.isNegative ? Duration.zero : newPosition);
+  }
+
+  @override
+  Future<void> click([MediaButton button = MediaButton.media]) async {
+    debugPrint('AudioHandler: click() called with button: $button');
+    // When notification is clicked, navigate to player screen
+    onNotificationClick?.call();
   }
 
   @override

@@ -84,15 +84,20 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
     Emitter<PlaylistState> emit,
   ) async {
     try {
+      // Check if the playlist being deleted is the current playlist
+      final wasCurrentPlaylist = state.currentPlaylist?.id == event.playlistId;
+
       await _playlistRepository.deletePlaylist(event.playlistId);
 
       // Clear current playlist if it was deleted
-      if (state.currentPlaylist?.id == event.playlistId) {
+      if (wasCurrentPlaylist) {
         emit(
           state.copyWith(
             currentPlaylist: () => null,
             currentTrackIndex: 0,
             shuffledIndices: const [],
+            // Mark that the current playlist was deleted
+            status: PlaylistStatus.playlistDeleted,
           ),
         );
       }
@@ -272,10 +277,16 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
     try {
       final playlist = await _playlistRepository.getPlaylist(event.playlistId);
       if (playlist != null) {
+        // Validate startIndex
+        final startIndex = event.startIndex.clamp(
+          0,
+          playlist.fileCount > 0 ? playlist.fileCount - 1 : 0,
+        );
+
         emit(
           state.copyWith(
             currentPlaylist: () => playlist,
-            currentTrackIndex: 0,
+            currentTrackIndex: startIndex,
             shuffledIndices:
                 state.shuffleEnabled
                     ? _generateShuffledIndices(playlist.fileCount)

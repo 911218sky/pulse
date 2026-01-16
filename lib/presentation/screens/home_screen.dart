@@ -8,9 +8,12 @@ import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_state.dart';
+import 'package:pulse/presentation/bloc/player/player_bloc.dart';
+import 'package:pulse/presentation/bloc/player/player_state.dart';
 import 'package:pulse/presentation/bloc/search/search_bloc.dart';
 import 'package:pulse/presentation/bloc/search/search_event.dart';
 import 'package:pulse/presentation/bloc/search/search_state.dart';
+import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/common/vercel_text_field.dart';
 
 /// Home screen showing the music library
@@ -58,26 +61,38 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.black : AppColors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _Header(
-              onSettingsPressed: widget.onSettingsPressed,
-              onScanPressed: widget.onScanPressed,
-              onPlaylistPressed: widget.onPlaylistPressed,
-              isDark: isDark,
-            ),
-            _SearchBar(isDark: isDark),
-            const SizedBox(height: AppSpacing.md),
-            Expanded(
-              child: _MusicList(
+    return BlocListener<FileScannerBloc, FileScannerState>(
+      listenWhen:
+          (previous, current) =>
+              previous.folders != current.folders ||
+              previous.libraryFiles != current.libraryFiles,
+      listener: (context, state) {
+        // Sync files to SearchBloc when FileScannerBloc state changes
+        final allFiles =
+            state.selectedFolders.expand((folder) => folder.files).toList();
+        context.read<SearchBloc>().add(SearchSourceUpdated(allFiles));
+      },
+      child: Scaffold(
+        backgroundColor: isDark ? AppColors.black : AppColors.white,
+        body: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: _Header(
+                  onSettingsPressed: widget.onSettingsPressed,
+                  onScanPressed: widget.onScanPressed,
+                  onPlaylistPressed: widget.onPlaylistPressed,
+                  isDark: isDark,
+                ),
+              ),
+              SliverToBoxAdapter(child: _SearchBar(isDark: isDark)),
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
+              _SliverMusicList(
                 onTrackSelected: widget.onTrackSelected,
                 isDark: isDark,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -153,33 +168,7 @@ class _Header extends StatelessWidget {
         context.read<FileScannerBloc>().add(const FileScannerClearLibrary());
         // Clear SearchBloc as well
         context.read<SearchBloc>().add(const SearchSourceUpdated([]));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  l10n.libraryCleared,
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.accent,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-            ),
-          ),
-        );
+        AppToast.success(context, l10n.libraryCleared);
       }
     });
   }
@@ -554,64 +543,75 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-class _MusicList extends StatelessWidget {
-  const _MusicList({required this.isDark, this.onTrackSelected});
+/// Sliver version of _MusicList for unified scrolling
+class _SliverMusicList extends StatelessWidget {
+  const _SliverMusicList({required this.isDark, this.onTrackSelected});
 
   final bool isDark;
   final void Function(AudioFile file)? onTrackSelected;
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<SearchBloc, SearchState>(
-    builder: (context, state) {
-      if (state.isSearching) {
-        return Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(
-              isDark ? AppColors.white : AppColors.accent,
-            ),
-            strokeWidth: 2,
-          ),
-        );
-      }
-
-      if (state.results.isEmpty) {
-        return _EmptyState(hasQuery: state.hasQuery, isDark: isDark);
-      }
-
-      return ListView.builder(
-        itemCount: state.results.length,
-        padding: EdgeInsets.symmetric(
-          horizontal:
-              MediaQuery.of(context).size.width < 600
-                  ? AppSpacing.md
-                  : AppSpacing.xl,
-          vertical: AppSpacing.md,
-        ),
-        itemBuilder: (context, index) {
-          final file = state.results[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-              boxShadow: [
-                BoxShadow(
-                  color: (isDark ? AppColors.black : AppColors.gray400)
-                      .withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+  Widget build(BuildContext context) => BlocBuilder<PlayerBloc, PlayerState>(
+    builder:
+        (context, playerState) => BlocBuilder<SearchBloc, SearchState>(
+          builder: (context, state) {
+            if (state.isSearching) {
+              return SliverFillRemaining(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation(
+                      isDark ? AppColors.white : AppColors.accent,
+                    ),
+                    strokeWidth: 2,
+                  ),
                 ),
-              ],
-            ),
-            child: _MusicTile(
-              audioFile: file,
-              index: index,
-              isDark: isDark,
-              onTap: () => onTrackSelected?.call(file),
-            ),
-          );
-        },
-      );
-    },
+              );
+            }
+
+            if (state.results.isEmpty) {
+              return SliverFillRemaining(
+                child: _EmptyState(hasQuery: state.hasQuery, isDark: isDark),
+              );
+            }
+
+            final currentTrackPath = playerState.currentAudio?.path;
+            final isCompact = MediaQuery.of(context).size.width < 600;
+
+            return SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isCompact ? AppSpacing.md : AppSpacing.xl,
+                vertical: AppSpacing.md,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final file = state.results[index];
+                  final isCurrentlyPlaying = currentTrackPath == file.path;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isDark ? AppColors.black : AppColors.gray400)
+                              .withValues(alpha: 0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: _MusicTile(
+                      audioFile: file,
+                      index: index,
+                      isDark: isDark,
+                      isCurrentlyPlaying: isCurrentlyPlaying,
+                      onTap: () => onTrackSelected?.call(file),
+                    ),
+                  );
+                }, childCount: state.results.length),
+              ),
+            );
+          },
+        ),
   );
 }
 
@@ -621,11 +621,13 @@ class _MusicTile extends StatefulWidget {
     required this.index,
     required this.isDark,
     required this.onTap,
+    this.isCurrentlyPlaying = false,
   });
 
   final AudioFile audioFile;
   final int index;
   final bool isDark;
+  final bool isCurrentlyPlaying;
   final VoidCallback onTap;
 
   @override
@@ -696,12 +698,9 @@ class _MusicTileState extends State<_MusicTile> {
             deleteFromDisk: true,
           ),
         );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.musicDeleted(widget.audioFile.displayTitle)),
-            backgroundColor: isDark ? AppColors.gray800 : AppColors.gray700,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppToast.info(
+          context,
+          l10n.musicDeleted(widget.audioFile.displayTitle),
         );
       }
     });
@@ -713,6 +712,7 @@ class _MusicTileState extends State<_MusicTile> {
     final isDark = widget.isDark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 600;
+    final isPlaying = widget.isCurrentlyPlaying;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -731,12 +731,20 @@ class _MusicTileState extends State<_MusicTile> {
           ),
           decoration: BoxDecoration(
             color:
-                _isHovered
+                isPlaying
+                    ? (isDark
+                        ? AppColors.accent.withValues(alpha: 0.15)
+                        : AppColors.accent.withValues(alpha: 0.1))
+                    : _isHovered
                     ? (isDark
                         ? AppColors.gray900
                         : AppColors.accent.withValues(alpha: 0.05))
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border:
+                isPlaying
+                    ? Border.all(color: AppColors.accent.withValues(alpha: 0.5))
+                    : null,
           ),
           child: Row(
             children: [
@@ -744,7 +752,13 @@ class _MusicTileState extends State<_MusicTile> {
               SizedBox(
                 width: isCompact ? 28 : 32,
                 child:
-                    _isHovered
+                    isPlaying
+                        ? Icon(
+                          Icons.equalizer_rounded,
+                          color: AppColors.accent,
+                          size: isCompact ? 18 : 20,
+                        )
+                        : _isHovered
                         ? Icon(
                           Icons.play_arrow_rounded,
                           color: isDark ? AppColors.white : AppColors.accent,
@@ -770,7 +784,12 @@ class _MusicTileState extends State<_MusicTile> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors:
-                        isDark
+                        isPlaying
+                            ? [
+                              AppColors.accent.withValues(alpha: 0.3),
+                              AppColors.accentDark.withValues(alpha: 0.4),
+                            ]
+                            : isDark
                             ? [AppColors.gray800, AppColors.gray900]
                             : [
                               AppColors.accentLight.withValues(alpha: 0.2),
@@ -781,7 +800,10 @@ class _MusicTileState extends State<_MusicTile> {
                 ),
                 child: Icon(
                   Icons.music_note_rounded,
-                  color: isDark ? AppColors.gray600 : AppColors.accent,
+                  color:
+                      isPlaying
+                          ? AppColors.accent
+                          : (isDark ? AppColors.gray600 : AppColors.accent),
                   size: isCompact ? 20 : 24,
                 ),
               ),
@@ -797,7 +819,9 @@ class _MusicTileState extends State<_MusicTile> {
                         widget.audioFile.displayTitle,
                         style: TextStyle(
                           color:
-                              _isHovered
+                              isPlaying
+                                  ? AppColors.accent
+                                  : _isHovered
                                   ? (isDark
                                       ? AppColors.white
                                       : AppColors.accent)
@@ -805,7 +829,8 @@ class _MusicTileState extends State<_MusicTile> {
                                       ? AppColors.gray200
                                       : AppColors.black),
                           fontSize: isCompact ? 14 : 15,
-                          fontWeight: FontWeight.w500,
+                          fontWeight:
+                              isPlaying ? FontWeight.w600 : FontWeight.w500,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -815,7 +840,12 @@ class _MusicTileState extends State<_MusicTile> {
                     Text(
                       widget.audioFile.artist ?? l10n.unknownArtist,
                       style: TextStyle(
-                        color: isDark ? AppColors.gray500 : AppColors.gray600,
+                        color:
+                            isPlaying
+                                ? AppColors.accent.withValues(alpha: 0.7)
+                                : (isDark
+                                    ? AppColors.gray500
+                                    : AppColors.gray600),
                         fontSize: isCompact ? 11 : 13,
                       ),
                       maxLines: 1,
