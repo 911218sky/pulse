@@ -46,6 +46,10 @@ abstract class FileScannerRepository {
   /// Clears entire music library
   Future<void> clearLibrary();
 
+  /// Cleans up database by removing entries for files that no longer exist on disk
+  /// Returns the number of removed entries
+  Future<int> cleanupOrphanedEntries();
+
   /// Supported audio file extensions
   static const List<String> supportedExtensions = [
     '.mp3',

@@ -122,3 +122,13 @@ class SettingsUpdateSleepTimer extends SettingsEvent {
   @override
   List<Object?> get props => [duration];
 }
+
+/// Update navigate to player on resume setting
+class SettingsUpdateNavigateToPlayerOnResume extends SettingsEvent {
+  const SettingsUpdateNavigateToPlayerOnResume({required this.enabled});
+
+  final bool enabled;
+
+  @override
+  List<Object?> get props => [enabled];
+}

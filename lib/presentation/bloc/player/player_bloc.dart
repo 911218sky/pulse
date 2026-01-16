@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pulse/core/utils/app_logger.dart';
 import 'package:pulse/core/utils/playback_speed_utils.dart';
 import 'package:pulse/core/utils/volume_utils.dart';
 import 'package:pulse/domain/entities/playback_state.dart';
@@ -36,6 +37,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     on<PlayerPlayingStateUpdated>(_onPlayingStateUpdated);
     on<PlayerSaveState>(_onSaveState);
     on<PlayerRestoreState>(_onRestoreState);
+    on<PlayerSetSleepFadeVolume>(_onSetSleepFadeVolume);
+    on<PlayerRestoreVolumeAfterSleep>(_onRestoreVolumeAfterSleep);
+    on<PlayerClearCompletedTrackPosition>(_onClearCompletedTrackPosition);
 
     _subscribeToStreams();
   }
@@ -359,6 +363,49 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       }
     } on Exception {
       // Silently fail - restoring state is not critical
+    }
+  }
+
+  /// Handle sleep timer fade out - only affects audio, not saved volume state
+  Future<void> _onSetSleepFadeVolume(
+    PlayerSetSleepFadeVolume event,
+    Emitter<PlayerState> emit,
+  ) async {
+    try {
+      final clampedVolume = VolumeUtils.clamp(event.volume);
+      // Only set audio volume, don't update state.volume to preserve original
+      await _audioRepository.setVolume(clampedVolume);
+    } on Exception {
+      // Silently fail - fade out is not critical
+    }
+  }
+
+  /// Restore volume after sleep timer expires
+  Future<void> _onRestoreVolumeAfterSleep(
+    PlayerRestoreVolumeAfterSleep event,
+    Emitter<PlayerState> emit,
+  ) async {
+    try {
+      // Restore the original volume that was saved in state
+      await _audioRepository.setVolume(state.volume);
+    } on Exception {
+      // Silently fail - restoring volume is not critical
+    }
+  }
+
+  /// Clear saved position for a completed track
+  Future<void> _onClearCompletedTrackPosition(
+    PlayerClearCompletedTrackPosition event,
+    Emitter<PlayerState> emit,
+  ) async {
+    try {
+      await _playbackStateRepository.clearPositionForFile(event.filePath);
+      AppLogger.d(
+        'PlayerBloc',
+        'Cleared position for completed track: ${event.filePath}',
+      );
+    } on Exception {
+      // Silently fail - clearing position is not critical
     }
   }
 

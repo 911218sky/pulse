@@ -26,6 +26,7 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
     on<FileScannerDeleteFile>(_onDeleteFile);
     on<FileScannerDeleteFiles>(_onDeleteFiles);
     on<FileScannerClearLibrary>(_onClearLibrary);
+    on<FileScannerCleanupOrphaned>(_onCleanupOrphaned);
   }
 
   final FileScannerRepository _fileScannerRepository;
@@ -182,6 +183,9 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
     emit(state.copyWith(status: FileScannerStatus.loading));
 
     try {
+      // Auto cleanup orphaned entries before loading
+      await _fileScannerRepository.cleanupOrphanedEntries();
+
       final files = await _fileScannerRepository.getLibraryFiles();
 
       if (files.isEmpty) {
@@ -483,6 +487,28 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
           ),
         ),
       );
+    } on Exception catch (e) {
+      emit(
+        state.copyWith(
+          status: FileScannerStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onCleanupOrphaned(
+    FileScannerCleanupOrphaned event,
+    Emitter<FileScannerState> emit,
+  ) async {
+    try {
+      final removedCount =
+          await _fileScannerRepository.cleanupOrphanedEntries();
+
+      if (removedCount > 0) {
+        // Reload library to reflect changes
+        add(const FileScannerLoadLibrary());
+      }
     } on Exception catch (e) {
       emit(
         state.copyWith(

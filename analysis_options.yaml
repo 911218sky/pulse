@@ -3,6 +3,9 @@
 
 include: package:flutter_lints/flutter.yaml
 
+formatter:
+  page_width: 80
+
 analyzer:
   language:
     strict-casts: true
@@ -19,8 +22,15 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "**/*.mocks.dart"
-    - "build/**"
     - "lib/generated/**"
+    - "build/**"
+    - "android/**"
+    - "ios/**"
+    - "linux/**"
+    - "macos/**"
+    - "windows/**"
+    - "web/**"
+    - ".dart_tool/**"
 
 linter:
   rules:

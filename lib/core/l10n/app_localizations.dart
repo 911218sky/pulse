@@ -108,6 +108,8 @@ class AppLocalizations {
   String get defaultSpeed => _t.defaultSpeed;
   String get autoResume => _t.autoResume;
   String get autoResumeDesc => _t.autoResumeDesc;
+  String get navigateToPlayerOnResume => _t.navigateToPlayerOnResume;
+  String get navigateToPlayerOnResumeDesc => _t.navigateToPlayerOnResumeDesc;
   String get skipSettings => _t.skipSettings;
   String get skipForward => _t.skipForward;
   String get skipBackward => _t.skipBackward;
@@ -291,6 +293,8 @@ abstract class Translations {
   String get defaultSpeed;
   String get autoResume;
   String get autoResumeDesc;
+  String get navigateToPlayerOnResume;
+  String get navigateToPlayerOnResumeDesc;
   String get skipSettings;
   String get skipForward;
   String get skipBackward;

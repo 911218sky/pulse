@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:pulse/core/utils/app_logger.dart';
 import 'package:pulse/data/services/audio_handler.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/repositories/audio_repository.dart';
@@ -13,7 +13,10 @@ class AudioRepositoryImpl implements AudioRepository {
   MusicPlayerAudioHandler get _handler {
     final handler = audioHandler;
     if (handler == null) {
-      debugPrint('ERROR: AudioHandler not initialized, creating new one');
+      AppLogger.e(
+        'AudioRepository',
+        'AudioHandler not initialized, creating new one',
+      );
       // Create a fallback handler if not initialized
       audioHandler = MusicPlayerAudioHandler();
       return audioHandler!;
@@ -37,7 +40,7 @@ class AudioRepositoryImpl implements AudioRepository {
         duration: audioFile.duration,
       );
     } on Exception catch (e) {
-      debugPrint('Error loading audio: $e');
+      AppLogger.e('AudioRepository', 'Error loading audio', e);
       rethrow;
     }
   }
@@ -47,7 +50,7 @@ class AudioRepositoryImpl implements AudioRepository {
     try {
       await _handler.play();
     } on Exception catch (e) {
-      debugPrint('Error playing: $e');
+      AppLogger.e('AudioRepository', 'Error playing', e);
     }
   }
 
@@ -56,7 +59,7 @@ class AudioRepositoryImpl implements AudioRepository {
     try {
       await _handler.pause();
     } on Exception catch (e) {
-      debugPrint('Error pausing: $e');
+      AppLogger.e('AudioRepository', 'Error pausing', e);
     }
   }
 
@@ -65,7 +68,7 @@ class AudioRepositoryImpl implements AudioRepository {
     try {
       await _handler.stop();
     } on Exception catch (e) {
-      debugPrint('Error stopping: $e');
+      AppLogger.e('AudioRepository', 'Error stopping', e);
     }
   }
 
@@ -86,7 +89,7 @@ class AudioRepositoryImpl implements AudioRepository {
       try {
         await _handler.seek(targetPosition);
       } on Exception catch (e) {
-        debugPrint('Error seeking: $e');
+        AppLogger.e('AudioRepository', 'Error seeking', e);
       } finally {
         _isSeeking = false;
       }
@@ -99,7 +102,7 @@ class AudioRepositoryImpl implements AudioRepository {
       final clampedVolume = volume.clamp(0.0, 1.0);
       await _handler.setVolume(clampedVolume);
     } on Exception catch (e) {
-      debugPrint('Error setting volume: $e');
+      AppLogger.e('AudioRepository', 'Error setting volume', e);
     }
   }
 
@@ -109,7 +112,7 @@ class AudioRepositoryImpl implements AudioRepository {
       final clampedSpeed = speed.clamp(0.5, 2.0);
       await _handler.setSpeed(clampedSpeed);
     } on Exception catch (e) {
-      debugPrint('Error setting speed: $e');
+      AppLogger.e('AudioRepository', 'Error setting speed', e);
     }
   }
 
@@ -120,25 +123,32 @@ class AudioRepositoryImpl implements AudioRepository {
 
   @override
   Stream<Duration> get positionStream => _handler.positionStream.handleError(
-    (Object error) => debugPrint('Position stream error: $error'),
+    (Object error) =>
+        AppLogger.e('AudioRepository', 'Position stream error', error),
   );
 
   @override
   Stream<bool> get playingStream => _handler.playingStream.handleError(
-    (Object error) => debugPrint('Playing stream error: $error'),
+    (Object error) =>
+        AppLogger.e('AudioRepository', 'Playing stream error', error),
   );
 
   @override
   Stream<Duration> get bufferedPositionStream =>
       _handler.bufferedPositionStream.handleError(
-        (Object error) => debugPrint('Buffered position stream error: $error'),
+        (Object error) => AppLogger.e(
+          'AudioRepository',
+          'Buffered position stream error',
+          error,
+        ),
       );
 
   @override
   Stream<Duration?> get durationStream => _handler.durationStream
       .map<Duration?>((d) => d)
       .handleError(
-        (Object error) => debugPrint('Duration stream error: $error'),
+        (Object error) =>
+            AppLogger.e('AudioRepository', 'Duration stream error', error),
       );
 
   @override

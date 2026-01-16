@@ -17,9 +17,9 @@ class SettingsModel {
     required this.monitoredFolders,
     required this.sleepTimerFadeOutEnabled,
     required this.sleepTimerFadeOutSeconds,
+    required this.navigateToPlayerOnResume,
   });
 
-  /// Converts from domain entity
   factory SettingsModel.fromEntity(Settings entity) => SettingsModel(
     darkMode: entity.darkMode,
     locale: entity.locale,
@@ -31,9 +31,9 @@ class SettingsModel {
     monitoredFolders: entity.monitoredFolders,
     sleepTimerFadeOutEnabled: entity.sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds: entity.sleepTimerFadeOutSeconds,
+    navigateToPlayerOnResume: entity.navigateToPlayerOnResume,
   );
 
-  /// Creates from Drift database row
   factory SettingsModel.fromDrift(SettingsTableData row) => SettingsModel(
     darkMode: row.darkMode,
     locale: row.locale,
@@ -45,9 +45,9 @@ class SettingsModel {
     monitoredFolders: _parseMonitoredFolders(row.monitoredFolders),
     sleepTimerFadeOutEnabled: row.sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds: row.sleepTimerFadeOutSeconds,
+    navigateToPlayerOnResume: row.navigateToPlayerOnResume,
   );
 
-  /// Creates from JSON map
   factory SettingsModel.fromJson(Map<String, dynamic> json) => SettingsModel(
     darkMode: json['darkMode'] as bool? ?? true,
     locale: json['locale'] as String? ?? 'zh_TW',
@@ -64,9 +64,10 @@ class SettingsModel {
         [],
     sleepTimerFadeOutEnabled: json['sleepTimerFadeOutEnabled'] as bool? ?? true,
     sleepTimerFadeOutSeconds: json['sleepTimerFadeOutSeconds'] as int? ?? 5,
+    navigateToPlayerOnResume:
+        json['navigateToPlayerOnResume'] as bool? ?? false,
   );
 
-  /// Default settings model
   factory SettingsModel.defaults() => SettingsModel(
     darkMode: true,
     locale: 'zh_TW',
@@ -78,6 +79,7 @@ class SettingsModel {
     monitoredFolders: [],
     sleepTimerFadeOutEnabled: true,
     sleepTimerFadeOutSeconds: 5,
+    navigateToPlayerOnResume: false,
   );
 
   final bool darkMode;
@@ -90,8 +92,8 @@ class SettingsModel {
   final List<String> monitoredFolders;
   final bool sleepTimerFadeOutEnabled;
   final int sleepTimerFadeOutSeconds;
+  final bool navigateToPlayerOnResume;
 
-  /// Converts to domain entity
   Settings toEntity() => Settings(
     darkMode: darkMode,
     locale: locale,
@@ -103,9 +105,9 @@ class SettingsModel {
     monitoredFolders: monitoredFolders,
     sleepTimerFadeOutEnabled: sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds: sleepTimerFadeOutSeconds,
+    navigateToPlayerOnResume: navigateToPlayerOnResume,
   );
 
-  /// Converts to Drift companion for insert/update
   SettingsTableCompanion toCompanion() => SettingsTableCompanion(
     darkMode: Value(darkMode),
     locale: Value(locale),
@@ -117,9 +119,9 @@ class SettingsModel {
     monitoredFolders: Value(jsonEncode(monitoredFolders)),
     sleepTimerFadeOutEnabled: Value(sleepTimerFadeOutEnabled),
     sleepTimerFadeOutSeconds: Value(sleepTimerFadeOutSeconds),
+    navigateToPlayerOnResume: Value(navigateToPlayerOnResume),
   );
 
-  /// Converts to JSON map
   Map<String, dynamic> toJson() => {
     'darkMode': darkMode,
     'locale': locale,
@@ -131,6 +133,7 @@ class SettingsModel {
     'monitoredFolders': monitoredFolders,
     'sleepTimerFadeOutEnabled': sleepTimerFadeOutEnabled,
     'sleepTimerFadeOutSeconds': sleepTimerFadeOutSeconds,
+    'navigateToPlayerOnResume': navigateToPlayerOnResume,
   };
 
   static List<String> _parseMonitoredFolders(String json) {

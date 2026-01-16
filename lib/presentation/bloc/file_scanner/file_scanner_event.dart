@@ -113,3 +113,8 @@ class FileScannerDeleteFiles extends FileScannerEvent {
 class FileScannerClearLibrary extends FileScannerEvent {
   const FileScannerClearLibrary();
 }
+
+/// Clean up orphaned database entries (files that no longer exist on disk)
+class FileScannerCleanupOrphaned extends FileScannerEvent {
+  const FileScannerCleanupOrphaned();
+}

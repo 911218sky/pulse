@@ -78,12 +78,38 @@ void main() {
                 generateRandomPlaylist(maxFiles: 5),
                 List.generate(
                   PropertyTest.randomInt(min: 1, max: 5),
-                  (_) => generateRandomAudioFile(),
+                  (i) => AudioFile(
+                    id: PropertyTest.randomNonEmptyString(),
+                    path:
+                        '/music/unique_${PropertyTest.randomNonEmptyString()}_$i.mp3',
+                    title: PropertyTest.randomNonEmptyString(),
+                    artist:
+                        PropertyTest.randomBool()
+                            ? PropertyTest.randomNonEmptyString()
+                            : null,
+                    album:
+                        PropertyTest.randomBool()
+                            ? PropertyTest.randomNonEmptyString()
+                            : null,
+                    duration: PropertyTest.randomDuration(maxHours: 2),
+                    fileSizeBytes: PropertyTest.randomInt(
+                      min: 1000,
+                      max: 100000000,
+                    ),
+                    addedAt: PropertyTest.randomDateTime(),
+                  ),
                 ),
               ),
           property: (input) {
             final (playlist, filesToAdd) = input;
             final initialCount = playlist.fileCount;
+            final existingPaths = playlist.files.map((f) => f.path).toSet();
+
+            // Filter out files that would be duplicates
+            final uniqueFilesToAdd =
+                filesToAdd
+                    .where((f) => !existingPaths.contains(f.path))
+                    .toList();
 
             // Add files one by one
             var updated = playlist;
@@ -91,11 +117,14 @@ void main() {
               updated = updated.addFile(file);
             }
 
-            // File count should increase by number of files added
-            expect(updated.fileCount, equals(initialCount + filesToAdd.length));
+            // File count should increase by number of unique files added
+            expect(
+              updated.fileCount,
+              equals(initialCount + uniqueFilesToAdd.length),
+            );
 
-            // All added files should be in the playlist
-            for (final file in filesToAdd) {
+            // All unique added files should be in the playlist
+            for (final file in uniqueFilesToAdd) {
               expect(
                 updated.files.any((f) => f.id == file.id),
                 isTrue,
@@ -116,18 +145,47 @@ void main() {
                 generateRandomPlaylist(maxFiles: 5),
                 List.generate(
                   PropertyTest.randomInt(min: 1, max: 5),
-                  (_) => generateRandomAudioFile(),
+                  (i) => AudioFile(
+                    id: PropertyTest.randomNonEmptyString(),
+                    path:
+                        '/music/batch_${PropertyTest.randomNonEmptyString()}_$i.mp3',
+                    title: PropertyTest.randomNonEmptyString(),
+                    artist:
+                        PropertyTest.randomBool()
+                            ? PropertyTest.randomNonEmptyString()
+                            : null,
+                    album:
+                        PropertyTest.randomBool()
+                            ? PropertyTest.randomNonEmptyString()
+                            : null,
+                    duration: PropertyTest.randomDuration(maxHours: 2),
+                    fileSizeBytes: PropertyTest.randomInt(
+                      min: 1000,
+                      max: 100000000,
+                    ),
+                    addedAt: PropertyTest.randomDateTime(),
+                  ),
                 ),
               ),
           property: (input) {
             final (playlist, filesToAdd) = input;
             final initialCount = playlist.fileCount;
+            final existingPaths = playlist.files.map((f) => f.path).toSet();
+
+            // Filter out files that would be duplicates
+            final uniqueFilesToAdd =
+                filesToAdd
+                    .where((f) => !existingPaths.contains(f.path))
+                    .toList();
 
             // Add all files at once
             final updated = playlist.addFiles(filesToAdd);
 
-            // File count should increase by number of files added
-            expect(updated.fileCount, equals(initialCount + filesToAdd.length));
+            // File count should increase by number of unique files added
+            expect(
+              updated.fileCount,
+              equals(initialCount + uniqueFilesToAdd.length),
+            );
           },
         );
       },

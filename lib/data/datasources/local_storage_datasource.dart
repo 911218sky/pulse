@@ -72,6 +72,19 @@ class LocalStorageDataSource {
     await _db.clearFilePosition(filePath);
   }
 
+  Future<void> clearFilePositions(List<String> filePaths) async {
+    await _db.clearFilePositions(filePaths);
+  }
+
+  Future<List<String>> getAllAudioFilePaths() async =>
+      _db.getAllAudioFilePaths();
+
+  Future<List<String>> getAllFilePositionPaths() async =>
+      _db.getAllFilePositionPaths();
+
+  Future<int> deleteAudioFilesByPaths(List<String> paths) async =>
+      _db.deleteAudioFilesByPaths(paths);
+
   // Settings Operations
 
   Future<void> saveSettings(SettingsModel settings) async {
