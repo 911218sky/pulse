@@ -68,7 +68,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
   ) async {
     try {
       await _playlistRepository.createPlaylist(event.name);
-      add(const PlaylistLoadAll());
+      // Stream subscription will trigger reload automatically
     } on Exception catch (e) {
       emit(
         state.copyWith(
@@ -102,7 +102,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
         );
       }
 
-      add(const PlaylistLoadAll());
+      // Stream subscription will trigger reload automatically
     } on Exception catch (e) {
       emit(
         state.copyWith(
@@ -122,7 +122,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
       if (playlist != null) {
         final updated = playlist.copyWith(name: event.newName);
         await _playlistRepository.updatePlaylist(updated);
-        add(const PlaylistLoadAll());
+        // Stream subscription will trigger reload automatically
       }
     } on Exception catch (e) {
       emit(
@@ -150,7 +150,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
         _regenerateShuffleIfNeeded(emit);
       }
 
-      add(const PlaylistLoadAll());
+      // Stream subscription will trigger reload automatically
     } on Exception catch (e) {
       emit(
         state.copyWith(
@@ -177,7 +177,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
         _regenerateShuffleIfNeeded(emit);
       }
 
-      add(const PlaylistLoadAll());
+      // Stream subscription will trigger reload automatically
     } on Exception catch (e) {
       emit(
         state.copyWith(
@@ -215,7 +215,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
         _regenerateShuffleIfNeeded(emit);
       }
 
-      add(const PlaylistLoadAll());
+      // Stream subscription will trigger reload automatically
     } on Exception catch (e) {
       emit(
         state.copyWith(
@@ -259,7 +259,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
         );
       }
 
-      add(const PlaylistLoadAll());
+      // Stream subscription will trigger reload automatically
     } on Exception catch (e) {
       emit(
         state.copyWith(
