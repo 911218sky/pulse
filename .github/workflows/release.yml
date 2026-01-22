@@ -14,14 +14,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: false
+          cache: true
       
       - name: Cache pub dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.pub-cache
-            ${{ env.LOCALAPPDATA }}\Pub\Cache
+            ~\AppData\Local\Pub\Cache
           key: pub-windows-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-windows-
       
@@ -50,7 +50,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: false
+          cache: true
       
       - name: Cache pub dependencies
         uses: actions/cache@v4
@@ -89,7 +89,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: false
+          cache: true
       
       - name: Cache pub dependencies
         uses: actions/cache@v4
@@ -129,7 +129,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: false
+          cache: true
       
       - name: Cache pub dependencies
         uses: actions/cache@v4
@@ -137,6 +137,16 @@ jobs:
           path: ~/.pub-cache
           key: pub-android-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-android-
+      
+      - name: Cache media_kit native libraries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            android/.gradle
+            build/app/.transforms
+          key: android-native-${{ hashFiles('pubspec.lock', 'android/app/build.gradle.kts') }}
+          restore-keys: android-native-
       
       - name: Install dependencies
         run: flutter pub get
