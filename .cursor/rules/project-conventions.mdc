@@ -1,5 +1,6 @@
 ---
-inclusion: always
+description: Pulse project conventions and architecture guidelines.
+alwaysApply: true
 ---
 
 # Pulse - Project Conventions

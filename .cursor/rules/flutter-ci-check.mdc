@@ -1,0 +1,11 @@
+---
+description: Run Flutter formatting and analysis after Dart edits.
+globs: ["**/*.dart"]
+---
+
+When you edit Dart files, run these checks:
+
+- `dart format --set-exit-if-changed .`
+- `flutter analyze`
+
+If any issues are found, fix them.
