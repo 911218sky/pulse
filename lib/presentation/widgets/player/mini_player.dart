@@ -75,7 +75,7 @@ class MiniPlayer extends StatelessWidget {
                                 isDark ? AppColors.darkCard : AppColors.gray100,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.music_note_rounded,
                             color: AppColors.accent,
                             size: 20,
