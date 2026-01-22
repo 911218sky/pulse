@@ -9,6 +9,7 @@ import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/search/search_bloc.dart';
 import 'package:pulse/presentation/screens/screens.dart';
+import 'package:pulse/presentation/widgets/common/app_shell.dart';
 
 export 'app_routes.dart';
 
@@ -22,57 +23,63 @@ class AppRouter {
   );
 
   static final List<RouteBase> _routes = [
-    GoRoute(
-      path: AppRoutes.home,
-      builder:
-          (context, state) => HomeScreen(
-            onTrackSelected: (file) => _handleTrackSelected(context, file),
-            onPlaylistPressed: () => context.push(AppRoutes.playlist),
-            onSettingsPressed: () => context.push(AppRoutes.settings),
-            onScanPressed: () => context.push(AppRoutes.scanner),
-          ),
-    ),
-    GoRoute(
-      path: AppRoutes.player,
-      builder:
-          (context, state) =>
-              PlayerScreen(onBack: () => _handleBack(context, AppRoutes.home)),
-    ),
-    GoRoute(
-      path: AppRoutes.playlist,
-      builder:
-          (context, state) => PlaylistScreen(
-            onBack: () => _handleBack(context, AppRoutes.home),
-            onPlaylistSelected: (playlist) {
-              context.push('/playlist/${playlist.id}');
-            },
-          ),
-    ),
-    GoRoute(
-      path: AppRoutes.playlistDetail,
-      builder: (context, state) {
-        final playlistId = state.pathParameters['id']!;
-        return PlaylistDetailScreen(
-          playlistId: playlistId,
-          onBack: () => _handleBack(context, AppRoutes.playlist),
-        );
-      },
-    ),
-    GoRoute(
-      path: AppRoutes.settings,
-      builder:
-          (context, state) => SettingsScreen(
-            onBack: () => _handleBack(context, AppRoutes.home),
-            onFolderScanPressed: () => context.push(AppRoutes.scanner),
-          ),
-    ),
-    GoRoute(
-      path: AppRoutes.scanner,
-      builder:
-          (context, state) => FileScannerScreen(
-            onBack: () => _handleBack(context, AppRoutes.home),
-            onComplete: () => _handleBack(context, AppRoutes.home),
-          ),
+    ShellRoute(
+      builder: (context, state, child) => AppShell(child: child),
+      routes: [
+        GoRoute(
+          path: AppRoutes.home,
+          builder:
+              (context, state) => HomeScreen(
+                onTrackSelected: (file) => _handleTrackSelected(context, file),
+                onPlaylistPressed: () => context.push(AppRoutes.playlist),
+                onSettingsPressed: () => context.push(AppRoutes.settings),
+                onScanPressed: () => context.push(AppRoutes.scanner),
+              ),
+        ),
+        GoRoute(
+          path: AppRoutes.player,
+          builder:
+              (context, state) => PlayerScreen(
+                onBack: () => _handleBack(context, AppRoutes.home),
+              ),
+        ),
+        GoRoute(
+          path: AppRoutes.playlist,
+          builder:
+              (context, state) => PlaylistScreen(
+                onBack: () => _handleBack(context, AppRoutes.home),
+                onPlaylistSelected: (playlist) {
+                  context.push('/playlist/${playlist.id}');
+                },
+              ),
+        ),
+        GoRoute(
+          path: AppRoutes.playlistDetail,
+          builder: (context, state) {
+            final playlistId = state.pathParameters['id']!;
+            return PlaylistDetailScreen(
+              playlistId: playlistId,
+              onBack: () => _handleBack(context, AppRoutes.playlist),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.settings,
+          builder:
+              (context, state) => SettingsScreen(
+                onBack: () => _handleBack(context, AppRoutes.home),
+                onFolderScanPressed: () => context.push(AppRoutes.scanner),
+              ),
+        ),
+        GoRoute(
+          path: AppRoutes.scanner,
+          builder:
+              (context, state) => FileScannerScreen(
+                onBack: () => _handleBack(context, AppRoutes.home),
+                onComplete: () => _handleBack(context, AppRoutes.home),
+              ),
+        ),
+      ],
     ),
   ];
 

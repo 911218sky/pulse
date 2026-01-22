@@ -1,4 +1,5 @@
 // Common widgets
+export 'package:pulse/presentation/widgets/common/app_shell.dart';
 export 'package:pulse/presentation/widgets/common/vercel_button.dart';
 export 'package:pulse/presentation/widgets/common/vercel_card.dart';
 export 'package:pulse/presentation/widgets/common/vercel_text_field.dart';
@@ -9,6 +10,7 @@ export 'package:pulse/presentation/widgets/file_scanner/folder_scan_progress.dar
 export 'package:pulse/presentation/widgets/file_scanner/folder_selection_list.dart';
 
 // Player widgets
+export 'package:pulse/presentation/widgets/player/mini_player.dart';
 export 'package:pulse/presentation/widgets/player/playback_controls.dart';
 export 'package:pulse/presentation/widgets/player/progress_bar.dart';
 export 'package:pulse/presentation/widgets/player/time_display.dart';
