@@ -14,7 +14,16 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
+          cache: false
+      
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ env.LOCALAPPDATA }}\Pub\Cache
+          key: pub-windows-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-windows-
       
       - name: Install dependencies
         run: flutter pub get
@@ -41,7 +50,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
+          cache: false
+      
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-linux-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-linux-
       
       - name: Install Linux dependencies
         run: |
@@ -73,7 +89,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
+          cache: false
+      
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-macos-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-macos-
       
       - name: Install dependencies
         run: flutter pub get
@@ -101,11 +124,19 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+          cache: 'gradle'
       
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
+          cache: false
+      
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-android-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-android-
       
       - name: Install dependencies
         run: flutter pub get

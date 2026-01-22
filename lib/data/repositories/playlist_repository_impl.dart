@@ -17,6 +17,14 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
 
   @override
   Future<Playlist> createPlaylist(String name) async {
+    // Check if playlist with same name already exists
+    final existing = await getAllPlaylists();
+    final existingWithName = existing.where((p) => p.name == name).firstOrNull;
+    if (existingWithName != null) {
+      // Return existing playlist instead of creating duplicate
+      return existingWithName;
+    }
+
     final playlist = Playlist.create(id: _uuid.v4(), name: name);
     final model = PlaylistModel.fromEntity(playlist);
     await _dataSource.savePlaylist(model);

@@ -1,31 +1,22 @@
-import 'package:logger/logger.dart';
+import 'dart:developer' as dev;
 
 /// Centralized logger for the app
 class AppLogger {
   AppLogger._();
 
-  static final Logger _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 80,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-    ),
-  );
-
   /// Log debug message with component tag
   static void d(String component, String message) {
-    _logger.d('[$component] $message');
+    dev.log('[$component] $message', name: 'DEBUG');
   }
 
   /// Log info message with component tag
   static void i(String component, String message) {
-    _logger.i('[$component] $message');
+    dev.log('[$component] $message', name: 'INFO');
   }
 
   /// Log warning message with component tag
   static void w(String component, String message) {
-    _logger.w('[$component] $message');
+    dev.log('[$component] $message', name: 'WARN');
   }
 
   /// Log error message with component tag
@@ -35,6 +26,11 @@ class AppLogger {
     Object? error,
     StackTrace? stackTrace,
   ]) {
-    _logger.e('[$component] $message', error: error, stackTrace: stackTrace);
+    dev.log(
+      '[$component] $message',
+      name: 'ERROR',
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 }

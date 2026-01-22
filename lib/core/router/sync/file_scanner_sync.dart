@@ -19,6 +19,8 @@ class FileScannerSync extends StatefulWidget {
 }
 
 class _FileScannerSyncState extends State<FileScannerSync> {
+  bool _isInitialLoad = true;
+
   @override
   void initState() {
     super.initState();
@@ -52,17 +54,31 @@ class _FileScannerSyncState extends State<FileScannerSync> {
     return previous.libraryFiles.length != current.libraryFiles.length;
   }
 
-  /// Update SearchBloc and create playlists
+  /// Update SearchBloc and sync playlists
   void _onStateChanged(BuildContext context, FileScannerState state) {
     context.read<SearchBloc>().add(SearchSourceUpdated(state.allFiles));
 
     if (state.status == FileScannerStatus.completed &&
         state.selectedFolders.isNotEmpty) {
-      _createPlaylistsForFolders(context, state);
+      // Only create playlists on manual scan/import, not on initial load
+      if (_isInitialLoad) {
+        _isInitialLoad = false;
+        // On initial load, just sync existing playlists with library files
+        _syncExistingPlaylists(context, state);
+      } else {
+        _createPlaylistsForFolders(context, state);
+      }
     }
   }
 
-  /// Create playlist for each scanned folder
+  /// Sync existing playlists with current library files (update file counts)
+  void _syncExistingPlaylists(BuildContext context, FileScannerState state) {
+    final playlistBloc = context.read<PlaylistBloc>();
+    // Just reload playlists to get updated file info
+    playlistBloc.add(const PlaylistLoadAll());
+  }
+
+  /// Create playlist for each scanned folder (only on manual scan/import)
   void _createPlaylistsForFolders(
     BuildContext context,
     FileScannerState state,
@@ -77,34 +93,33 @@ class _FileScannerSyncState extends State<FileScannerSync> {
               .where((p) => p.name == folder.name)
               .firstOrNull;
 
+      // If playlist exists, update its files instead of recreating
       if (existingPlaylist != null) {
-        playlistBloc.add(PlaylistDelete(existingPlaylist.id));
-      }
+        // Clear and re-add files to update the playlist
+        playlistBloc.add(
+          PlaylistAddFiles(
+            playlistId: existingPlaylist.id,
+            files: folder.files,
+          ),
+        );
+      } else {
+        // Create new playlist
+        playlistBloc.add(PlaylistCreate(folder.name));
 
-      Future.delayed(
-        Duration(milliseconds: existingPlaylist != null ? 100 : 0),
-        () {
+        Future.delayed(const Duration(milliseconds: 150), () {
           if (!context.mounted) return;
-          playlistBloc.add(PlaylistCreate(folder.name));
+          final newPlaylist =
+              playlistBloc.state.playlists
+                  .where((p) => p.name == folder.name)
+                  .firstOrNull;
 
-          Future.delayed(const Duration(milliseconds: 150), () {
-            if (!context.mounted) return;
-            final newPlaylist =
-                playlistBloc.state.playlists
-                    .where((p) => p.name == folder.name)
-                    .firstOrNull;
-
-            if (newPlaylist != null && folder.files.isNotEmpty) {
-              playlistBloc.add(
-                PlaylistAddFiles(
-                  playlistId: newPlaylist.id,
-                  files: folder.files,
-                ),
-              );
-            }
-          });
-        },
-      );
+          if (newPlaylist != null && folder.files.isNotEmpty) {
+            playlistBloc.add(
+              PlaylistAddFiles(playlistId: newPlaylist.id, files: folder.files),
+            );
+          }
+        });
+      }
     }
   }
 }
