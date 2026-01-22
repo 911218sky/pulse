@@ -8,11 +8,13 @@ class PlayingIndicator extends StatefulWidget {
     this.color,
     this.size = 20,
     this.barCount = 3,
+    this.isAnimating = true,
   });
 
   final Color? color;
   final double size;
   final int barCount;
+  final bool isAnimating;
 
   @override
   State<PlayingIndicator> createState() => _PlayingIndicatorState();
@@ -47,13 +49,36 @@ class _PlayingIndicatorState extends State<PlayingIndicator>
             )
             .toList();
 
-    // Start animations with staggered delays
+    if (widget.isAnimating) {
+      _startAnimations();
+    }
+  }
+
+  void _startAnimations() {
     for (var i = 0; i < _controllers.length; i++) {
       Future.delayed(Duration(milliseconds: i * 100), () {
-        if (mounted) {
+        if (mounted && widget.isAnimating) {
           _controllers[i].repeat(reverse: true);
         }
       });
+    }
+  }
+
+  void _stopAnimations() {
+    for (final controller in _controllers) {
+      controller.stop();
+    }
+  }
+
+  @override
+  void didUpdateWidget(PlayingIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isAnimating != oldWidget.isAnimating) {
+      if (widget.isAnimating) {
+        _startAnimations();
+      } else {
+        _stopAnimations();
+      }
     }
   }
 
@@ -84,7 +109,10 @@ class _PlayingIndicatorState extends State<PlayingIndicator>
             builder:
                 (context, child) => Container(
                   width: barWidth,
-                  height: widget.size * _animations[index].value,
+                  height:
+                      widget.isAnimating
+                          ? widget.size * _animations[index].value
+                          : widget.size * 0.5,
                   margin: EdgeInsets.only(
                     right: index < widget.barCount - 1 ? gap : 0,
                   ),

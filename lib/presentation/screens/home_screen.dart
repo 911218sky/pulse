@@ -587,6 +587,8 @@ class _SliverMusicList extends StatelessWidget {
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final file = state.results[index];
                   final isCurrentlyPlaying = currentTrackPath == file.path;
+                  final isActuallyPlaying =
+                      isCurrentlyPlaying && playerState.isPlaying;
                   return Container(
                     margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                     decoration: BoxDecoration(
@@ -605,6 +607,7 @@ class _SliverMusicList extends StatelessWidget {
                       index: index,
                       isDark: isDark,
                       isCurrentlyPlaying: isCurrentlyPlaying,
+                      isActuallyPlaying: isActuallyPlaying,
                       onTap: () => onTrackSelected?.call(file),
                     ),
                   );
@@ -623,12 +626,14 @@ class _MusicTile extends StatefulWidget {
     required this.isDark,
     required this.onTap,
     this.isCurrentlyPlaying = false,
+    this.isActuallyPlaying = false,
   });
 
   final AudioFile audioFile;
   final int index;
   final bool isDark;
   final bool isCurrentlyPlaying;
+  final bool isActuallyPlaying;
   final VoidCallback onTap;
 
   @override
@@ -757,6 +762,7 @@ class _MusicTileState extends State<_MusicTile> {
                         ? PlayingIndicator(
                           color: AppColors.accent,
                           size: isCompact ? 18 : 20,
+                          isAnimating: widget.isActuallyPlaying,
                         )
                         : _isHovered
                         ? Icon(

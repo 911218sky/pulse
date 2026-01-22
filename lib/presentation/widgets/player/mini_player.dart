@@ -35,6 +35,7 @@ class MiniPlayer extends StatelessWidget {
         return GestureDetector(
           onTap: onTap,
           child: Container(
+            height: 64,
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
               border: Border(
@@ -44,64 +45,114 @@ class MiniPlayer extends StatelessWidget {
               ),
             ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
                 // Progress bar at top
-                _ProgressIndicator(progress: state.progress, isDark: isDark),
-                // Content
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
+                SizedBox(
+                  height: 3,
+                  child: LinearProgressIndicator(
+                    value: state.progress.clamp(0.0, 1.0),
+                    backgroundColor:
+                        isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.accent,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      // Track info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              state.currentAudio!.title,
-                              style: TextStyle(
+                ),
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
+                    child: Row(
+                      children: [
+                        // Music icon
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color:
+                                isDark ? AppColors.darkCard : AppColors.gray100,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(
+                            Icons.music_note_rounded,
+                            color: AppColors.accent,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        // Track info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                state.currentAudio!.title,
+                                style: TextStyle(
+                                  color:
+                                      isDark
+                                          ? AppColors.white
+                                          : AppColors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  decoration: TextDecoration.none,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                state.currentAudio!.artist ?? 'Unknown Artist',
+                                style: TextStyle(
+                                  color:
+                                      isDark
+                                          ? AppColors.gray400
+                                          : AppColors.gray600,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.normal,
+                                  decoration: TextDecoration.none,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Play/Pause button
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              if (state.isPlaying) {
+                                context.read<PlayerBloc>().add(
+                                  const PlayerPause(),
+                                );
+                              } else {
+                                context.read<PlayerBloc>().add(
+                                  const PlayerPlay(),
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(24),
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              alignment: Alignment.center,
+                              child: Icon(
+                                state.isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
                                 color:
                                     isDark ? AppColors.white : AppColors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                                size: 32,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              state.currentAudio!.artist ?? 'Unknown Artist',
-                              style: TextStyle(
-                                color:
-                                    isDark
-                                        ? AppColors.gray400
-                                        : AppColors.gray600,
-                                fontSize: 12,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      // Play/Pause button
-                      _PlayPauseButton(
-                        isPlaying: state.isPlaying,
-                        isDark: isDark,
-                        onPressed: () {
-                          if (state.isPlaying) {
-                            context.read<PlayerBloc>().add(const PlayerPause());
-                          } else {
-                            context.read<PlayerBloc>().add(const PlayerPlay());
-                          }
-                        },
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -111,43 +162,4 @@ class MiniPlayer extends StatelessWidget {
       },
     );
   }
-}
-
-class _ProgressIndicator extends StatelessWidget {
-  const _ProgressIndicator({required this.progress, required this.isDark});
-
-  final double progress;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) => LinearProgressIndicator(
-    value: progress.clamp(0.0, 1.0),
-    minHeight: 2,
-    backgroundColor: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
-  );
-}
-
-class _PlayPauseButton extends StatelessWidget {
-  const _PlayPauseButton({
-    required this.isPlaying,
-    required this.isDark,
-    required this.onPressed,
-  });
-
-  final bool isPlaying;
-  final bool isDark;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => IconButton(
-    onPressed: onPressed,
-    icon: Icon(
-      isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-      color: isDark ? AppColors.white : AppColors.black,
-      size: 32,
-    ),
-    padding: EdgeInsets.zero,
-    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-  );
 }

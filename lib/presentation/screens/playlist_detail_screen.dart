@@ -253,6 +253,8 @@ class _TrackList extends StatelessWidget {
           itemBuilder: (context, index) {
             final file = playlist.files[index];
             final isCurrentlyPlaying = currentTrackPath == file.path;
+            final isActuallyPlaying =
+                isCurrentlyPlaying && playerState.isPlaying;
             return Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),
               decoration: BoxDecoration(
@@ -272,6 +274,7 @@ class _TrackList extends StatelessWidget {
                 playlistId: playlist.id,
                 isDark: isDark,
                 isCurrentlyPlaying: isCurrentlyPlaying,
+                isActuallyPlaying: isActuallyPlaying,
               ),
             );
           },
@@ -288,6 +291,7 @@ class _TrackTile extends StatefulWidget {
     required this.playlistId,
     required this.isDark,
     this.isCurrentlyPlaying = false,
+    this.isActuallyPlaying = false,
   });
 
   final AudioFile audioFile;
@@ -295,6 +299,7 @@ class _TrackTile extends StatefulWidget {
   final String playlistId;
   final bool isDark;
   final bool isCurrentlyPlaying;
+  final bool isActuallyPlaying;
 
   @override
   State<_TrackTile> createState() => _TrackTileState();
@@ -437,6 +442,7 @@ class _TrackTileState extends State<_TrackTile> {
                         ? PlayingIndicator(
                           color: AppColors.accent,
                           size: isCompact ? 18 : 20,
+                          isAnimating: widget.isActuallyPlaying,
                         )
                         : _isHovered
                         ? Icon(

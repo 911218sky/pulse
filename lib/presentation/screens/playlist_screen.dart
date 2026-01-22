@@ -244,6 +244,8 @@ class _PlaylistList extends StatelessWidget {
             final isPlayingFromPlaylist =
                 currentTrackPath != null &&
                 playlist.containsPath(currentTrackPath);
+            final isActuallyPlaying =
+                isPlayingFromPlaylist && playerState.isPlaying;
 
             return Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -261,6 +263,7 @@ class _PlaylistList extends StatelessWidget {
               child: _PlaylistCard(
                 playlist: playlist,
                 isSelected: isPlayingFromPlaylist,
+                isActuallyPlaying: isActuallyPlaying,
                 onTap: () => onPlaylistSelected?.call(playlist),
                 onDelete: () => _confirmDelete(context, playlist),
                 onRename: () => _showRenameDialog(context, playlist),
@@ -353,6 +356,7 @@ class _PlaylistCard extends StatefulWidget {
     required this.playlist,
     required this.isDark,
     this.isSelected = false,
+    this.isActuallyPlaying = false,
     this.onTap,
     this.onDelete,
     this.onRename,
@@ -360,6 +364,7 @@ class _PlaylistCard extends StatefulWidget {
 
   final Playlist playlist;
   final bool isSelected;
+  final bool isActuallyPlaying;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onRename;
@@ -427,6 +432,7 @@ class _PlaylistCardState extends State<_PlaylistCard> {
                         ? PlayingIndicator(
                           color: AppColors.accent,
                           size: isCompact ? 18 : 20,
+                          isAnimating: widget.isActuallyPlaying,
                         )
                         : _isHovered
                         ? Icon(
