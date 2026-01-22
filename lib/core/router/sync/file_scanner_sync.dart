@@ -73,9 +73,8 @@ class _FileScannerSyncState extends State<FileScannerSync> {
 
   /// Sync existing playlists with current library files (update file counts)
   void _syncExistingPlaylists(BuildContext context, FileScannerState state) {
-    final playlistBloc = context.read<PlaylistBloc>();
     // Just reload playlists to get updated file info
-    playlistBloc.add(const PlaylistLoadAll());
+    context.read<PlaylistBloc>().add(const PlaylistLoadAll());
   }
 
   /// Create playlist for each scanned folder (only on manual scan/import)
