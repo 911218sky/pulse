@@ -1,3 +1,8 @@
+---
+description: Git commit and branch conventions for this repo.
+alwaysApply: true
+---
+
 # Git Commit Conventions
 
 ## Commit Message Format
