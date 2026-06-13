@@ -10,12 +10,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: subosito/flutter-action@v2.23.0
         with:
           channel: 'stable'
           cache: true
-      
+
       - name: Cache pub dependencies
         uses: actions/cache@v5
         with:
@@ -24,18 +24,18 @@ jobs:
             ~\AppData\Local\Pub\Cache
           key: pub-windows-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-windows-
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
       - name: Build Windows
         run: flutter build windows --release
-      
+
       - name: Create Windows archive
         run: |
           cd build/windows/x64/runner/Release
           Compress-Archive -Path * -DestinationPath ../../../../../pulse-windows-x64.zip
-      
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v7
         with:
@@ -46,35 +46,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: subosito/flutter-action@v2.23.0
         with:
           channel: 'stable'
           cache: true
-      
+
       - name: Cache pub dependencies
         uses: actions/cache@v5
         with:
           path: ~/.pub-cache
           key: pub-linux-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-linux-
-      
+
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
       - name: Build Linux
         run: flutter build linux --release
-      
+
       - name: Create Linux archive
         run: |
           cd build/linux/x64/release/bundle
           tar -czf ../../../../../pulse-linux-x64.tar.gz *
-      
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v7
         with:
@@ -85,30 +85,30 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: subosito/flutter-action@v2.23.0
         with:
           channel: 'stable'
           cache: true
-      
+
       - name: Cache pub dependencies
         uses: actions/cache@v5
         with:
           path: ~/.pub-cache
           key: pub-macos-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-macos-
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
       - name: Build macOS
         run: flutter build macos --release
-      
+
       - name: Create macOS archive
         run: |
           cd build/macos/Build/Products/Release
           zip -r ../../../../../pulse-macos-universal.zip Pulse.app
-      
+
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v7
         with:
@@ -119,25 +119,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
           cache: 'gradle'
-      
+
       - uses: subosito/flutter-action@v2.23.0
         with:
           channel: 'stable'
           cache: true
-      
+
       - name: Cache pub dependencies
         uses: actions/cache@v5
         with:
           path: ~/.pub-cache
           key: pub-android-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-android-
-      
+
       - name: Cache media_kit native libraries
         uses: actions/cache@v5
         with:
@@ -147,39 +147,57 @@ jobs:
             build/app/.transforms
           key: android-native-${{ hashFiles('pubspec.lock', 'android/app/build.gradle.kts') }}
           restore-keys: android-native-
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
+      - name: Build Android Universal APK
+        run: flutter build apk --release
+
       - name: Build Android APK
         run: flutter build apk --release --split-per-abi
-      
+
       - name: Build Android App Bundle
         run: flutter build appbundle --release
-      
+
+      - name: Rename Android release artifacts
+        run: |
+          mkdir -p build/release-artifacts/android
+          cp build/app/outputs/flutter-apk/app-release.apk build/release-artifacts/android/pulse-android-universal.apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/release-artifacts/android/pulse-android-arm64-v8a.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/release-artifacts/android/pulse-android-armeabi-v7a.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk build/release-artifacts/android/pulse-android-x86_64.apk
+          cp build/app/outputs/bundle/release/app-release.aab build/release-artifacts/android/pulse-android-release.aab
+
+      - name: Upload Android Universal APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: pulse-android-universal
+          path: build/release-artifacts/android/pulse-android-universal.apk
+
       - name: Upload Android APK (arm64-v8a)
         uses: actions/upload-artifact@v7
         with:
           name: pulse-android-arm64-v8a
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-      
+          path: build/release-artifacts/android/pulse-android-arm64-v8a.apk
+
       - name: Upload Android APK (armeabi-v7a)
         uses: actions/upload-artifact@v7
         with:
           name: pulse-android-armeabi-v7a
-          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-      
+          path: build/release-artifacts/android/pulse-android-armeabi-v7a.apk
+
       - name: Upload Android APK (x86_64)
         uses: actions/upload-artifact@v7
         with:
           name: pulse-android-x86_64
-          path: build/app/outputs/flutter-apk/app-x86_64-release.apk
-      
+          path: build/release-artifacts/android/pulse-android-x86_64.apk
+
       - name: Upload Android App Bundle
         uses: actions/upload-artifact@v7
         with:
           name: pulse-android-bundle
-          path: build/app/outputs/bundle/release/app-release.aab
+          path: build/release-artifacts/android/pulse-android-release.aab
 
   create-release:
     needs: [build-windows, build-linux, build-macos, build-android]
@@ -188,19 +206,19 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
-      
+
       - name: Download all artifacts
         uses: actions/download-artifact@v8
         with:
           path: artifacts
-      
+
       - name: Delete existing release if exists
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete ${{ github.ref_name }} --yes || true
-      
+
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
@@ -208,10 +226,11 @@ jobs:
             artifacts/pulse-windows-x64/pulse-windows-x64.zip
             artifacts/pulse-linux-x64/pulse-linux-x64.tar.gz
             artifacts/pulse-macos-universal/pulse-macos-universal.zip
-            artifacts/pulse-android-arm64-v8a/app-arm64-v8a-release.apk
-            artifacts/pulse-android-armeabi-v7a/app-armeabi-v7a-release.apk
-            artifacts/pulse-android-x86_64/app-x86_64-release.apk
-            artifacts/pulse-android-bundle/app-release.aab
+            artifacts/pulse-android-universal/pulse-android-universal.apk
+            artifacts/pulse-android-arm64-v8a/pulse-android-arm64-v8a.apk
+            artifacts/pulse-android-armeabi-v7a/pulse-android-armeabi-v7a.apk
+            artifacts/pulse-android-x86_64/pulse-android-x86_64.apk
+            artifacts/pulse-android-bundle/pulse-android-release.aab
           draft: false
           prerelease: false
           generate_release_notes: true
