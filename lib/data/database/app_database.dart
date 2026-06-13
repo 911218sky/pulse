@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:pulse/core/utils/audio_path_utils.dart';
 
 part 'app_database.g.dart';
 
@@ -15,7 +16,7 @@ class AudioFilesTable extends Table {
   String get tableName => 'audio_files';
 
   TextColumn get id => text()();
-  TextColumn get filePath => text()();
+  TextColumn get filePath => text().unique()();
   TextColumn get title => text()();
   TextColumn get artist => text().nullable()();
   TextColumn get album => text().nullable()();
@@ -126,7 +127,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await repairDuplicateAudioFilesByPath();
+        await customStatement(
+          'CREATE UNIQUE INDEX IF NOT EXISTS '
+          'idx_audio_files_file_path ON audio_files (file_path)',
+        );
+      }
+    },
+    beforeOpen: (_) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 
   static LazyDatabase _openConnection() => LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
@@ -175,16 +192,17 @@ class AppDatabase extends _$AppDatabase {
   // ============== File Position Operations ==============
 
   Future<int?> getFilePosition(String path) async {
+    final canonicalPath = AudioPathUtils.canonicalize(path);
     final result =
         await (select(filePositionsTable)
-          ..where((t) => t.filePath.equals(path))).getSingleOrNull();
+          ..where((t) => t.filePath.equals(canonicalPath))).getSingleOrNull();
     return result?.positionMs;
   }
 
   Future<void> saveFilePosition(String path, int positionMs) =>
       into(filePositionsTable).insert(
         FilePositionsTableCompanion(
-          filePath: Value(path),
+          filePath: Value(AudioPathUtils.canonicalize(path)),
           positionMs: Value(positionMs),
         ),
         mode: InsertMode.insertOrReplace,
@@ -196,7 +214,9 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<int> clearFilePosition(String path) =>
-      (delete(filePositionsTable)..where((t) => t.filePath.equals(path))).go();
+      (delete(filePositionsTable)..where(
+        (t) => t.filePath.equals(AudioPathUtils.canonicalize(path)),
+      )).go();
 
   /// Clears file positions for multiple paths
   Future<void> clearFilePositions(List<String> paths) async {
@@ -222,8 +242,9 @@ class AppDatabase extends _$AppDatabase {
     var count = 0;
     for (final path in paths) {
       count +=
-          await (delete(audioFilesTable)
-            ..where((t) => t.filePath.equals(path))).go();
+          await (delete(audioFilesTable)..where(
+            (t) => t.filePath.equals(AudioPathUtils.canonicalize(path)),
+          )).go();
     }
     return count;
   }
@@ -237,8 +258,43 @@ class AppDatabase extends _$AppDatabase {
       (select(audioFilesTable)
         ..where((t) => t.id.equals(id))).getSingleOrNull();
 
-  Future<int> insertAudioFile(AudioFilesTableCompanion entry) =>
-      into(audioFilesTable).insert(entry, mode: InsertMode.insertOrReplace);
+  Future<AudioFilesTableData?> getAudioFileByPath(String filePath) =>
+      (select(audioFilesTable)..where(
+        (t) => t.filePath.equals(AudioPathUtils.canonicalize(filePath)),
+      )).getSingleOrNull();
+
+  Future<AudioFilesTableData> upsertAudioFileByPath(
+    AudioFilesTableCompanion entry,
+  ) async => transaction(() async {
+    final canonicalPath = AudioPathUtils.canonicalize(entry.filePath.value);
+    final existing = await getAudioFileByPath(canonicalPath);
+
+    if (existing != null) {
+      final updatedEntry = entry.copyWith(
+        id: Value(existing.id),
+        filePath: Value(canonicalPath),
+        addedAt: Value(existing.addedAt ?? entry.addedAt.value),
+      );
+      await (update(audioFilesTable)
+        ..where((t) => t.id.equals(existing.id))).write(updatedEntry);
+      return (await getAudioFileById(existing.id))!;
+    }
+
+    final insertEntry = entry.copyWith(filePath: Value(canonicalPath));
+    try {
+      await into(audioFilesTable).insert(insertEntry);
+    } on Exception {
+      final racedExisting = await getAudioFileByPath(canonicalPath);
+      if (racedExisting != null) return racedExisting;
+      rethrow;
+    }
+    return (await getAudioFileById(insertEntry.id.value))!;
+  });
+
+  Future<int> insertAudioFile(AudioFilesTableCompanion entry) async {
+    await upsertAudioFileByPath(entry);
+    return 1;
+  }
 
   Future<int> deleteAudioFile(String id) =>
       (delete(audioFilesTable)..where((t) => t.id.equals(id))).go();
@@ -274,7 +330,10 @@ class AppDatabase extends _$AppDatabase {
             ),
           ])
           ..where(playlistFilesTable.playlistId.equals(playlistId))
-          ..orderBy([OrderingTerm.asc(playlistFilesTable.sortOrder)]);
+          ..orderBy([
+            OrderingTerm.asc(playlistFilesTable.sortOrder),
+            OrderingTerm.asc(audioFilesTable.id),
+          ]);
 
     final results = await query.get();
     return results.map((row) => row.readTable(audioFilesTable)).toList();
@@ -300,6 +359,101 @@ class AppDatabase extends _$AppDatabase {
         );
       }
     });
+  }
+
+  /// Collapses duplicate audio rows by canonical path and rewrites playlists.
+  Future<int> repairDuplicateAudioFilesByPath() async {
+    final rows =
+        await customSelect(
+          'SELECT id, file_path FROM audio_files '
+          'ORDER BY added_at IS NULL, added_at, id',
+          readsFrom: {audioFilesTable},
+        ).get();
+
+    final keptIdByPath = <String, String>{};
+    final canonicalPathByKeptId = <String, String>{};
+    var removedCount = 0;
+
+    await transaction(() async {
+      for (final row in rows) {
+        final id = row.read<String>('id');
+        final filePath = row.read<String>('file_path');
+        final canonicalPath = AudioPathUtils.canonicalize(filePath);
+        final keptId = keptIdByPath[canonicalPath];
+
+        if (keptId == null) {
+          keptIdByPath[canonicalPath] = id;
+          canonicalPathByKeptId[id] = canonicalPath;
+          continue;
+        }
+
+        await customStatement(
+          'UPDATE playlist_files '
+          'SET sort_order = MIN(sort_order, ('
+          'SELECT duplicate.sort_order FROM playlist_files AS duplicate '
+          'WHERE duplicate.playlist_id = playlist_files.playlist_id '
+          'AND duplicate.audio_file_id = ?'
+          ')) '
+          'WHERE audio_file_id = ? '
+          'AND EXISTS ('
+          'SELECT 1 FROM playlist_files AS duplicate '
+          'WHERE duplicate.playlist_id = playlist_files.playlist_id '
+          'AND duplicate.audio_file_id = ?'
+          ')',
+          [id, keptId, id],
+        );
+        await customStatement(
+          'INSERT OR IGNORE INTO playlist_files '
+          '(playlist_id, audio_file_id, sort_order) '
+          'SELECT playlist_id, ?, sort_order FROM playlist_files '
+          'WHERE audio_file_id = ?',
+          [keptId, id],
+        );
+        await (delete(playlistFilesTable)
+          ..where((t) => t.audioFileId.equals(id))).go();
+        await (delete(audioFilesTable)..where((t) => t.id.equals(id))).go();
+        removedCount++;
+      }
+
+      for (final entry in canonicalPathByKeptId.entries) {
+        await (update(audioFilesTable)..where(
+          (t) => t.id.equals(entry.key),
+        )).write(AudioFilesTableCompanion(filePath: Value(entry.value)));
+      }
+
+      await _normalizePlaylistSortOrders();
+    });
+
+    return removedCount;
+  }
+
+  Future<void> _normalizePlaylistSortOrders() async {
+    final playlistIds =
+        await customSelect(
+          'SELECT DISTINCT playlist_id FROM playlist_files',
+          readsFrom: {playlistFilesTable},
+        ).get();
+
+    for (final playlistRow in playlistIds) {
+      final playlistId = playlistRow.read<String>('playlist_id');
+      final entries =
+          await customSelect(
+            'SELECT audio_file_id FROM playlist_files '
+            'WHERE playlist_id = ? '
+            'ORDER BY sort_order, audio_file_id',
+            variables: [Variable.withString(playlistId)],
+            readsFrom: {playlistFilesTable},
+          ).get();
+
+      for (var i = 0; i < entries.length; i++) {
+        final audioFileId = entries[i].read<String>('audio_file_id');
+        await (update(playlistFilesTable)..where(
+          (t) =>
+              t.playlistId.equals(playlistId) &
+              t.audioFileId.equals(audioFileId),
+        )).write(PlaylistFilesTableCompanion(sortOrder: Value(i)));
+      }
+    }
   }
 
   // ============== Clear All Data ==============

@@ -39,7 +39,6 @@ linter:
     - avoid_empty_else
     - avoid_print
     - avoid_relative_lib_imports
-    - avoid_returning_null_for_future
     - avoid_slow_async_io
     - cancel_subscriptions
     - close_sinks
@@ -63,7 +62,6 @@ linter:
     - avoid_positional_boolean_parameters
     - avoid_private_typedef_functions
     - avoid_redundant_argument_values
-    - avoid_returning_null
     - avoid_returning_this
     - avoid_setters_without_getters
     - avoid_single_cascade_in_expression_statements

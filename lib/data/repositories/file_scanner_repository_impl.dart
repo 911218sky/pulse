@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as path_lib;
+import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/data/datasources/local_storage_datasource.dart';
 import 'package:pulse/data/models/audio_file_model.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
@@ -102,7 +103,7 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
   @override
   Future<List<AudioFile>> scanFolder(String folderPath) async {
     final files = <AudioFile>[];
-    final dir = Directory(folderPath);
+    final dir = Directory(AudioPathUtils.canonicalize(folderPath));
 
     if (!dir.existsSync()) return files;
 
@@ -132,7 +133,7 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
       try {
         await for (final entity in dir.list(recursive: true)) {
           if (entity is File && isSupportedAudioFile(entity.path)) {
-            final folderPath = path_lib.dirname(entity.path);
+            final folderPath = AudioPathUtils.dirname(entity.path);
             final audioFile = await extractMetadata(entity.path);
             if (audioFile != null) {
               folderMap.putIfAbsent(folderPath, () => []).add(audioFile);
@@ -165,22 +166,24 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
 
   @override
   bool isSupportedAudioFile(String filePath) {
-    final extension = path_lib.extension(filePath).toLowerCase();
+    final extension =
+        path_lib.extension(AudioPathUtils.canonicalize(filePath)).toLowerCase();
     return FileScannerRepository.supportedExtensions.contains(extension);
   }
 
   @override
   Future<AudioFile?> extractMetadata(String filePath) async {
-    final file = File(filePath);
+    final canonicalPath = AudioPathUtils.canonicalize(filePath);
+    final file = File(canonicalPath);
     if (!file.existsSync()) return null;
 
     try {
       final stat = file.statSync();
-      final fileName = path_lib.basenameWithoutExtension(filePath);
+      final fileName = AudioPathUtils.basenameWithoutExtension(canonicalPath);
 
       return AudioFile(
         id: _uuid.v4(),
-        path: filePath,
+        path: canonicalPath,
         title: fileName,
         duration: Duration.zero,
         fileSizeBytes: stat.size,
@@ -266,6 +269,8 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
       await _dataSource.clearFilePositions(missingPositionPaths);
       removedCount += missingPositionPaths.length;
     }
+
+    removedCount += await _dataSource.repairDuplicateAudioFilesByPath();
 
     return removedCount;
   }

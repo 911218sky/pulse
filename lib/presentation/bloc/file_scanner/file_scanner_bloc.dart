@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart' as path_lib;
+import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/entities/scanned_folder.dart';
 import 'package:pulse/domain/repositories/file_scanner_repository.dart';
@@ -15,6 +17,7 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
     on<FileScannerStartScan>(_onStartScan);
     on<FileScannerCancelScan>(_onCancelScan);
     on<FileScannerProgressUpdated>(_onProgressUpdated);
+    on<FileScannerScanFailed>(_onScanFailed);
     on<FileScannerToggleFolder>(_onToggleFolder);
     on<FileScannerSelectAll>(_onSelectAll);
     on<FileScannerDeselectAll>(_onDeselectAll);
@@ -47,14 +50,7 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
       await _scanSubscription?.cancel();
       _scanSubscription = _fileScannerRepository.scanForMusicFiles().listen(
         (progress) => add(FileScannerProgressUpdated(progress)),
-        onError: (Object error) {
-          emit(
-            state.copyWith(
-              status: FileScannerStatus.error,
-              errorMessage: error.toString(),
-            ),
-          );
-        },
+        onError: (Object error) => add(FileScannerScanFailed(error.toString())),
       );
     } on Exception catch (e) {
       emit(
@@ -114,6 +110,18 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
         );
       }
     }
+  }
+
+  void _onScanFailed(
+    FileScannerScanFailed event,
+    Emitter<FileScannerState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        status: FileScannerStatus.error,
+        errorMessage: event.message,
+      ),
+    );
   }
 
   void _onToggleFolder(
@@ -201,16 +209,13 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
       // Group files by folder
       final folderMap = <String, List<AudioFile>>{};
       for (final file in files) {
-        final folderPath = file.path.substring(
-          0,
-          file.path.lastIndexOf(RegExp(r'[/\\]')),
-        );
+        final folderPath = AudioPathUtils.dirname(file.path);
         folderMap.putIfAbsent(folderPath, () => []).add(file);
       }
 
       final folders =
           folderMap.entries.map((e) {
-            final folderName = e.key.split(RegExp(r'[/\\]')).last;
+            final folderName = path_lib.basename(e.key);
             return ScannedFolder(
               path: e.key,
               name: folderName,
@@ -396,12 +401,11 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
       // Import individual files - group by parent folder
       if (event.files.isNotEmpty) {
         final filesByFolder = <String, List<String>>{};
-        for (final filePath in event.files) {
-          final parts = filePath.split(RegExp(r'[/\\]'));
-          final folderPath =
-              parts.length > 1
-                  ? parts.sublist(0, parts.length - 1).join('/')
-                  : '';
+        final uniqueFilePaths =
+            event.files.map(AudioPathUtils.canonicalize).toSet();
+
+        for (final filePath in uniqueFilePaths) {
+          final folderPath = AudioPathUtils.dirname(filePath);
           filesByFolder.putIfAbsent(folderPath, () => []).add(filePath);
         }
 
@@ -420,7 +424,7 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
           }
 
           if (files.isNotEmpty) {
-            final folderName = entry.key.split(RegExp(r'[/\\]')).last;
+            final folderName = path_lib.basename(entry.key);
             importedFolders.add(
               ScannedFolder(
                 path: entry.key,
@@ -434,13 +438,16 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
       }
 
       // Import folders in parallel for speed
+      final uniqueFolderPaths =
+          event.folders.map(AudioPathUtils.canonicalize).toSet();
       final folderResults = await Future.wait(
-        event.folders.map((folderPath) async {
+        uniqueFolderPaths.map((folderPath) async {
           final files = await _fileScannerRepository.scanFolder(folderPath);
           if (files.isNotEmpty) {
-            final folderName = folderPath.split(RegExp(r'[/\\]')).last;
+            final canonicalFolderPath = AudioPathUtils.canonicalize(folderPath);
+            final folderName = path_lib.basename(canonicalFolderPath);
             return ScannedFolder(
-              path: folderPath,
+              path: canonicalFolderPath,
               name: folderName,
               files: files,
               isSelected: true,
@@ -454,15 +461,21 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
       // Merge with existing folders
       final existingFolders = List<ScannedFolder>.from(state.folders);
       for (final imported in importedFolders) {
+        final importedPath = AudioPathUtils.canonicalize(imported.path);
         final existingIndex = existingFolders.indexWhere(
-          (f) => f.path == imported.path,
+          (f) => AudioPathUtils.canonicalize(f.path) == importedPath,
         );
         if (existingIndex >= 0) {
           // Merge files
           final existing = existingFolders[existingIndex];
           final mergedFiles = <AudioFile>[...existing.files];
+          final mergedPaths =
+              mergedFiles
+                  .map((f) => AudioPathUtils.canonicalize(f.path))
+                  .toSet();
           for (final file in imported.files) {
-            if (!mergedFiles.any((f) => f.path == file.path)) {
+            final filePath = AudioPathUtils.canonicalize(file.path);
+            if (mergedPaths.add(filePath)) {
               mergedFiles.add(file);
             }
           }

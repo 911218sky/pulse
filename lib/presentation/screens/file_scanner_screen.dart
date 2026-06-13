@@ -5,7 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/domain/entities/scanned_folder.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
@@ -25,10 +27,11 @@ class FileScannerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDarkMode;
+    final palette = context.appPalette;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.black : AppColors.white,
+      backgroundColor: palette.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -95,6 +98,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = context.appPalette;
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -103,17 +107,13 @@ class _Header extends StatelessWidget {
           if (onBack != null)
             IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
-              color: isDark ? AppColors.white : AppColors.black,
+              color: palette.primaryText,
               onPressed: onBack,
             ),
           const SizedBox(width: AppSpacing.sm),
           Text(
             l10n.scanMusic,
-            style: TextStyle(
-              color: isDark ? AppColors.white : AppColors.black,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTypography.displaySmall(palette.primaryText),
           ),
         ],
       ),
@@ -152,6 +152,7 @@ class _InitialState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = context.appPalette;
 
     return Center(
       child: Padding(
@@ -185,19 +186,14 @@ class _InitialState extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Text(
               l10n.addMusic,
-              style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-              ),
+              style: AppTypography.displaySmall(
+                palette.primaryText,
+              ).copyWith(fontSize: 22),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               l10n.addMusicDesc,
-              style: TextStyle(
-                color: isDark ? AppColors.gray500 : AppColors.gray600,
-                fontSize: 14,
-              ),
+              style: AppTypography.bodyMedium(palette.secondaryText),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xxl),
@@ -311,9 +307,12 @@ class _CompletedState extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _RescanButton(
+                    child: VercelButton(
+                      label: l10n.refreshLibrary,
+                      icon: Icons.refresh_rounded,
+                      variant: VercelButtonVariant.secondary,
                       isDark: isDark,
-                      onTap: () {
+                      onPressed: () {
                         context.read<FileScannerBloc>().add(
                           const FileScannerStartScan(),
                         );
@@ -322,9 +321,12 @@ class _CompletedState extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: _AddMoreButton(
+                    child: VercelButton(
+                      label: l10n.addMore,
+                      icon: Icons.add_rounded,
+                      variant: VercelButtonVariant.secondary,
                       isDark: isDark,
-                      onTap: () => _showImportDialog(context),
+                      onPressed: () => _showImportDialog(context),
                     ),
                   ),
                 ],
@@ -368,165 +370,6 @@ class _CompletedState extends StatelessWidget {
   }
 }
 
-class _AddMoreButton extends StatefulWidget {
-  const _AddMoreButton({required this.isDark, required this.onTap});
-
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  State<_AddMoreButton> createState() => _AddMoreButtonState();
-}
-
-class _RescanButton extends StatefulWidget {
-  const _RescanButton({required this.isDark, required this.onTap});
-
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  State<_RescanButton> createState() => _RescanButtonState();
-}
-
-class _RescanButtonState extends State<_RescanButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color:
-                _isHovered
-                    ? (widget.isDark
-                        ? AppColors.gray800
-                        : AppColors.accent.withValues(alpha: 0.1))
-                    : (widget.isDark ? AppColors.gray900 : AppColors.gray100),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            border: Border.all(
-              color:
-                  _isHovered
-                      ? (widget.isDark ? AppColors.gray600 : AppColors.accent)
-                      : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.refresh_rounded,
-                size: 18,
-                color:
-                    _isHovered
-                        ? (widget.isDark ? AppColors.white : AppColors.accent)
-                        : (widget.isDark
-                            ? AppColors.gray400
-                            : AppColors.gray600),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                l10n.refreshLibrary,
-                style: TextStyle(
-                  color:
-                      _isHovered
-                          ? (widget.isDark ? AppColors.white : AppColors.accent)
-                          : (widget.isDark
-                              ? AppColors.gray400
-                              : AppColors.gray600),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AddMoreButtonState extends State<_AddMoreButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color:
-                _isHovered
-                    ? (widget.isDark
-                        ? AppColors.gray800
-                        : AppColors.accent.withValues(alpha: 0.1))
-                    : (widget.isDark ? AppColors.gray900 : AppColors.gray100),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            border: Border.all(
-              color:
-                  _isHovered
-                      ? (widget.isDark ? AppColors.gray600 : AppColors.accent)
-                      : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.add_rounded,
-                color:
-                    _isHovered
-                        ? (widget.isDark ? AppColors.white : AppColors.accent)
-                        : (widget.isDark
-                            ? AppColors.gray400
-                            : AppColors.gray600),
-                size: 18,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                l10n.addMore,
-                style: TextStyle(
-                  color:
-                      _isHovered
-                          ? (widget.isDark ? AppColors.white : AppColors.accent)
-                          : (widget.isDark
-                              ? AppColors.gray400
-                              : AppColors.gray600),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _ErrorState extends StatelessWidget {
   const _ErrorState({
     required this.isDark,
@@ -541,6 +384,7 @@ class _ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = context.appPalette;
 
     return Center(
       child: Padding(
@@ -556,19 +400,12 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Text(
               l10n.scanFailed,
-              style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTypography.headlineLarge(palette.primaryText),
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               message,
-              style: TextStyle(
-                color: isDark ? AppColors.gray500 : AppColors.gray600,
-                fontSize: 14,
-              ),
+              style: AppTypography.bodyMedium(palette.secondaryText),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xxl),

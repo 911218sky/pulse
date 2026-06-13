@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 
 /// A Vercel-style text field widget
 class VercelTextField extends StatefulWidget {
@@ -75,8 +77,7 @@ class _VercelTextFieldState extends State<VercelTextField> {
     setState(() => _isFocused = _focusNode.hasFocus);
   }
 
-  bool _isDark(BuildContext context) =>
-      widget.isDark ?? Theme.of(context).brightness == Brightness.dark;
+  bool _isDark(BuildContext context) => widget.isDark ?? context.isDarkMode;
 
   Color _borderColor(bool isDark) {
     if (widget.errorText != null) return AppColors.error;
@@ -100,11 +101,9 @@ class _VercelTextFieldState extends State<VercelTextField> {
         if (widget.label != null) ...[
           Text(
             widget.label!,
-            style: TextStyle(
-              color: isDark ? AppColors.gray300 : AppColors.gray600,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+            style: AppTypography.labelMedium(
+              isDark ? AppColors.gray300 : AppColors.gray600,
+            ).copyWith(fontSize: 13),
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
@@ -126,16 +125,14 @@ class _VercelTextFieldState extends State<VercelTextField> {
             autofocus: widget.autofocus,
             maxLines: widget.maxLines,
             textAlign: widget.textAlign,
-            style: TextStyle(
-              color: isDark ? AppColors.white : AppColors.black,
-              fontSize: 14,
+            style: AppTypography.bodyMedium(
+              isDark ? AppColors.white : AppColors.black,
             ),
             cursorColor: isDark ? AppColors.white : AppColors.accent,
             decoration: InputDecoration(
               hintText: widget.hint,
-              hintStyle: TextStyle(
-                color: isDark ? AppColors.gray500 : AppColors.gray400,
-                fontSize: 14,
+              hintStyle: AppTypography.bodyMedium(
+                isDark ? AppColors.gray500 : AppColors.gray400,
               ),
               prefixIcon: widget.prefixIcon,
               prefixIconColor: isDark ? AppColors.gray400 : AppColors.gray500,
@@ -154,15 +151,14 @@ class _VercelTextFieldState extends State<VercelTextField> {
           const SizedBox(height: AppSpacing.xs),
           Text(
             widget.errorText!,
-            style: const TextStyle(color: AppColors.error, fontSize: 12),
+            style: AppTypography.bodySmall(AppColors.error),
           ),
         ] else if (widget.helperText != null) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
             widget.helperText!,
-            style: TextStyle(
-              color: isDark ? AppColors.gray500 : AppColors.gray600,
-              fontSize: 12,
+            style: AppTypography.bodySmall(
+              isDark ? AppColors.gray500 : AppColors.gray600,
             ),
           ),
         ],

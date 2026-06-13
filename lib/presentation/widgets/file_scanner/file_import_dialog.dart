@@ -2,7 +2,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 
 /// Result of file import dialog
@@ -92,13 +94,14 @@ class _FileImportDialogState extends State<FileImportDialog> {
     final screenWidth = MediaQuery.of(context).size.width;
     final dialogWidth = screenWidth < 400 ? screenWidth * 0.9 : 400.0;
     final l10n = AppLocalizations.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDarkMode;
+    final palette = context.appPalette;
 
     return Dialog(
-      backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
+      backgroundColor: palette.elevatedSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        side: BorderSide(color: isDark ? AppColors.gray700 : AppColors.gray200),
+        side: BorderSide(color: palette.border),
       ),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: dialogWidth, maxHeight: 500),
@@ -110,19 +113,12 @@ class _FileImportDialogState extends State<FileImportDialog> {
             children: [
               Text(
                 l10n.importMusic,
-                style: TextStyle(
-                  color: isDark ? AppColors.white : AppColors.gray900,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTypography.headlineLarge(palette.primaryText),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 l10n.importMusicDesc,
-                style: TextStyle(
-                  color: isDark ? AppColors.gray400 : AppColors.gray600,
-                  fontSize: 14,
-                ),
+                style: AppTypography.bodyMedium(palette.secondaryText),
               ),
               const SizedBox(height: AppSpacing.lg),
               // Action buttons
@@ -153,11 +149,9 @@ class _FileImportDialogState extends State<FileImportDialog> {
                 Flexible(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.black : AppColors.gray50,
+                      color: palette.background,
                       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                      border: Border.all(
-                        color: isDark ? AppColors.gray800 : AppColors.gray200,
-                      ),
+                      border: Border.all(color: palette.subtleBorder),
                     ),
                     child: ListView(
                       shrinkWrap: true,
@@ -185,11 +179,9 @@ class _FileImportDialogState extends State<FileImportDialog> {
               else
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.black : AppColors.gray50,
+                    color: palette.background,
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    border: Border.all(
-                      color: isDark ? AppColors.gray800 : AppColors.gray200,
-                    ),
+                    border: Border.all(color: palette.subtleBorder),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.xl),
@@ -206,12 +198,8 @@ class _FileImportDialogState extends State<FileImportDialog> {
                           const SizedBox(height: AppSpacing.md),
                           Text(
                             l10n.noFilesSelected,
-                            style: TextStyle(
-                              color:
-                                  isDark
-                                      ? AppColors.gray500
-                                      : AppColors.gray600,
-                              fontSize: 14,
+                            style: AppTypography.bodyMedium(
+                              isDark ? AppColors.gray500 : AppColors.gray600,
                             ),
                           ),
                         ],
@@ -317,20 +305,17 @@ class _SelectedItemState extends State<_SelectedItem> {
               children: [
                 Text(
                   _displayName,
-                  style: TextStyle(
-                    color: widget.isDark ? AppColors.white : AppColors.gray900,
-                    fontSize: 13,
-                  ),
+                  style: AppTypography.bodySmall(
+                    widget.isDark ? AppColors.white : AppColors.gray900,
+                  ).copyWith(fontSize: 13),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   widget.path,
-                  style: TextStyle(
-                    color:
-                        widget.isDark ? AppColors.gray600 : AppColors.gray500,
-                    fontSize: 11,
-                  ),
+                  style: AppTypography.bodySmall(
+                    widget.isDark ? AppColors.gray600 : AppColors.gray500,
+                  ).copyWith(fontSize: 11),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

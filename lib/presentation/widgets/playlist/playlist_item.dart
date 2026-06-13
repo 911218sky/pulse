@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/durations.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/utils/time_parser.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 
@@ -83,10 +84,11 @@ class _PlaylistItemState extends State<PlaylistItem> {
                         ? const _PlayingIndicator()
                         : Text(
                           '${widget.index + 1}',
-                          style: const TextStyle(
-                            color: AppColors.gray500,
+                          style: AppTypography.bodySmall(
+                            AppColors.gray500,
+                          ).copyWith(
                             fontSize: 13,
-                            fontFeatures: [FontFeature.tabularFigures()],
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
               ),
@@ -99,16 +101,13 @@ class _PlaylistItemState extends State<PlaylistItem> {
                 children: [
                   Text(
                     widget.audioFile.displayTitle,
-                    style: TextStyle(
-                      color:
-                          widget.isPlaying
-                              ? AppColors.white
-                              : AppColors.gray200,
-                      fontSize: 14,
+                    style: AppTypography.bodyMedium(
+                      widget.isPlaying ? AppColors.white : AppColors.gray200,
+                    ).copyWith(
                       fontWeight:
                           widget.isPlaying
-                              ? FontWeight.w500
-                              : FontWeight.normal,
+                              ? AppTypography.medium
+                              : AppTypography.regular,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -117,10 +116,7 @@ class _PlaylistItemState extends State<PlaylistItem> {
                     const SizedBox(height: 2),
                     Text(
                       widget.audioFile.artist!,
-                      style: const TextStyle(
-                        color: AppColors.gray500,
-                        fontSize: 12,
-                      ),
+                      style: AppTypography.bodySmall(AppColors.gray500),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -135,10 +131,9 @@ class _PlaylistItemState extends State<PlaylistItem> {
                 widget.audioFile.duration == Duration.zero
                     ? '--:--'
                     : TimeParser.formatDuration(widget.audioFile.duration),
-                style: const TextStyle(
-                  color: AppColors.gray500,
+                style: AppTypography.bodySmall(AppColors.gray500).copyWith(
                   fontSize: 13,
-                  fontFeatures: [FontFeature.tabularFigures()],
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
 

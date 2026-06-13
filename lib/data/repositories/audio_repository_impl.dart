@@ -24,11 +24,6 @@ class AudioRepositoryImpl implements AudioRepository {
     return handler;
   }
 
-  // Debounce seek to prevent crashes on large files
-  Timer? _seekDebounceTimer;
-  Duration? _pendingSeekPosition;
-  bool _isSeeking = false;
-
   @override
   Future<void> loadAudio(AudioFile audioFile) async {
     try {
@@ -74,26 +69,11 @@ class AudioRepositoryImpl implements AudioRepository {
 
   @override
   Future<void> seekTo(Duration position) async {
-    // Cancel any pending seek
-    _seekDebounceTimer?.cancel();
-    _pendingSeekPosition = position;
-
-    // Debounce seek operations to prevent crashes on large files
-    _seekDebounceTimer = Timer(const Duration(milliseconds: 100), () async {
-      if (_isSeeking || _pendingSeekPosition == null) return;
-
-      _isSeeking = true;
-      final targetPosition = _pendingSeekPosition!;
-      _pendingSeekPosition = null;
-
-      try {
-        await _handler.seek(targetPosition);
-      } on Exception catch (e) {
-        AppLogger.e('AudioRepository', 'Error seeking', e);
-      } finally {
-        _isSeeking = false;
-      }
-    });
+    try {
+      await _handler.seek(position);
+    } on Exception catch (e) {
+      AppLogger.e('AudioRepository', 'Error seeking', e);
+    }
   }
 
   @override
@@ -167,7 +147,5 @@ class AudioRepositoryImpl implements AudioRepository {
   double get currentPlaybackSpeed => _handler.speed;
 
   @override
-  Future<void> dispose() async {
-    _seekDebounceTimer?.cancel();
-  }
+  Future<void> dispose() async {}
 }

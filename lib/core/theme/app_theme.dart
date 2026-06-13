@@ -6,9 +6,29 @@ import 'package:pulse/core/constants/typography.dart';
 class AppTheme {
   AppTheme._();
 
+  static TextTheme _textTheme(Color primary, Color secondary) => TextTheme(
+    displayLarge: AppTypography.displayLarge(primary),
+    displayMedium: AppTypography.displayMedium(primary),
+    displaySmall: AppTypography.displaySmall(primary),
+    headlineLarge: AppTypography.headlineLarge(primary),
+    headlineMedium: AppTypography.headlineMedium(primary),
+    headlineSmall: AppTypography.headlineMedium(primary),
+    titleLarge: AppTypography.headlineLarge(primary),
+    titleMedium: AppTypography.headlineMedium(primary),
+    titleSmall: AppTypography.labelLarge(primary),
+    bodyLarge: AppTypography.bodyLarge(primary),
+    bodyMedium: AppTypography.bodyMedium(primary),
+    bodySmall: AppTypography.bodySmall(secondary),
+    labelLarge: AppTypography.labelLarge(primary),
+    labelMedium: AppTypography.labelMedium(primary),
+    labelSmall: AppTypography.labelSmall(secondary),
+  );
+
   static ThemeData get darkTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
+    fontFamily: AppTypography.fontFamily,
+    textTheme: _textTheme(AppColors.white, AppColors.gray400),
     scaffoldBackgroundColor: AppColors.darkBackground,
     colorScheme: const ColorScheme.dark(
       primary: AppColors.white,
@@ -126,6 +146,8 @@ class AppTheme {
   static ThemeData get lightTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
+    fontFamily: AppTypography.fontFamily,
+    textTheme: _textTheme(AppColors.black, AppColors.gray600),
     scaffoldBackgroundColor: AppColors.lightBackground,
     colorScheme: const ColorScheme.light(
       primary: AppColors.accent,

@@ -12,14 +12,19 @@ class LocalStorageDataSource {
 
   // Audio File Operations (Music Library)
 
-  Future<void> saveAudioFile(AudioFileModel file) async {
-    await _db.insertAudioFile(file.toCompanion());
+  Future<AudioFileModel> saveAudioFile(AudioFileModel file) async {
+    final row = await _db.upsertAudioFileByPath(file.toCompanion());
+    return AudioFileModel.fromDrift(row);
   }
 
-  Future<void> saveAudioFiles(List<AudioFileModel> files) async {
+  Future<List<AudioFileModel>> saveAudioFiles(
+    List<AudioFileModel> files,
+  ) async {
+    final saved = <AudioFileModel>[];
     for (final file in files) {
-      await _db.insertAudioFile(file.toCompanion());
+      saved.add(await saveAudioFile(file));
     }
+    return saved;
   }
 
   Future<List<AudioFileModel>> getAllAudioFiles() async {
@@ -85,6 +90,9 @@ class LocalStorageDataSource {
   Future<int> deleteAudioFilesByPaths(List<String> paths) async =>
       _db.deleteAudioFilesByPaths(paths);
 
+  Future<int> repairDuplicateAudioFilesByPath() =>
+      _db.repairDuplicateAudioFilesByPath();
+
   // Settings Operations
 
   Future<void> saveSettings(SettingsModel settings) async {
@@ -111,8 +119,8 @@ class LocalStorageDataSource {
     // Insert audio files and update playlist files
     final audioFileIds = <String>[];
     for (final file in playlist.files) {
-      await _db.insertAudioFile(file.toCompanion());
-      audioFileIds.add(file.id);
+      final savedFile = await saveAudioFile(file);
+      audioFileIds.add(savedFile.id);
     }
 
     // Update playlist-file relationships

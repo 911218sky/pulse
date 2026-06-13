@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 
 /// Represents a playlist containing multiple audio files
@@ -46,18 +47,25 @@ class Playlist extends Equatable {
 
   /// Adds a file to the playlist (prevents duplicates by path)
   Playlist addFile(AudioFile file) {
+    final path = AudioPathUtils.canonicalize(file.path);
     // Check if file already exists by path
-    if (files.any((f) => f.path == file.path)) {
+    if (files.any((f) => AudioPathUtils.canonicalize(f.path) == path)) {
       return this; // Return unchanged if duplicate
     }
-    return copyWith(files: [...files, file]);
+    return copyWith(files: [...files, file.copyWith(path: path)]);
   }
 
   /// Adds multiple files to the playlist (filters out duplicates by path)
   Playlist addFiles(List<AudioFile> newFiles) {
-    final existingPaths = files.map((f) => f.path).toSet();
-    final uniqueNewFiles =
-        newFiles.where((f) => !existingPaths.contains(f.path)).toList();
+    final existingPaths =
+        files.map((f) => AudioPathUtils.canonicalize(f.path)).toSet();
+    final uniqueNewFiles = <AudioFile>[];
+    for (final file in newFiles) {
+      final path = AudioPathUtils.canonicalize(file.path);
+      if (existingPaths.add(path)) {
+        uniqueNewFiles.add(file.copyWith(path: path));
+      }
+    }
     if (uniqueNewFiles.isEmpty) {
       return this; // Return unchanged if all are duplicates
     }
@@ -65,7 +73,12 @@ class Playlist extends Equatable {
   }
 
   /// Checks if a file with the given path already exists in the playlist
-  bool containsPath(String path) => files.any((f) => f.path == path);
+  bool containsPath(String path) {
+    final canonicalPath = AudioPathUtils.canonicalize(path);
+    return files.any(
+      (f) => AudioPathUtils.canonicalize(f.path) == canonicalPath,
+    );
+  }
 
   /// Removes a file from the playlist by ID
   Playlist removeFile(String fileId) =>

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/core/utils/time_parser.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 
@@ -77,14 +79,15 @@ class _TimeInputDialogState extends State<TimeInputDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDarkMode;
+    final palette = context.appPalette;
     final l10n = AppLocalizations.of(context);
 
     return Dialog(
-      backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
+      backgroundColor: palette.elevatedSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        side: BorderSide(color: isDark ? AppColors.gray700 : AppColors.gray200),
+        side: BorderSide(color: palette.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
@@ -94,19 +97,16 @@ class _TimeInputDialogState extends State<TimeInputDialog> {
           children: [
             Text(
               l10n.jumpToTimeTitle,
-              style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.gray900,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTypography.headlineMedium(
+                palette.primaryText,
+              ).copyWith(fontWeight: AppTypography.semiBold),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               l10n.totalDuration(TimeParser.formatDuration(widget.duration)),
-              style: TextStyle(
-                color: isDark ? AppColors.gray400 : AppColors.gray600,
-                fontSize: 13,
-              ),
+              style: AppTypography.bodySmall(
+                palette.secondaryText,
+              ).copyWith(fontSize: 13),
             ),
             const SizedBox(height: AppSpacing.lg),
             // Scroll wheel pickers
@@ -154,15 +154,9 @@ class _TimeInputDialogState extends State<TimeInputDialog> {
             Center(
               child: Text(
                 TimeParser.formatDuration(_selectedDuration),
-                style: TextStyle(
-                  color:
-                      _isValid
-                          ? (isDark ? AppColors.white : AppColors.gray900)
-                          : AppColors.error,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+                style: AppTypography.displaySmall(
+                  _isValid ? palette.primaryText : AppColors.error,
+                ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
               ),
             ),
             if (!_isValid) ...[
@@ -170,7 +164,9 @@ class _TimeInputDialogState extends State<TimeInputDialog> {
               Center(
                 child: Text(
                   l10n.timeExceedsDuration,
-                  style: const TextStyle(color: AppColors.error, fontSize: 13),
+                  style: AppTypography.bodySmall(
+                    AppColors.error,
+                  ).copyWith(fontSize: 13),
                 ),
               ),
             ],
@@ -218,10 +214,8 @@ class _WheelPicker extends StatelessWidget {
     children: [
       Text(
         label,
-        style: TextStyle(
-          color: isDark ? AppColors.gray400 : AppColors.gray600,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
+        style: AppTypography.labelLarge(
+          isDark ? AppColors.gray400 : AppColors.gray600,
         ),
       ),
       const SizedBox(height: AppSpacing.sm),
@@ -252,10 +246,10 @@ class _WheelPicker extends StatelessWidget {
                     (context, index) => Center(
                       child: Text(
                         index.toString().padLeft(2, '0'),
-                        style: TextStyle(
-                          color: isDark ? AppColors.white : AppColors.gray900,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
+                        style: AppTypography.displaySmall(
+                          isDark ? AppColors.white : AppColors.gray900,
+                        ).copyWith(
+                          fontWeight: AppTypography.medium,
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),

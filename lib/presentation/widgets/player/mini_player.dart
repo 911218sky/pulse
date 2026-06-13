@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/player/player_state.dart';
@@ -14,7 +16,8 @@ class MiniPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.appPalette;
+    final isDark = context.isDarkMode;
 
     return BlocBuilder<PlayerBloc, PlayerState>(
       buildWhen:
@@ -38,11 +41,7 @@ class MiniPlayer extends StatelessWidget {
             height: 64,
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                ),
-              ),
+              border: Border(top: BorderSide(color: palette.subtleBorder)),
             ),
             child: Column(
               children: [
@@ -90,30 +89,18 @@ class MiniPlayer extends StatelessWidget {
                             children: [
                               Text(
                                 state.currentAudio!.title,
-                                style: TextStyle(
-                                  color:
-                                      isDark
-                                          ? AppColors.white
-                                          : AppColors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  decoration: TextDecoration.none,
-                                ),
+                                style: AppTypography.labelLarge(
+                                  palette.primaryText,
+                                ).copyWith(decoration: TextDecoration.none),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 state.currentAudio!.artist ?? 'Unknown Artist',
-                                style: TextStyle(
-                                  color:
-                                      isDark
-                                          ? AppColors.gray400
-                                          : AppColors.gray600,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.normal,
-                                  decoration: TextDecoration.none,
-                                ),
+                                style: AppTypography.bodySmall(
+                                  palette.secondaryText,
+                                ).copyWith(decoration: TextDecoration.none),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -144,8 +131,7 @@ class MiniPlayer extends StatelessWidget {
                                 state.isPlaying
                                     ? Icons.pause_rounded
                                     : Icons.play_arrow_rounded,
-                                color:
-                                    isDark ? AppColors.white : AppColors.black,
+                                color: palette.primaryText,
                                 size: 32,
                               ),
                             ),

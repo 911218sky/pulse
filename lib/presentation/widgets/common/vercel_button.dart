@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/durations.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 
 /// Vercel-style button variants
 enum VercelButtonVariant { primary, secondary, ghost, danger }
@@ -44,8 +46,7 @@ class _VercelButtonState extends State<VercelButton> {
 
   bool get _isEnabled => !widget.isDisabled && !widget.isLoading;
 
-  bool _isDark(BuildContext context) =>
-      widget.isDark ?? Theme.of(context).brightness == Brightness.dark;
+  bool _isDark(BuildContext context) => widget.isDark ?? context.isDarkMode;
 
   double get _height => switch (widget.size) {
     VercelButtonSize.small => 32,
@@ -205,11 +206,9 @@ class _VercelButtonState extends State<VercelButton> {
                 Flexible(
                   child: Text(
                     widget.label!,
-                    style: TextStyle(
-                      fontSize: _fontSize,
-                      fontWeight: FontWeight.w500,
-                      color: _foregroundColor(isDark),
-                    ),
+                    style: AppTypography.labelLarge(
+                      _foregroundColor(isDark),
+                    ).copyWith(fontSize: _fontSize),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),

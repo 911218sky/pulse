@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 
 /// Toast notification types
 enum ToastType {
@@ -29,7 +31,7 @@ class AppToast {
     Duration duration = const Duration(seconds: 3),
     VoidCallback? onDismiss,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDarkMode;
     final (backgroundColor, icon, iconColor) = getStyleForType(
       type,
       isDark: isDark,
@@ -43,14 +45,7 @@ class AppToast {
             Icon(icon, color: iconColor, size: 20),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: iconColor,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
+              child: Text(message, style: AppTypography.bodyMedium(iconColor)),
             ),
           ],
         ),

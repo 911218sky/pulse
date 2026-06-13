@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/durations.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 
 /// A Vercel-style card widget
 class VercelCard extends StatefulWidget {
@@ -29,17 +30,19 @@ class VercelCard extends StatefulWidget {
 class _VercelCardState extends State<VercelCard> {
   bool _isHovered = false;
 
-  Color get _backgroundColor {
+  Color _backgroundColor(BuildContext context) {
     if (widget.backgroundColor != null) return widget.backgroundColor!;
-    if (widget.isSelected) return AppColors.gray900;
-    if (_isHovered && widget.onTap != null) return AppColors.gray900;
-    return AppColors.black;
+    final palette = context.appPalette;
+    if (widget.isSelected) return palette.elevatedSurface;
+    if (_isHovered && widget.onTap != null) return palette.surface;
+    return palette.background;
   }
 
-  Color get _borderColor {
-    if (widget.isSelected) return AppColors.white;
-    if (_isHovered && widget.onTap != null) return AppColors.gray600;
-    return AppColors.gray800;
+  Color _borderColor(BuildContext context) {
+    final palette = context.appPalette;
+    if (widget.isSelected) return Theme.of(context).colorScheme.primary;
+    if (_isHovered && widget.onTap != null) return palette.border;
+    return palette.subtleBorder;
   }
 
   @override
@@ -56,9 +59,12 @@ class _VercelCardState extends State<VercelCard> {
         duration: AppDurations.fast,
         padding: widget.padding ?? const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: _backgroundColor,
+          color: _backgroundColor(context),
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          border: widget.showBorder ? Border.all(color: _borderColor) : null,
+          border:
+              widget.showBorder
+                  ? Border.all(color: _borderColor(context))
+                  : null,
         ),
         child: widget.child,
       ),
@@ -86,47 +92,44 @@ class VercelListTile extends StatelessWidget {
   final EdgeInsets? contentPadding;
 
   @override
-  Widget build(BuildContext context) => VercelCard(
-    padding: contentPadding ?? const EdgeInsets.all(AppSpacing.md),
-    onTap: onTap,
-    child: Row(
-      children: [
-        if (leading != null) ...[
-          leading!,
-          const SizedBox(width: AppSpacing.md),
-        ],
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (title != null)
-                DefaultTextStyle(
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+  Widget build(BuildContext context) {
+    final palette = context.appPalette;
+
+    return VercelCard(
+      padding: contentPadding ?? const EdgeInsets.all(AppSpacing.md),
+      onTap: onTap,
+      child: Row(
+        children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: AppSpacing.md),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (title != null)
+                  DefaultTextStyle(
+                    style: AppTypography.labelLarge(palette.primaryText),
+                    child: title!,
                   ),
-                  child: title!,
-                ),
-              if (subtitle != null) ...[
-                const SizedBox(height: AppSpacing.xs),
-                DefaultTextStyle(
-                  style: const TextStyle(
-                    color: AppColors.gray400,
-                    fontSize: 13,
+                if (subtitle != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  DefaultTextStyle(
+                    style: AppTypography.bodySmall(palette.secondaryText),
+                    child: subtitle!,
                   ),
-                  child: subtitle!,
-                ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-        if (trailing != null) ...[
-          const SizedBox(width: AppSpacing.md),
-          trailing!,
+          if (trailing != null) ...[
+            const SizedBox(width: AppSpacing.md),
+            trailing!,
+          ],
         ],
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }

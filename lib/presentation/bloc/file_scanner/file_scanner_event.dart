@@ -29,6 +29,16 @@ class FileScannerProgressUpdated extends FileScannerEvent {
   List<Object?> get props => [progress];
 }
 
+/// Report scan errors from the scanner stream (internal event)
+class FileScannerScanFailed extends FileScannerEvent {
+  const FileScannerScanFailed(this.message);
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
 /// Toggle folder selection
 class FileScannerToggleFolder extends FileScannerEvent {
   const FileScannerToggleFolder(this.folderPath);

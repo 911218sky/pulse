@@ -327,21 +327,8 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerSaveState event,
     Emitter<PlayerState> emit,
   ) async {
-    if (state.currentAudio == null) return;
-
     try {
-      final playbackState = PlaybackState.create(
-        audioFilePath: state.currentAudio!.path,
-        position: state.position,
-        volume: state.volume,
-        playbackSpeed: state.speed,
-      );
-
-      await _playbackStateRepository.savePlaybackState(playbackState);
-      await _playbackStateRepository.savePositionForFile(
-        state.currentAudio!.path,
-        state.position,
-      );
+      await _saveCurrentPlaybackState();
     } on Exception {
       // Silently fail - saving state is not critical
     }
@@ -418,6 +405,23 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     });
   }
 
+  Future<void> _saveCurrentPlaybackState() async {
+    if (state.currentAudio == null) return;
+
+    final playbackState = PlaybackState.create(
+      audioFilePath: state.currentAudio!.path,
+      position: state.position,
+      volume: state.volume,
+      playbackSpeed: state.speed,
+    );
+
+    await _playbackStateRepository.savePlaybackState(playbackState);
+    await _playbackStateRepository.savePositionForFile(
+      state.currentAudio!.path,
+      state.position,
+    );
+  }
+
   @override
   Future<void> close() async {
     await _positionSubscription?.cancel();
@@ -427,14 +431,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _positionThrottleTimer?.cancel();
 
     // Save state before closing
-    if (state.currentAudio != null) {
-      final playbackState = PlaybackState.create(
-        audioFilePath: state.currentAudio!.path,
-        position: state.position,
-        volume: state.volume,
-        playbackSpeed: state.speed,
-      );
-      await _playbackStateRepository.savePlaybackState(playbackState);
+    try {
+      await _saveCurrentPlaybackState();
+    } on Exception {
+      // Silently fail - saving state is not critical during shutdown
     }
 
     await _audioRepository.dispose();

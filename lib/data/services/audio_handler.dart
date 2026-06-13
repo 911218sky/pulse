@@ -189,6 +189,10 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     try {
       AppLogger.d('AudioHandler', 'play() called, current playing: $_playing');
 
+      if (_player.state.completed) {
+        await _player.seek(Duration.zero);
+      }
+
       // media_kit needs playOrPause for toggle behavior
       if (!_player.state.playing) {
         await _player.play();
@@ -266,6 +270,21 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   @override
   Future<void> click([MediaButton button = MediaButton.media]) async {
     AppLogger.d('AudioHandler', 'click() called with button: $button');
+    switch (button) {
+      case MediaButton.media:
+        if (_player.state.playing) {
+          await pause();
+        } else {
+          await play();
+        }
+        return;
+      case MediaButton.next:
+        await skipToNext();
+        return;
+      case MediaButton.previous:
+        await skipToPrevious();
+        return;
+    }
   }
 
   @override

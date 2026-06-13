@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/domain/entities/playlist.dart';
 import 'package:pulse/presentation/widgets/playlist/playlist_item.dart';
@@ -105,11 +106,7 @@ class _ReorderablePlaylistView extends StatelessWidget {
             child: child,
           ),
         ),
-    onReorder: (oldIndex, newIndex) {
-      // Adjust for the way ReorderableListView handles indices
-      if (newIndex > oldIndex) newIndex--;
-      onReorder(oldIndex, newIndex);
-    },
+    onReorderItem: onReorder,
     itemBuilder:
         (context, index) => PlaylistItem(
           key: ValueKey(playlist.files[index].id),
@@ -154,7 +151,7 @@ class _EmptyPlaylist extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             l10n.playlistEmpty,
-            style: const TextStyle(color: AppColors.gray500, fontSize: 16),
+            style: AppTypography.bodyLarge(AppColors.gray500),
           ),
         ],
       ),
@@ -191,16 +188,16 @@ class PlaylistHeader extends StatelessWidget {
             children: [
               Text(
                 playlist.name,
-                style: const TextStyle(
-                  color: AppColors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTypography.headlineMedium(
+                  AppColors.white,
+                ).copyWith(fontWeight: AppTypography.semiBold),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 '${playlist.fileCount} 首歌曲',
-                style: const TextStyle(color: AppColors.gray500, fontSize: 13),
+                style: AppTypography.bodySmall(
+                  AppColors.gray500,
+                ).copyWith(fontSize: 13),
               ),
             ],
           ),
