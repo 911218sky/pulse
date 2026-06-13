@@ -117,6 +117,11 @@ jobs:
 
   build-android:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_PATH: android/app/upload-keystore.p12
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: pulse-release
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v6
 
@@ -150,6 +155,20 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Decode Android signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 secret is required for release APK signing."
+            exit 1
+          fi
+          if [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_PASSWORD secrets are required for release APK signing."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.p12
 
       - name: Build Android Universal APK
         run: flutter build apk --release
