@@ -69,6 +69,7 @@ class AppLocalizations {
   String get emptyLibrary => _t.emptyLibrary;
   String get emptyLibraryHint => _t.emptyLibraryHint;
   String get noResults => _t.noResults;
+  String get results => _t.results;
   String get tryOtherKeywords => _t.tryOtherKeywords;
   String get scanMusic => _t.scanMusic;
   String get refreshLibrary => _t.refreshLibrary;
@@ -273,6 +274,7 @@ abstract class Translations {
   String get emptyLibrary;
   String get emptyLibraryHint;
   String get noResults;
+  String get results;
   String get tryOtherKeywords;
   String get scanMusic;
   String get refreshLibrary;

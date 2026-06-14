@@ -62,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isCompact = MediaQuery.of(context).size.width < 600;
 
     return BlocListener<FileScannerBloc, FileScannerState>(
       listenWhen:
@@ -78,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: isDark ? AppColors.black : AppColors.white,
         body: SafeArea(
           child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
             slivers: [
               SliverToBoxAdapter(
                 child: _Header(
@@ -88,7 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               SliverToBoxAdapter(child: _SearchBar(isDark: isDark)),
-              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: isCompact ? AppSpacing.sm : AppSpacing.md,
+                ),
+              ),
               _SliverMusicList(
                 onTrackSelected: widget.onTrackSelected,
                 isDark: isDark,
@@ -139,24 +145,26 @@ class _Header extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 600;
 
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors:
               isDark
                   ? [
                     AppColors.black,
-                    AppColors.gray900.withValues(alpha: 0.3),
+                    AppColors.gray900,
+                    AppColors.accentDark.withValues(alpha: 0.18),
                     AppColors.black,
                   ]
                   : [
                     AppColors.white,
-                    AppColors.gray50.withValues(alpha: 0.5),
+                    AppColors.gray50,
+                    AppColors.accentLight.withValues(alpha: 0.14),
                     AppColors.white,
                   ],
-          stops: const [0.0, 0.3, 1.0],
+          stops: const [0.0, 0.48, 0.78, 1.0],
         ),
       ),
       child: Padding(
@@ -169,14 +177,9 @@ class _Header extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Hero section with title and subtitle
             _buildHeroSection(context, l10n, isCompact),
             SizedBox(height: isCompact ? AppSpacing.lg : AppSpacing.xl),
-
-            // Action buttons section
             _buildActionSection(context, l10n, isCompact),
-
-            SizedBox(height: isCompact ? AppSpacing.md : AppSpacing.lg),
           ],
         ),
       ),
@@ -187,74 +190,133 @@ class _Header extends StatelessWidget {
     BuildContext context,
     AppLocalizations l10n,
     bool isCompact,
-  ) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Main title with icon
-      Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(isCompact ? AppSpacing.sm : AppSpacing.md),
+  ) => Container(
+    width: double.infinity,
+    padding: EdgeInsets.all(isCompact ? AppSpacing.md : AppSpacing.lg),
+    decoration: BoxDecoration(
+      color:
+          isDark
+              ? AppColors.gray900.withValues(alpha: 0.72)
+              : AppColors.white.withValues(alpha: 0.82),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+      border: Border.all(
+        color:
+            isDark ? AppColors.gray800 : AppColors.white.withValues(alpha: 0.9),
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: (isDark ? AppColors.black : AppColors.accent).withValues(
+            alpha: isDark ? 0.26 : 0.08,
+          ),
+          blurRadius: 28,
+          offset: const Offset(0, 16),
+        ),
+      ],
+    ),
+    child: Stack(
+      children: [
+        Positioned(
+          right: -24,
+          top: -28,
+          child: Container(
+            width: isCompact ? 96 : 140,
+            height: isCompact ? 96 : 140,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.accent, AppColors.accentDark],
-              ),
-              borderRadius: BorderRadius.circular(
-                isCompact ? AppSpacing.radiusMd : AppSpacing.radiusLg,
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: AppColors.accent,
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.library_music_rounded,
-              color: AppColors.white,
-              size: isCompact ? 24 : 32,
+              shape: BoxShape.circle,
+              color: AppColors.accent.withValues(alpha: isDark ? 0.12 : 0.08),
             ),
           ),
-          SizedBox(width: isCompact ? AppSpacing.md : AppSpacing.lg),
-          Expanded(
-            child: Column(
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.musicLibrary,
-                  style: TextStyle(
-                    color: isDark ? AppColors.white : AppColors.black,
-                    fontSize: isCompact ? 24 : 32,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+                Container(
+                  padding: EdgeInsets.all(
+                    isCompact ? AppSpacing.sm : AppSpacing.md,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [AppColors.accent, AppColors.accentDark],
+                    ),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.accent.withValues(alpha: 0.32),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.graphic_eq_rounded,
+                    color: AppColors.white,
+                    size: isCompact ? 24 : 32,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  l10n.exploreYourMusic,
-                  style: TextStyle(
-                    color: isDark ? AppColors.gray400 : AppColors.gray600,
-                    fontSize: isCompact ? 14 : 16,
-                    fontWeight: FontWeight.w500,
+                SizedBox(width: isCompact ? AppSpacing.md : AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.musicLibrary,
+                        style: TextStyle(
+                          color: isDark ? AppColors.white : AppColors.black,
+                          fontSize: isCompact ? 30 : 40,
+                          height: 0.98,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        l10n.exploreYourMusic,
+                        style: TextStyle(
+                          color: isDark ? AppColors.gray400 : AppColors.gray600,
+                          fontSize: isCompact ? 14 : 16,
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: isCompact ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
+                if (onSettingsPressed != null) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  _ModernIconButton(
+                    icon: Icons.settings_rounded,
+                    onTap: onSettingsPressed!,
+                    tooltip: l10n.settings,
+                    isDark: isDark,
+                  ),
+                ],
               ],
             ),
-          ),
-          // Settings button for mobile
-          if (isCompact && onSettingsPressed != null)
-            _ModernIconButton(
-              icon: Icons.settings_rounded,
-              onTap: onSettingsPressed!,
-              tooltip: l10n.settings,
-              isDark: isDark,
-            ),
-        ],
-      ),
-    ],
+            if (!isCompact) ...[
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                l10n.quickActions,
+                style: TextStyle(
+                  color: isDark ? AppColors.gray500 : AppColors.gray500,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    ),
   );
 
   Widget _buildActionSection(
@@ -263,52 +325,14 @@ class _Header extends StatelessWidget {
     bool isCompact,
   ) {
     if (isCompact) {
-      return Column(
-        children: [
-          // Primary actions
-          Row(
-            children: [
-              if (onPlaylistPressed != null)
-                Expanded(
-                  child: _ModernActionCard(
-                    icon: Icons.queue_music_rounded,
-                    title: l10n.playlist,
-                    subtitle: l10n.managePlaylist,
-                    onTap: onPlaylistPressed!,
-                    isDark: isDark,
-                    color: AppColors.accent,
-                  ),
-                ),
-              if (onPlaylistPressed != null && onScanPressed != null)
-                const SizedBox(width: AppSpacing.md),
-              if (onScanPressed != null)
-                Expanded(
-                  child: _ModernActionCard(
-                    icon: Icons.refresh_rounded,
-                    title: l10n.refreshLibrary,
-                    subtitle: l10n.scanNewMusic,
-                    onTap: onScanPressed!,
-                    isDark: isDark,
-                    color: AppColors.accent,
-                  ),
-                ),
-            ],
-          ),
-          // Secondary actions
-          if (onScanPressed != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            _ModernActionCard(
-              icon: Icons.delete_sweep_rounded,
-              title: l10n.clearLibrary,
-              subtitle: l10n.clearLibraryDesc,
-              onTap: () => _showClearLibraryDialog(context, isDark),
-              isDark: isDark,
-              color: AppColors.error,
-              isDestructive: true,
-              isFullWidth: true,
-            ),
-          ],
-        ],
+      return _MobileActionDock(
+        isDark: isDark,
+        onScanPressed: onScanPressed,
+        onPlaylistPressed: onPlaylistPressed,
+        onClearPressed:
+            onScanPressed == null
+                ? null
+                : () => _showClearLibraryDialog(context, isDark),
       );
     } else {
       // Desktop layout with floating action bar
@@ -336,13 +360,26 @@ class _Header extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              l10n.quickActions,
-              style: TextStyle(
-                color: isDark ? AppColors.gray300 : AppColors.gray700,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.accent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  l10n.quickActions,
+                  style: TextStyle(
+                    color: isDark ? AppColors.gray300 : AppColors.gray700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
             Row(
               children: [
@@ -371,81 +408,12 @@ class _Header extends StatelessWidget {
                     isDestructive: true,
                   ),
                 ],
-                if (onSettingsPressed != null) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  _ModernIconButton(
-                    icon: Icons.settings_rounded,
-                    onTap: onSettingsPressed!,
-                    tooltip: l10n.settings,
-                    isDark: isDark,
-                  ),
-                ],
               ],
             ),
           ],
         ),
       );
     }
-  }
-}
-
-class _HeaderButton extends StatefulWidget {
-  const _HeaderButton({
-    required this.icon,
-    required this.onTap,
-    required this.isDark,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isDark;
-
-  @override
-  State<_HeaderButton> createState() => _HeaderButtonState();
-}
-
-class _HeaderButtonState extends State<_HeaderButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final button = MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          decoration: BoxDecoration(
-            color:
-                _isHovered
-                    ? (widget.isDark
-                        ? AppColors.gray800
-                        : AppColors.accent.withValues(alpha: 0.1))
-                    : (widget.isDark ? AppColors.gray900 : AppColors.gray100),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-            border: Border.all(
-              color:
-                  _isHovered
-                      ? (widget.isDark ? AppColors.gray600 : AppColors.accent)
-                      : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
-            ),
-          ),
-          child: Icon(
-            widget.icon,
-            color:
-                _isHovered
-                    ? (widget.isDark ? AppColors.white : AppColors.accent)
-                    : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
-            size: 20,
-          ),
-        ),
-      ),
-    );
-
-    return button;
   }
 }
 
@@ -503,6 +471,221 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
+class _MobileActionDock extends StatelessWidget {
+  const _MobileActionDock({
+    required this.isDark,
+    this.onScanPressed,
+    this.onPlaylistPressed,
+    this.onClearPressed,
+  });
+
+  final bool isDark;
+  final VoidCallback? onScanPressed;
+  final VoidCallback? onPlaylistPressed;
+  final VoidCallback? onClearPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color:
+            isDark
+                ? AppColors.black.withValues(alpha: 0.28)
+                : AppColors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+        border: Border.all(
+          color: isDark ? AppColors.gray800 : AppColors.gray200,
+        ),
+      ),
+      child: Column(
+        children: [
+          if (onScanPressed != null)
+            _MobileActionButton(
+              icon: Icons.radar_rounded,
+              label: l10n.scanMusic,
+              description: l10n.scanNewMusic,
+              onTap: onScanPressed!,
+              isDark: isDark,
+              isPrimary: true,
+            ),
+          if (onPlaylistPressed != null || onClearPressed != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                if (onPlaylistPressed != null)
+                  Expanded(
+                    child: _MobileActionButton(
+                      icon: Icons.queue_music_rounded,
+                      label: l10n.playlist,
+                      description: l10n.managePlaylist,
+                      onTap: onPlaylistPressed!,
+                      isDark: isDark,
+                    ),
+                  ),
+                if (onPlaylistPressed != null && onClearPressed != null)
+                  const SizedBox(width: AppSpacing.sm),
+                if (onClearPressed != null)
+                  Expanded(
+                    child: _MobileActionButton(
+                      icon: Icons.delete_sweep_rounded,
+                      label: l10n.clearLibrary,
+                      description: l10n.clearLibraryDesc,
+                      onTap: onClearPressed!,
+                      isDark: isDark,
+                      isDestructive: true,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileActionButton extends StatefulWidget {
+  const _MobileActionButton({
+    required this.icon,
+    required this.label,
+    required this.description,
+    required this.onTap,
+    required this.isDark,
+    this.isPrimary = false,
+    this.isDestructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String description;
+  final VoidCallback onTap;
+  final bool isDark;
+  final bool isPrimary;
+  final bool isDestructive;
+
+  @override
+  State<_MobileActionButton> createState() => _MobileActionButtonState();
+}
+
+class _MobileActionButtonState extends State<_MobileActionButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.isDestructive ? AppColors.error : AppColors.accent;
+    final foreground =
+        widget.isPrimary
+            ? AppColors.white
+            : widget.isDestructive
+            ? AppColors.error
+            : (widget.isDark ? AppColors.white : AppColors.black);
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.all(
+          widget.isPrimary ? AppSpacing.md : AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          gradient:
+              widget.isPrimary
+                  ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.accent, AppColors.accentDark],
+                  )
+                  : null,
+          color:
+              widget.isPrimary
+                  ? null
+                  : _isPressed
+                  ? color.withValues(alpha: 0.12)
+                  : (widget.isDark ? AppColors.gray900 : AppColors.white),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          border: Border.all(
+            color:
+                widget.isPrimary
+                    ? AppColors.accentLight.withValues(alpha: 0.6)
+                    : _isPressed
+                    ? color
+                    : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
+          ),
+          boxShadow: [
+            if (widget.isPrimary)
+              BoxShadow(
+                color: AppColors.accent.withValues(alpha: 0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: widget.isPrimary ? 44 : 36,
+              height: widget.isPrimary ? 44 : 36,
+              decoration: BoxDecoration(
+                color:
+                    widget.isPrimary
+                        ? AppColors.white.withValues(alpha: 0.18)
+                        : color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              ),
+              child: Icon(
+                widget.icon,
+                color: widget.isPrimary ? AppColors.white : color,
+                size: widget.isPrimary ? 23 : 19,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: widget.isPrimary ? 15 : 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color:
+                          widget.isPrimary
+                              ? AppColors.white.withValues(alpha: 0.72)
+                              : (widget.isDark
+                                  ? AppColors.gray500
+                                  : AppColors.gray600),
+                      fontSize: widget.isPrimary ? 12 : 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Sliver version of _MusicList for unified scrolling
 class _SliverMusicList extends StatelessWidget {
   const _SliverMusicList({required this.isDark, this.onTrackSelected});
@@ -530,6 +713,7 @@ class _SliverMusicList extends StatelessWidget {
 
             if (state.results.isEmpty) {
               return SliverFillRemaining(
+                hasScrollBody: false,
                 child: _EmptyState(hasQuery: state.hasQuery, isDark: isDark),
               );
             }
@@ -537,41 +721,58 @@ class _SliverMusicList extends StatelessWidget {
             final currentTrackPath = playerState.currentAudio?.path;
             final isCompact = MediaQuery.of(context).size.width < 600;
 
-            return SliverPadding(
-              padding: EdgeInsets.symmetric(
-                horizontal: isCompact ? AppSpacing.md : AppSpacing.xl,
-                vertical: AppSpacing.md,
-              ),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final file = state.results[index];
-                  final isCurrentlyPlaying = currentTrackPath == file.path;
-                  final isActuallyPlaying =
-                      isCurrentlyPlaying && playerState.isPlaying;
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (isDark ? AppColors.black : AppColors.gray400)
-                              .withValues(alpha: 0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+            return SliverMainAxisGroup(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _LibrarySectionHeader(
+                    count: state.results.length,
+                    hasQuery: state.hasQuery,
+                    isDark: isDark,
+                  ),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact ? AppSpacing.md : AppSpacing.xl,
+                    AppSpacing.sm,
+                    isCompact ? AppSpacing.md : AppSpacing.xl,
+                    AppSpacing.lg,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final file = state.results[index];
+                      final isCurrentlyPlaying = currentTrackPath == file.path;
+                      final isActuallyPlaying =
+                          isCurrentlyPlaying && playerState.isPlaying;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusLg,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isDark
+                                      ? AppColors.black
+                                      : AppColors.gray400)
+                                  .withValues(alpha: 0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: _MusicTile(
-                      audioFile: file,
-                      index: index,
-                      isDark: isDark,
-                      isCurrentlyPlaying: isCurrentlyPlaying,
-                      isActuallyPlaying: isActuallyPlaying,
-                      onTap: () => onTrackSelected?.call(file),
-                    ),
-                  );
-                }, childCount: state.results.length),
-              ),
+                        child: _MusicTile(
+                          audioFile: file,
+                          index: index,
+                          isDark: isDark,
+                          isCurrentlyPlaying: isCurrentlyPlaying,
+                          isActuallyPlaying: isActuallyPlaying,
+                          onTap: () => onTrackSelected?.call(file),
+                        ),
+                      );
+                    }, childCount: state.results.length),
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -598,6 +799,123 @@ class _MusicTile extends StatefulWidget {
   @override
   State<_MusicTile> createState() => _MusicTileState();
 }
+
+class _LibrarySectionHeader extends StatelessWidget {
+  const _LibrarySectionHeader({
+    required this.count,
+    required this.hasQuery,
+    required this.isDark,
+  });
+
+  final int count;
+  final bool hasQuery;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isCompact = MediaQuery.of(context).size.width < 600;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        isCompact ? AppSpacing.md : AppSpacing.xl,
+        AppSpacing.md,
+        isCompact ? AppSpacing.md : AppSpacing.xl,
+        AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              hasQuery ? l10n.results : l10n.musicLibrary,
+              style: TextStyle(
+                color: isDark ? AppColors.white : AppColors.black,
+                fontSize: isCompact ? 16 : 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color:
+                  isDark
+                      ? AppColors.gray900
+                      : AppColors.accent.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+              border: Border.all(
+                color: isDark ? AppColors.gray800 : AppColors.gray200,
+              ),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                color: isDark ? AppColors.gray300 : AppColors.accent,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrackLeading extends StatelessWidget {
+  const _TrackLeading({
+    required this.index,
+    required this.isDark,
+    required this.isHovered,
+    required this.isPlaying,
+    required this.isActuallyPlaying,
+    required this.isCompact,
+  });
+
+  final int index;
+  final bool isDark;
+  final bool isHovered;
+  final bool isPlaying;
+  final bool isActuallyPlaying;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: isCompact ? 24 : 32,
+    child:
+        isPlaying
+            ? PlayingIndicator(
+              color: AppColors.accent,
+              size: isCompact ? 18 : 20,
+              isAnimating: isActuallyPlaying,
+            )
+            : isHovered
+            ? Icon(
+              Icons.play_arrow_rounded,
+              color: isDark ? AppColors.white : AppColors.accent,
+              size: isCompact ? 18 : 20,
+            )
+            : Text(
+              '${index + 1}',
+              style: TextStyle(
+                color: isDark ? AppColors.gray500 : AppColors.gray400,
+                fontSize: isCompact ? 12 : 14,
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+              textAlign: TextAlign.center,
+            ),
+  );
+}
+
+enum _TrackAction { delete }
 
 class _MusicTileState extends State<_MusicTile> {
   bool _isHovered = false;
@@ -690,9 +1008,11 @@ class _MusicTileState extends State<_MusicTile> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-          padding: EdgeInsets.symmetric(
-            horizontal: isCompact ? AppSpacing.sm : AppSpacing.md,
-            vertical: AppSpacing.sm,
+          padding: EdgeInsets.fromLTRB(
+            isCompact ? AppSpacing.sm : AppSpacing.md,
+            isCompact ? AppSpacing.sm : AppSpacing.md,
+            isCompact ? AppSpacing.sm : AppSpacing.md,
+            isCompact ? AppSpacing.sm : AppSpacing.md,
           ),
           decoration: BoxDecoration(
             color:
@@ -713,37 +1033,18 @@ class _MusicTileState extends State<_MusicTile> {
           ),
           child: Row(
             children: [
-              // Index or play icon
-              SizedBox(
-                width: isCompact ? 28 : 32,
-                child:
-                    isPlaying
-                        ? PlayingIndicator(
-                          color: AppColors.accent,
-                          size: isCompact ? 18 : 20,
-                          isAnimating: widget.isActuallyPlaying,
-                        )
-                        : _isHovered
-                        ? Icon(
-                          Icons.play_arrow_rounded,
-                          color: isDark ? AppColors.white : AppColors.accent,
-                          size: isCompact ? 18 : 20,
-                        )
-                        : Text(
-                          '${widget.index + 1}',
-                          style: TextStyle(
-                            color:
-                                isDark ? AppColors.gray500 : AppColors.gray400,
-                            fontSize: isCompact ? 12 : 14,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
+              _TrackLeading(
+                index: widget.index,
+                isDark: isDark,
+                isHovered: _isHovered,
+                isPlaying: isPlaying,
+                isActuallyPlaying: widget.isActuallyPlaying,
+                isCompact: isCompact,
               ),
               SizedBox(width: isCompact ? AppSpacing.sm : AppSpacing.md),
-              // Album art
               Container(
-                width: isCompact ? 40 : 48,
-                height: isCompact ? 40 : 48,
+                width: isCompact ? 44 : 52,
+                height: isCompact ? 44 : 52,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -773,7 +1074,6 @@ class _MusicTileState extends State<_MusicTile> {
                 ),
               ),
               SizedBox(width: isCompact ? AppSpacing.sm : AppSpacing.md),
-              // Title and artist
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -794,32 +1094,58 @@ class _MusicTileState extends State<_MusicTile> {
                                       ? AppColors.gray200
                                       : AppColors.black),
                           fontSize: isCompact ? 14 : 15,
+                          height: 1.18,
                           fontWeight:
-                              isPlaying ? FontWeight.w600 : FontWeight.w500,
+                              isPlaying ? FontWeight.w700 : FontWeight.w600,
                         ),
-                        maxLines: 1,
+                        maxLines: isCompact ? 2 : 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.audioFile.artist ?? l10n.unknownArtist,
-                      style: TextStyle(
-                        color:
-                            isPlaying
-                                ? AppColors.accent.withValues(alpha: 0.7)
-                                : (isDark
-                                    ? AppColors.gray500
-                                    : AppColors.gray600),
-                        fontSize: isCompact ? 11 : 13,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.audioFile.artist ?? l10n.unknownArtist,
+                            style: TextStyle(
+                              color:
+                                  isPlaying
+                                      ? AppColors.accent.withValues(alpha: 0.74)
+                                      : (isDark
+                                          ? AppColors.gray500
+                                          : AppColors.gray600),
+                              fontSize: isCompact ? 11 : 13,
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isCompact &&
+                            widget.audioFile.duration > Duration.zero) ...[
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            TimeParser.formatDuration(
+                              widget.audioFile.duration,
+                            ),
+                            style: TextStyle(
+                              color:
+                                  isDark
+                                      ? AppColors.gray600
+                                      : AppColors.gray500,
+                              fontSize: 11,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
               ),
-              // Duration and delete button
               if (!isCompact) ...[
                 const SizedBox(width: AppSpacing.md),
                 Text(
@@ -832,24 +1158,61 @@ class _MusicTileState extends State<_MusicTile> {
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-              ],
-              const SizedBox(width: AppSpacing.sm),
-              // Delete button
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded),
-                color:
-                    _isHovered
-                        ? AppColors.error
-                        : (isDark ? AppColors.gray600 : AppColors.gray400),
-                iconSize: isCompact ? 18 : 20,
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: isCompact ? 28 : 32,
-                  minHeight: isCompact ? 28 : 32,
+                const SizedBox(width: AppSpacing.sm),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  color:
+                      _isHovered
+                          ? AppColors.error
+                          : (isDark ? AppColors.gray600 : AppColors.gray400),
+                  iconSize: 20,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  onPressed: _showDeleteDialog,
+                  tooltip: l10n.removeFromLibrary,
                 ),
-                onPressed: _showDeleteDialog,
-                tooltip: l10n.removeFromLibrary,
-              ),
+              ] else ...[
+                const SizedBox(width: AppSpacing.xs),
+                PopupMenuButton<_TrackAction>(
+                  color: isDark ? AppColors.gray900 : AppColors.white,
+                  tooltip: l10n.removeFromLibrary,
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    Icons.more_horiz_rounded,
+                    color: isDark ? AppColors.gray500 : AppColors.gray500,
+                    size: 20,
+                  ),
+                  onSelected: (action) {
+                    switch (action) {
+                      case _TrackAction.delete:
+                        _showDeleteDialog();
+                    }
+                  },
+                  itemBuilder:
+                      (context) => [
+                        PopupMenuItem(
+                          value: _TrackAction.delete,
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.delete_outline_rounded,
+                                color: AppColors.error,
+                                size: 18,
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Text(
+                                l10n.removeFromLibrary,
+                                style: const TextStyle(color: AppColors.error),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                ),
+              ],
             ],
           ),
         ),
@@ -922,152 +1285,6 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
-}
-
-// Modern action card for mobile layout
-class _ModernActionCard extends StatefulWidget {
-  const _ModernActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    required this.isDark,
-    required this.color,
-    this.isDestructive = false,
-    this.isFullWidth = false,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final bool isDark;
-  final Color color;
-  final bool isDestructive;
-  final bool isFullWidth;
-
-  @override
-  State<_ModernActionCard> createState() => _ModernActionCardState();
-}
-
-class _ModernActionCardState extends State<_ModernActionCard> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTapDown: (_) => setState(() => _isPressed = true),
-    onTapUp: (_) => setState(() => _isPressed = false),
-    onTapCancel: () => setState(() => _isPressed = false),
-    onTap: widget.onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      width: widget.isFullWidth ? double.infinity : null,
-      constraints: const BoxConstraints(minHeight: 72),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        gradient:
-            _isPressed
-                ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    widget.color.withValues(alpha: 0.2),
-                    widget.color.withValues(alpha: 0.1),
-                  ],
-                )
-                : LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors:
-                      widget.isDark
-                          ? [AppColors.gray900, AppColors.gray800]
-                          : [AppColors.white, AppColors.gray50],
-                ),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(
-          color:
-              _isPressed
-                  ? widget.color
-                  : (widget.isDark ? AppColors.gray700 : AppColors.gray200),
-          width: _isPressed ? 2 : 1,
-        ),
-        boxShadow: [
-          if (_isPressed)
-            BoxShadow(
-              color: widget.color.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            )
-          else
-            BoxShadow(
-              color: (widget.isDark ? AppColors.black : AppColors.gray400)
-                  .withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color:
-                  _isPressed
-                      ? widget.color.withValues(alpha: 0.2)
-                      : (widget.isDark ? AppColors.gray800 : AppColors.gray100),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            ),
-            child: Icon(
-              widget.icon,
-              color:
-                  _isPressed
-                      ? widget.color
-                      : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color:
-                        _isPressed
-                            ? widget.color
-                            : (widget.isDark
-                                ? AppColors.white
-                                : AppColors.black),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color:
-                        widget.isDark ? AppColors.gray500 : AppColors.gray600,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 // Modern icon button

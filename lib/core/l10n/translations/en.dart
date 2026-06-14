@@ -32,13 +32,15 @@ class EnTranslations extends Translations {
   @override
   String get musicLibrary => 'Music Library';
   @override
-  String get searchHint => 'Search songs, artists, albums...';
+  String get searchHint => 'Search music, artists, albums...';
   @override
   String get emptyLibrary => 'Music library is empty';
   @override
   String get emptyLibraryHint => 'Tap the scan button to add music';
   @override
   String get noResults => 'No results found';
+  @override
+  String get results => 'Results';
   @override
   String get tryOtherKeywords => 'Try other keywords';
   @override
@@ -53,13 +55,14 @@ class EnTranslations extends Translations {
   @override
   String get libraryCleared => 'Library cleared';
   @override
-  String get exploreYourMusic => 'Explore your music collection';
+  String get exploreYourMusic =>
+      'Your local music, organized for fast playback';
   @override
-  String get managePlaylist => 'Manage playlists';
+  String get managePlaylist => 'Playlists';
   @override
-  String get scanNewMusic => 'Scan new music';
+  String get scanNewMusic => 'Find new tracks';
   @override
-  String get clearLibraryDesc => 'Clear music library';
+  String get clearLibraryDesc => 'Remove records';
   @override
   String get quickActions => 'Quick Actions';
 

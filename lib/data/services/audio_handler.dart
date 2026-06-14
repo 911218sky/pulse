@@ -203,10 +203,16 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
         await _player.seek(Duration.zero);
       }
 
-      // media_kit needs playOrPause for toggle behavior
-      if (!_player.state.playing) {
-        await _player.play();
+      if (_player.state.playlist.medias.isEmpty && mediaItem.value != null) {
+        await _player.open(Media(mediaItem.value!.id), play: false);
+        if (_position > Duration.zero) {
+          await _player.seek(_position);
+        }
       }
+
+      await _player.play();
+      _playing = true;
+      _broadcastState();
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error playing', e);
       rethrow;
@@ -221,6 +227,8 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       if (_player.state.playing) {
         await _player.pause();
       }
+      _playing = false;
+      _broadcastState();
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error pausing', e);
       rethrow;

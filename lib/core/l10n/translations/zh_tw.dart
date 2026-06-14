@@ -36,9 +36,11 @@ class ZhTwTranslations extends Translations {
   @override
   String get emptyLibrary => '音樂庫是空的';
   @override
-  String get emptyLibraryHint => '點擊右上角的掃描按鈕來新增音樂';
+  String get emptyLibraryHint => '掃描資料夾後，音樂會顯示在這裡';
   @override
   String get noResults => '找不到符合的結果';
+  @override
+  String get results => '搜尋結果';
   @override
   String get tryOtherKeywords => '試試其他關鍵字';
   @override
@@ -53,13 +55,13 @@ class ZhTwTranslations extends Translations {
   @override
   String get libraryCleared => '音樂庫已清空';
   @override
-  String get exploreYourMusic => '探索你的音樂收藏';
+  String get exploreYourMusic => '整理本機音樂，快速找到想聽的歌曲';
   @override
-  String get managePlaylist => '管理播放清單';
+  String get managePlaylist => '播放清單';
   @override
-  String get scanNewMusic => '掃描新音樂';
+  String get scanNewMusic => '尋找新歌曲';
   @override
-  String get clearLibraryDesc => '清空音樂庫';
+  String get clearLibraryDesc => '移除紀錄';
   @override
   String get quickActions => '快速操作';
 
