@@ -11,6 +11,7 @@ import 'package:pulse/presentation/bloc/player/player_state.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
+import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 import 'package:pulse/presentation/widgets/common/vercel_text_field.dart';
@@ -278,61 +279,15 @@ class _PlaylistList extends StatelessWidget {
 
   Future<void> _confirmDelete(BuildContext context, Playlist playlist) async {
     final l10n = AppLocalizations.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              side: BorderSide(
-                color: isDark ? AppColors.gray800 : AppColors.gray200,
-              ),
-            ),
-            title: Row(
-              children: [
-                const Icon(
-                  Icons.warning_rounded,
-                  color: AppColors.error,
-                  size: 24,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    l10n.deletePlaylist,
-                    style: const TextStyle(color: AppColors.error),
-                  ),
-                ),
-              ],
-            ),
-            content: Text(
-              l10n.deletePlaylistConfirm(playlist.name),
-              style: TextStyle(
-                color: isDark ? AppColors.gray400 : AppColors.gray600,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  l10n.cancel,
-                  style: TextStyle(
-                    color: isDark ? AppColors.gray400 : AppColors.gray600,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: Text(l10n.delete),
-              ),
-            ],
-          ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: l10n.deletePlaylist,
+      message: l10n.deletePlaylistConfirm(playlist.name),
+      confirmLabel: l10n.delete,
+      cancelLabel: l10n.cancel,
     );
 
-    if ((confirmed ?? false) && context.mounted) {
+    if (confirmed && context.mounted) {
       context.read<PlaylistBloc>().add(PlaylistDelete(playlist.id));
       AppToast.success(context, AppLocalizations.of(context).playlistDeleted);
     }

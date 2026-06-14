@@ -316,6 +316,12 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerPlayingStateUpdated event,
     Emitter<PlayerState> emit,
   ) {
+    if (!event.isPlaying &&
+        state.status != PlayerStatus.playing &&
+        state.status != PlayerStatus.paused) {
+      return;
+    }
+
     emit(
       state.copyWith(
         status: event.isPlaying ? PlayerStatus.playing : PlayerStatus.paused,

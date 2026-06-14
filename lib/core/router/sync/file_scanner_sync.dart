@@ -94,12 +94,14 @@ class _FileScannerSyncState extends State<FileScannerSync> {
 
       // If playlist exists, update its files instead of recreating
       if (existingPlaylist != null) {
-        // Clear and re-add files to update the playlist
+        final newFiles =
+            folder.files
+                .where((file) => !existingPlaylist.containsPath(file.path))
+                .toList();
+        if (newFiles.isEmpty) continue;
+
         playlistBloc.add(
-          PlaylistAddFiles(
-            playlistId: existingPlaylist.id,
-            files: folder.files,
-          ),
+          PlaylistAddFiles(playlistId: existingPlaylist.id, files: newFiles),
         );
       } else {
         // Create new playlist

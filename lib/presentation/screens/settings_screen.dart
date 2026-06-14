@@ -6,6 +6,7 @@ import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
 import 'package:pulse/presentation/bloc/settings/settings_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
+import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 
 /// Settings screen
@@ -207,44 +208,16 @@ class _SettingsContent extends StatelessWidget {
     BuildContext context,
     AppLocalizations l10n,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-              side: BorderSide(
-                color: isDark ? AppColors.gray700 : AppColors.gray300,
-              ),
-            ),
-            title: Text(
-              l10n.resetSettings,
-              style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.black,
-              ),
-            ),
-            content: Text(
-              l10n.resetSettingsConfirm,
-              style: TextStyle(
-                color: isDark ? AppColors.gray400 : AppColors.gray600,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(l10n.cancel),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: AppColors.warning),
-                child: Text(l10n.reset),
-              ),
-            ],
-          ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: l10n.resetSettings,
+      message: l10n.resetSettingsConfirm,
+      confirmLabel: l10n.reset,
+      cancelLabel: l10n.cancel,
+      tone: AppConfirmDialogTone.warning,
     );
 
-    if ((confirmed ?? false) && context.mounted) {
+    if (confirmed && context.mounted) {
       context.read<SettingsBloc>().add(const SettingsReset());
       AppToast.success(context, l10n.settingsReset);
     }
@@ -254,42 +227,15 @@ class _SettingsContent extends StatelessWidget {
     BuildContext context,
     AppLocalizations l10n,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-              side: BorderSide(
-                color: isDark ? AppColors.gray700 : AppColors.gray300,
-              ),
-            ),
-            title: Text(
-              l10n.clearAllData,
-              style: const TextStyle(color: AppColors.error),
-            ),
-            content: Text(
-              l10n.clearAllDataConfirm,
-              style: TextStyle(
-                color: isDark ? AppColors.gray400 : AppColors.gray600,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(l10n.cancel),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: Text(l10n.clearAllData),
-              ),
-            ],
-          ),
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: l10n.clearAllData,
+      message: l10n.clearAllDataConfirm,
+      confirmLabel: l10n.clearAllData,
+      cancelLabel: l10n.cancel,
     );
 
-    if ((confirmed ?? false) && context.mounted) {
+    if (confirmed && context.mounted) {
       context.read<SettingsBloc>().add(const SettingsResetAll());
       AppToast.warning(context, l10n.allDataCleared);
     }

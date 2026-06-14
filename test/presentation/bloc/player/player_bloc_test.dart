@@ -1,5 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
+import 'package:pulse/domain/entities/playback_state.dart' as playback;
+import 'package:pulse/domain/entities/settings.dart';
+import 'package:pulse/domain/repositories/audio_repository.dart';
+import 'package:pulse/domain/repositories/playback_state_repository.dart';
+import 'package:pulse/domain/repositories/settings_repository.dart';
+import 'package:pulse/presentation/bloc/player/player_bloc.dart';
+import 'package:pulse/presentation/bloc/player/player_event.dart';
+import 'package:pulse/presentation/bloc/player/player_state.dart';
 
 import '../../../helpers/property_test_helper.dart';
 
@@ -18,6 +28,44 @@ import '../../../helpers/property_test_helper.dart';
 /// - If T is invalid format or T < 0 or T > D, seek fails or clamps
 
 void main() {
+  group('Playback stream state mapping', () {
+    late _FakeAudioRepository audioRepository;
+    late PlayerBloc bloc;
+
+    setUp(() {
+      audioRepository = _FakeAudioRepository();
+      bloc = PlayerBloc(
+        audioRepository: audioRepository,
+        playbackStateRepository: _FakePlaybackStateRepository(),
+        settingsRepository: _FakeSettingsRepository(),
+      );
+    });
+
+    tearDown(() => bloc.close());
+
+    test(
+      'playing=false does not convert stopped state back to paused',
+      () async {
+        bloc.add(const PlayerStop());
+        await expectLater(
+          bloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.status,
+              'status',
+              PlayerStatus.stopped,
+            ),
+          ),
+        );
+
+        audioRepository.emitPlaying(isPlaying: false);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.status, PlayerStatus.stopped);
+      },
+    );
+  });
+
   group('Skip Forward/Backward Bounds', () {
     test('Property 7.1: Skip forward clamps to duration (100 iterations)', () {
       PropertyTest.forAll(
@@ -180,4 +228,122 @@ void main() {
       expect(audioFile.fileSizeBytes, greaterThan(0));
     });
   });
+}
+
+class _FakeAudioRepository implements AudioRepository {
+  final _positionController = StreamController<Duration>.broadcast();
+  final _durationController = StreamController<Duration?>.broadcast();
+  final _playingController = StreamController<bool>.broadcast();
+  final _bufferedController = StreamController<Duration>.broadcast();
+
+  void emitPlaying({required bool isPlaying}) =>
+      _playingController.add(isPlaying);
+
+  @override
+  Stream<Duration> get positionStream => _positionController.stream;
+
+  @override
+  Stream<bool> get playingStream => _playingController.stream;
+
+  @override
+  Stream<Duration> get bufferedPositionStream => _bufferedController.stream;
+
+  @override
+  Stream<Duration?> get durationStream => _durationController.stream;
+
+  @override
+  Duration get currentPosition => Duration.zero;
+
+  @override
+  Duration? get currentDuration => null;
+
+  @override
+  bool get isPlaying => false;
+
+  @override
+  double get currentVolume => 1;
+
+  @override
+  double get currentPlaybackSpeed => 1;
+
+  @override
+  Future<void> loadAudio(AudioFile audioFile) async {}
+
+  @override
+  Future<void> play() async {}
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  Future<void> stop() async {
+    emitPlaying(isPlaying: false);
+  }
+
+  @override
+  Future<void> seekTo(Duration position) async {}
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<void> setPlaybackSpeed(double speed) async {}
+
+  @override
+  Future<void> setLoopMode(LoopMode mode) async {}
+
+  @override
+  Future<void> dispose() async {
+    await _positionController.close();
+    await _durationController.close();
+    await _playingController.close();
+    await _bufferedController.close();
+  }
+}
+
+class _FakePlaybackStateRepository implements PlaybackStateRepository {
+  @override
+  Future<void> savePlaybackState(playback.PlaybackState state) async {}
+
+  @override
+  Future<playback.PlaybackState?> getLastPlaybackState() async => null;
+
+  @override
+  Future<void> clearPlaybackState() async {}
+
+  @override
+  Future<Duration?> getPositionForFile(String filePath) async => null;
+
+  @override
+  Future<void> savePositionForFile(String filePath, Duration position) async {}
+
+  @override
+  Future<Map<String, Duration>> getAllFilePositions() async => {};
+
+  @override
+  Future<void> clearPositionForFile(String filePath) async {}
+}
+
+class _FakeSettingsRepository implements SettingsRepository {
+  final _controller = StreamController<Settings>.broadcast();
+
+  @override
+  Future<Settings> loadSettings() async => Settings.defaults;
+
+  @override
+  Future<void> saveSettings(Settings settings) async {
+    _controller.add(settings);
+  }
+
+  @override
+  Future<void> resetSettings() async {}
+
+  @override
+  Future<void> resetAllData() async {}
+
+  @override
+  Stream<Settings> get settingsStream => _controller.stream;
+
+  @override
+  Future<void> updateSetting<T>(String key, T value) async {}
 }

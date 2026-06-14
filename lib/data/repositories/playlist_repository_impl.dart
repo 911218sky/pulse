@@ -64,6 +64,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
       throw Exception('Playlist not found: $playlistId');
     }
     final updated = playlist.addFile(file);
+    if (identical(updated, playlist)) return playlist;
     await updatePlaylist(updated);
     return updated;
   }
@@ -78,6 +79,7 @@ class PlaylistRepositoryImpl implements PlaylistRepository {
       throw Exception('Playlist not found: $playlistId');
     }
     final updated = playlist.addFiles(files);
+    if (identical(updated, playlist)) return playlist;
     await updatePlaylist(updated);
     return updated;
   }

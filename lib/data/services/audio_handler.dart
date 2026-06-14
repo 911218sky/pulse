@@ -318,8 +318,9 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
 
   @override
   Future<void> onTaskRemoved() async {
-    await stop();
-    await dispose();
+    // Keep the media session alive so Android notification controls can resume
+    // playback after the app task is swiped away.
+    await pause();
   }
 
   Future<void> dispose() async {

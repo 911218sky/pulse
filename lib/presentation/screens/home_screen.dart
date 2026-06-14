@@ -13,6 +13,7 @@ import 'package:pulse/presentation/bloc/player/player_state.dart';
 import 'package:pulse/presentation/bloc/search/search_bloc.dart';
 import 'package:pulse/presentation/bloc/search/search_event.dart';
 import 'package:pulse/presentation/bloc/search/search_state.dart';
+import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/common/vercel_text_field.dart';
 import 'package:pulse/presentation/widgets/playing_indicator.dart';
@@ -116,56 +117,14 @@ class _Header extends StatelessWidget {
   static void _showClearLibraryDialog(BuildContext context, bool isDark) {
     final l10n = AppLocalizations.of(context);
 
-    showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              side: BorderSide(
-                color: isDark ? AppColors.gray800 : AppColors.gray200,
-              ),
-            ),
-            title: Row(
-              children: [
-                const Icon(
-                  Icons.warning_rounded,
-                  color: AppColors.error,
-                  size: 24,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  l10n.clearLibrary,
-                  style: const TextStyle(color: AppColors.error),
-                ),
-              ],
-            ),
-            content: Text(
-              l10n.clearLibraryConfirm,
-              style: TextStyle(
-                color: isDark ? AppColors.gray400 : AppColors.gray600,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  l10n.cancel,
-                  style: TextStyle(
-                    color: isDark ? AppColors.gray400 : AppColors.gray600,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: Text(l10n.delete),
-              ),
-            ],
-          ),
+    AppConfirmDialog.show(
+      context,
+      title: l10n.clearLibrary,
+      message: l10n.clearLibraryConfirm,
+      confirmLabel: l10n.delete,
+      cancelLabel: l10n.cancel,
     ).then((confirmed) {
-      if ((confirmed ?? false) && context.mounted) {
+      if (confirmed && context.mounted) {
         context.read<FileScannerBloc>().add(const FileScannerClearLibrary());
         // Clear SearchBloc as well
         context.read<SearchBloc>().add(const SearchSourceUpdated([]));

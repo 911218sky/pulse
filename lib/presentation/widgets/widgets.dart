@@ -1,5 +1,6 @@
 // Common widgets
 export 'package:pulse/presentation/widgets/common/app_shell.dart';
+export 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
 export 'package:pulse/presentation/widgets/common/vercel_button.dart';
 export 'package:pulse/presentation/widgets/common/vercel_card.dart';
 export 'package:pulse/presentation/widgets/common/vercel_text_field.dart';
