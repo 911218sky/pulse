@@ -60,7 +60,7 @@ Future<void> main() async {
           config: const AudioServiceConfig(
             androidNotificationChannelId: 'dev.pulse.app.audio',
             androidNotificationChannelName: '音樂播放',
-            androidNotificationOngoing: true,
+            androidStopForegroundOnPause: false,
             androidShowNotificationBadge: true,
             notificationColor: Color(0xFF000000),
           ),

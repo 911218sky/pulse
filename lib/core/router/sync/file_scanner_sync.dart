@@ -40,6 +40,12 @@ class _FileScannerSyncState extends State<FileScannerSync> {
 
   /// Listen when scan completes or files change
   bool _shouldListen(FileScannerState previous, FileScannerState current) {
+    if (_isInitialLoad &&
+        previous.status == FileScannerStatus.loading &&
+        (current.status == FileScannerStatus.initial ||
+            current.status == FileScannerStatus.completed)) {
+      return true;
+    }
     if (current.status != FileScannerStatus.completed) return false;
     if (previous.status != FileScannerStatus.completed) return true;
     if (previous.selectedFolders.length != current.selectedFolders.length) {
@@ -58,16 +64,19 @@ class _FileScannerSyncState extends State<FileScannerSync> {
   void _onStateChanged(BuildContext context, FileScannerState state) {
     context.read<SearchBloc>().add(SearchSourceUpdated(state.allFiles));
 
+    if (_isInitialLoad) {
+      _isInitialLoad = false;
+      if (state.status == FileScannerStatus.completed &&
+          state.selectedFolders.isNotEmpty) {
+        // On initial load, just sync existing playlists with library files.
+        _syncExistingPlaylists(context, state);
+      }
+      return;
+    }
+
     if (state.status == FileScannerStatus.completed &&
         state.selectedFolders.isNotEmpty) {
-      // Only create playlists on manual scan/import, not on initial load
-      if (_isInitialLoad) {
-        _isInitialLoad = false;
-        // On initial load, just sync existing playlists with library files
-        _syncExistingPlaylists(context, state);
-      } else {
-        _createPlaylistsForFolders(context, state);
-      }
+      _createPlaylistsForFolders(context, state);
     }
   }
 

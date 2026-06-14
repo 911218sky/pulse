@@ -342,7 +342,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updatePlaylistFiles(
     String playlistId,
     List<String> audioFileIds,
-  ) async {
+  ) async => transaction(() async {
     await (delete(playlistFilesTable)
       ..where((t) => t.playlistId.equals(playlistId))).go();
 
@@ -359,7 +359,7 @@ class AppDatabase extends _$AppDatabase {
         );
       }
     });
-  }
+  });
 
   /// Collapses duplicate audio rows by canonical path and rewrites playlists.
   Future<int> repairDuplicateAudioFilesByPath() async {

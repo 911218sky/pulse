@@ -59,19 +59,10 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   Duration? _duration;
   bool _playing = false;
 
-  // Throttle position updates to reduce UI rebuilds
-  DateTime _lastPositionUpdate = DateTime.now();
-  static const _positionUpdateInterval = Duration(milliseconds: 250);
-
   void _init() {
     // Listen to position changes (throttled)
     _positionSub = _player.stream.position.listen((pos) {
       _position = pos;
-      final now = DateTime.now();
-      if (now.difference(_lastPositionUpdate) >= _positionUpdateInterval) {
-        _lastPositionUpdate = now;
-        _broadcastState();
-      }
     });
 
     // Listen to duration changes
@@ -199,6 +190,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       }
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error playing', e);
+      rethrow;
     }
   }
 
@@ -212,6 +204,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       }
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error pausing', e);
+      rethrow;
     }
   }
 
@@ -223,6 +216,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       _broadcastState();
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error stopping', e);
+      rethrow;
     }
   }
 
@@ -238,8 +232,11 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       if (wasPlaying && !_player.state.playing) {
         await _player.play();
       }
+      _position = position;
+      _broadcastState();
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error seeking', e);
+      rethrow;
     }
   }
 
@@ -293,6 +290,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       await _player.setRate(speed);
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error setting speed', e);
+      rethrow;
     }
   }
 
@@ -301,6 +299,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       await _player.setVolume(volume * 100); // media_kit uses 0-100
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error setting volume', e);
+      rethrow;
     }
   }
 
@@ -320,7 +319,11 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   Future<void> onTaskRemoved() async {
     // Keep the media session alive so Android notification controls can resume
     // playback after the app task is swiped away.
-    await pause();
+    try {
+      await pause();
+    } on Exception catch (e) {
+      AppLogger.e('AudioHandler', 'Error pausing after task removal', e);
+    }
   }
 
   Future<void> dispose() async {

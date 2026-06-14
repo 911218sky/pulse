@@ -46,6 +46,7 @@ class AudioRepositoryImpl implements AudioRepository {
       await _handler.play();
     } on Exception catch (e) {
       AppLogger.e('AudioRepository', 'Error playing', e);
+      rethrow;
     }
   }
 
@@ -55,6 +56,7 @@ class AudioRepositoryImpl implements AudioRepository {
       await _handler.pause();
     } on Exception catch (e) {
       AppLogger.e('AudioRepository', 'Error pausing', e);
+      rethrow;
     }
   }
 
@@ -64,6 +66,7 @@ class AudioRepositoryImpl implements AudioRepository {
       await _handler.stop();
     } on Exception catch (e) {
       AppLogger.e('AudioRepository', 'Error stopping', e);
+      rethrow;
     }
   }
 
@@ -73,6 +76,7 @@ class AudioRepositoryImpl implements AudioRepository {
       await _handler.seek(position);
     } on Exception catch (e) {
       AppLogger.e('AudioRepository', 'Error seeking', e);
+      rethrow;
     }
   }
 
@@ -83,6 +87,7 @@ class AudioRepositoryImpl implements AudioRepository {
       await _handler.setVolume(clampedVolume);
     } on Exception catch (e) {
       AppLogger.e('AudioRepository', 'Error setting volume', e);
+      rethrow;
     }
   }
 
@@ -93,6 +98,7 @@ class AudioRepositoryImpl implements AudioRepository {
       await _handler.setSpeed(clampedSpeed);
     } on Exception catch (e) {
       AppLogger.e('AudioRepository', 'Error setting speed', e);
+      rethrow;
     }
   }
 

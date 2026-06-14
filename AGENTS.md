@@ -22,6 +22,18 @@ Core responsibilities:
 - Keep `.codegraph/` local-only. Never commit it.
 - Do not commit generated build/cache folders such as `.dart_tool/`, `build/`, platform `ephemeral/`, or `android/local.properties`.
 
+## CodeGraph
+
+This repository may contain a local `.codegraph/` index. Use it for code-impact work when available, but treat source files as authoritative.
+
+Rules:
+- Before non-trivial code edits, inspect definitions, references, callers, and dependencies for the symbols being changed.
+- For bug fixes, check both upstream event sources and downstream consumers instead of only the failing line.
+- For refactors, inspect public APIs and all call sites before changing names, signatures, or file locations.
+- Use plain text search for Markdown, YAML, shell, generated files, localization strings, and simple config checks.
+- If the graph looks stale after edits, branch changes, or file moves, refresh it locally only.
+- Never stage, commit, push, or upload `.codegraph/`.
+
 If Flutter/Dart are not on `PATH` in this workspace, use:
 - `/home/sbplab/sky/.tools/flutter/flutter/bin/dart`
 - `/home/sbplab/sky/.tools/flutter/flutter/bin/flutter`
@@ -37,6 +49,11 @@ If Android build logic, manifest, signing, media service, or release packaging c
 - `flutter build apk --release`
 
 If local Android SDK is unavailable, state that explicitly and rely on GitHub Actions release verification after pushing a tag.
+
+After pushing a release tag, verify:
+- The release workflow completed successfully.
+- Android artifacts include `pulse-android-universal`, `pulse-android-arm64-v8a`, `pulse-android-armeabi-v7a`, `pulse-android-x86_64`, and `pulse-android-bundle`.
+- `pulse-android-universal.apk` is present for normal Android users.
 
 ## Architecture
 
@@ -72,6 +89,12 @@ For normal APK updates to work:
 
 If signing key or applicationId changes, Android treats it as a conflicting or different app and users may need to uninstall, which can delete app data.
 
+If a user reports `App not installed as package conflicts`, check these first:
+- They installed a different package id before this release.
+- The APK was signed with a different key from the installed copy.
+- The new APK has a lower or equal `versionCode`.
+- They downloaded the wrong artifact for their device; default them to `pulse-android-universal.apk`.
+
 ## Persistence And Migration
 
 The app stores data in Drift SQLite at `pulse.db` under the app documents directory.
@@ -82,6 +105,7 @@ Preserve user data across upgrades:
 - Add Drift migrations in `AppDatabase.migration` for schema changes.
 - Never clear library, playlists, settings, playback state, or file positions during normal startup or upgrade.
 - Keep audio file path canonicalization consistent; changing it can affect duplicate detection and saved positions.
+- Test migrations with an existing database whenever schema, path normalization, playlist relations, or playback-state storage changes.
 
 Destructive actions must stay explicit and user-confirmed through a shared confirmation dialog.
 
@@ -160,4 +184,3 @@ Release flow:
 
 For Android users, recommend the universal APK unless they know their CPU ABI:
 - `pulse-android-universal.apk`
-

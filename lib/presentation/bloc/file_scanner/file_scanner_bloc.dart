@@ -191,9 +191,6 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
     emit(state.copyWith(status: FileScannerStatus.loading));
 
     try {
-      // Auto cleanup orphaned entries before loading
-      await _fileScannerRepository.cleanupOrphanedEntries();
-
       final files = await _fileScannerRepository.getLibraryFiles();
 
       if (files.isEmpty) {

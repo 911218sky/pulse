@@ -390,29 +390,11 @@ class _PlayerControls extends StatelessWidget {
                           context.read<PlaylistBloc>().add(
                             const PlaylistPlayPrevious(),
                           );
-                          final prevIndex = playlistState.previousTrackIndex;
-                          if (prevIndex != null &&
-                              playlistState.currentPlaylist != null) {
-                            final prevTrack =
-                                playlistState.currentPlaylist!.files[prevIndex];
-                            context.read<PlayerBloc>().add(
-                              PlayerLoadAudio(prevTrack),
-                            );
-                          }
                         },
                         onNext: () {
                           context.read<PlaylistBloc>().add(
                             const PlaylistPlayNext(),
                           );
-                          final nextIndex = playlistState.nextTrackIndex;
-                          if (nextIndex != null &&
-                              playlistState.currentPlaylist != null) {
-                            final nextTrack =
-                                playlistState.currentPlaylist!.files[nextIndex];
-                            context.read<PlayerBloc>().add(
-                              PlayerLoadAudio(nextTrack),
-                            );
-                          }
                         },
                         onSkipBackward: () {
                           context.read<PlayerBloc>().add(

@@ -196,7 +196,19 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
 
   @override
   Future<void> saveToLibrary(List<AudioFile> files) async {
-    final models = files.map(AudioFileModel.fromEntity).toList();
+    final existingPaths =
+        (await _dataSource.getAllAudioFilePaths())
+            .map(AudioPathUtils.canonicalize)
+            .toSet();
+    final models =
+        files
+            .where(
+              (file) =>
+                  existingPaths.add(AudioPathUtils.canonicalize(file.path)),
+            )
+            .map(AudioFileModel.fromEntity)
+            .toList();
+    if (models.isEmpty) return;
     await _dataSource.saveAudioFiles(models);
   }
 
