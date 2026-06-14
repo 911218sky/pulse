@@ -31,6 +31,7 @@ class FolderSelectionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = _isDark(context);
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +54,7 @@ class FolderSelectionList extends StatelessWidget {
               const Spacer(),
               if (onSelectAll != null)
                 VercelButton(
-                  label: 'All',
+                  label: l10n.selectAll,
                   variant: VercelButtonVariant.ghost,
                   size: VercelButtonSize.small,
                   isDark: dark,
@@ -62,7 +63,7 @@ class FolderSelectionList extends StatelessWidget {
               if (onDeselectAll != null) ...[
                 const SizedBox(width: AppSpacing.sm),
                 VercelButton(
-                  label: 'None',
+                  label: l10n.selectNone,
                   variant: VercelButtonVariant.ghost,
                   size: VercelButtonSize.small,
                   isDark: dark,
@@ -283,7 +284,7 @@ class FolderSelectionSummary extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '$selectedCount folders',
+                  l10n.foldersCount(selectedCount),
                   style: TextStyle(
                     color: dark ? AppColors.white : AppColors.black,
                     fontSize: 14,
@@ -292,7 +293,7 @@ class FolderSelectionSummary extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '$totalFileCount tracks',
+                  l10n.tracksCount(totalFileCount),
                   style: TextStyle(
                     color: dark ? AppColors.gray400 : AppColors.gray600,
                     fontSize: 13,

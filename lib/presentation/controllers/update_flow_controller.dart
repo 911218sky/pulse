@@ -13,13 +13,15 @@ import 'package:url_launcher/url_launcher.dart';
 
 enum UpdateCheckTrigger { automatic, manual }
 
+enum UpdateCheckOutcome { updateAvailable, upToDate, failed, skipped }
+
 /// Coordinates update checks, downloads, progress UI, and installer handoff.
 class UpdateFlowController {
   const UpdateFlowController();
 
   static bool _isRunning = false;
 
-  Future<void> checkForUpdate(
+  Future<UpdateCheckOutcome> checkForUpdate(
     BuildContext context, {
     UpdateCheckTrigger trigger = UpdateCheckTrigger.manual,
   }) async {
@@ -28,17 +30,24 @@ class UpdateFlowController {
 
     if (_isRunning) {
       if (isManual) AppToast.info(context, l10n.updateCheckInProgress);
-      return;
+      return UpdateCheckOutcome.skipped;
     }
 
     _isRunning = true;
     try {
       final update = await sl<UpdateCheckService>().checkForUpdate();
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return UpdateCheckOutcome.skipped;
+      }
 
       if (update == null) {
         if (isManual) AppToast.success(context, l10n.updateUpToDate);
-        return;
+        return UpdateCheckOutcome.upToDate;
+      }
+
+      if (!isManual) {
+        await downloadAndOpen(context, update);
+        return UpdateCheckOutcome.updateAvailable;
       }
 
       final confirmed = await AppConfirmDialog.show(
@@ -58,12 +67,14 @@ class UpdateFlowController {
       if (confirmed && context.mounted) {
         await downloadAndOpen(context, update);
       }
+      return UpdateCheckOutcome.updateAvailable;
     } on Exception catch (error, stackTrace) {
       AppLogger.w('UpdateFlowController', 'Update check failed: $error');
       AppLogger.d('UpdateFlowController', stackTrace.toString());
       if (isManual && context.mounted) {
         AppToast.error(context, l10n.updateCheckFailed);
       }
+      return UpdateCheckOutcome.failed;
     } finally {
       _isRunning = false;
     }
@@ -106,6 +117,18 @@ class UpdateFlowController {
       }
 
       await sl<UpdateDownloadService>().openInstaller(file);
+    } on UpdateInstallPermissionException catch (error, stackTrace) {
+      AppLogger.w(
+        'UpdateFlowController',
+        'Installer permission required: $error',
+      );
+      AppLogger.d('UpdateFlowController', stackTrace.toString());
+      if (rootNavigator.mounted && dialogShown) {
+        rootNavigator.pop();
+      }
+      if (context.mounted) {
+        AppToast.warning(context, l10n.updateInstallPermissionRequired);
+      }
     } on Exception catch (error, stackTrace) {
       AppLogger.e(
         'UpdateFlowController',

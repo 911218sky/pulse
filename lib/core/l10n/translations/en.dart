@@ -46,6 +46,9 @@ class EnTranslations extends Translations {
   @override
   String get scanMusic => 'Scan Music';
   @override
+  String get scanMusicDesc =>
+      'Find folders, import files, and keep your library current';
+  @override
   String get refreshLibrary => 'Rescan';
   @override
   String get clearLibrary => 'Clear Library';
@@ -97,6 +100,9 @@ class EnTranslations extends Translations {
   // ============== Settings Screen ==============
   @override
   String get settings => 'Settings';
+  @override
+  String get settingsDesc =>
+      'Tune playback, updates, language, and library behavior';
   @override
   String get appearance => 'Appearance';
   @override
@@ -203,6 +209,9 @@ class EnTranslations extends Translations {
       'Download complete. Opening installer...';
   @override
   String get updateDownloadFailed => 'Update download failed';
+  @override
+  String get updateInstallPermissionRequired =>
+      'Allow Pulse to install unknown apps, then run the update again';
 
   // ============== Sleep Timer ==============
   @override
@@ -265,15 +274,26 @@ class EnTranslations extends Translations {
   @override
   String get selectFolder => 'Select Folder';
   @override
+  String get selectAll => 'All';
+  @override
+  String get selectNone => 'None';
+  @override
   String get noFilesSelected => 'No files or folders selected';
   @override
   String get import => 'Import';
   @override
   String get importedFiles => 'Imported Files';
+  @override
+  String foldersCount(int n) => '$n ${n == 1 ? 'folder' : 'folders'}';
+  @override
+  String tracksCount(int n) => '$n ${n == 1 ? 'track' : 'tracks'}';
 
   // ============== Playlist ==============
   @override
   String get playlist => 'Playlist';
+  @override
+  String get playlistDesc =>
+      'Build listening queues and organize your favorite tracks';
   @override
   String get playlistEmpty => 'Playlist is empty';
   @override

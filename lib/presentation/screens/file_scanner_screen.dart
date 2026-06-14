@@ -13,6 +13,7 @@ import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_state.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
+import 'package:pulse/presentation/widgets/common/app_screen_header.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 import 'package:pulse/presentation/widgets/file_scanner/file_import_dialog.dart';
 import 'package:pulse/presentation/widgets/file_scanner/folder_scan_progress.dart';
@@ -98,25 +99,12 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final palette = context.appPalette;
-
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        children: [
-          if (onBack != null)
-            IconButton(
-              icon: const Icon(Icons.arrow_back_rounded),
-              color: palette.primaryText,
-              onPressed: onBack,
-            ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            l10n.scanMusic,
-            style: AppTypography.displaySmall(palette.primaryText),
-          ),
-        ],
-      ),
+    return AppScreenHeader(
+      title: l10n.scanMusic,
+      subtitle: l10n.scanMusicDesc,
+      icon: Icons.folder_open_rounded,
+      isDark: isDark,
+      onBack: onBack,
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:pulse/presentation/bloc/settings/settings_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
 import 'package:pulse/presentation/controllers/update_flow_controller.dart';
 import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
+import 'package:pulse/presentation/widgets/common/app_screen_header.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -303,27 +304,12 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        children: [
-          if (onBack != null)
-            IconButton(
-              icon: const Icon(Icons.arrow_back_rounded),
-              color: isDark ? AppColors.white : AppColors.black,
-              onPressed: onBack,
-            ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            l10n.settings,
-            style: TextStyle(
-              color: isDark ? AppColors.white : AppColors.black,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
+    return AppScreenHeader(
+      title: l10n.settings,
+      subtitle: l10n.settingsDesc,
+      icon: Icons.tune_rounded,
+      isDark: isDark,
+      onBack: onBack,
     );
   }
 }

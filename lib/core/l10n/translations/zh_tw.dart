@@ -46,6 +46,8 @@ class ZhTwTranslations extends Translations {
   @override
   String get scanMusic => '掃描音樂';
   @override
+  String get scanMusicDesc => '尋找資料夾、匯入檔案，讓音樂庫保持最新';
+  @override
   String get refreshLibrary => '重新掃描';
   @override
   String get clearLibrary => '清空音樂庫';
@@ -96,6 +98,8 @@ class ZhTwTranslations extends Translations {
   // ============== Settings Screen ==============
   @override
   String get settings => '設定';
+  @override
+  String get settingsDesc => '調整播放、更新、語言與音樂庫行為';
   @override
   String get appearance => '外觀';
   @override
@@ -195,6 +199,9 @@ class ZhTwTranslations extends Translations {
   String get updateDownloadComplete => '下載完成，正在開啟安裝程式...';
   @override
   String get updateDownloadFailed => '更新下載失敗';
+  @override
+  String get updateInstallPermissionRequired =>
+      '請允許 Pulse 安裝未知來源應用程式，然後再重新執行更新';
 
   // ============== Sleep Timer ==============
   @override
@@ -254,15 +261,25 @@ class ZhTwTranslations extends Translations {
   @override
   String get selectFolder => '選擇資料夾';
   @override
+  String get selectAll => '全選';
+  @override
+  String get selectNone => '全不選';
+  @override
   String get noFilesSelected => '尚未選擇任何檔案或資料夾';
   @override
   String get import => '匯入';
   @override
   String get importedFiles => '匯入的檔案';
+  @override
+  String foldersCount(int n) => '$n 個資料夾';
+  @override
+  String tracksCount(int n) => '$n 首歌曲';
 
   // ============== Playlist ==============
   @override
   String get playlist => '播放清單';
+  @override
+  String get playlistDesc => '建立播放佇列，整理常聽與喜愛的歌曲';
   @override
   String get playlistEmpty => '播放清單是空的';
   @override

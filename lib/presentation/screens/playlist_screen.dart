@@ -12,6 +12,7 @@ import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
+import 'package:pulse/presentation/widgets/common/app_screen_header.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 import 'package:pulse/presentation/widgets/common/vercel_text_field.dart';
@@ -103,110 +104,12 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 600;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors:
-              isDark
-                  ? [
-                    AppColors.black,
-                    AppColors.gray900.withValues(alpha: 0.3),
-                    AppColors.black,
-                  ]
-                  : [
-                    AppColors.white,
-                    AppColors.gray50.withValues(alpha: 0.5),
-                    AppColors.white,
-                  ],
-          stops: const [0.0, 0.3, 1.0],
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          isCompact ? AppSpacing.md : AppSpacing.xl,
-          isCompact ? AppSpacing.lg : AppSpacing.xxl,
-          isCompact ? AppSpacing.md : AppSpacing.xl,
-          AppSpacing.lg,
-        ),
-        child: Row(
-          children: [
-            if (onBack != null)
-              Container(
-                margin: const EdgeInsets.only(right: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.gray900 : AppColors.gray100,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                  border: Border.all(
-                    color: isDark ? AppColors.gray800 : AppColors.gray200,
-                  ),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  color: isDark ? AppColors.white : AppColors.black,
-                  onPressed: onBack,
-                ),
-              ),
-            Container(
-              padding: EdgeInsets.all(
-                isCompact ? AppSpacing.sm : AppSpacing.md,
-              ),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.accent, AppColors.accentDark],
-                ),
-                borderRadius: BorderRadius.circular(
-                  isCompact ? AppSpacing.radiusMd : AppSpacing.radiusLg,
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: AppColors.accent,
-                    blurRadius: 12,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.queue_music_rounded,
-                color: AppColors.white,
-                size: isCompact ? 24 : 32,
-              ),
-            ),
-            SizedBox(width: isCompact ? AppSpacing.md : AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.playlist,
-                    style: TextStyle(
-                      color: isDark ? AppColors.white : AppColors.black,
-                      fontSize: isCompact ? 24 : 32,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    l10n.managePlaylist,
-                    style: TextStyle(
-                      color: isDark ? AppColors.gray400 : AppColors.gray600,
-                      fontSize: isCompact ? 14 : 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AppScreenHeader(
+      title: l10n.playlist,
+      subtitle: l10n.playlistDesc,
+      icon: Icons.queue_music_rounded,
+      isDark: isDark,
+      onBack: onBack,
     );
   }
 }

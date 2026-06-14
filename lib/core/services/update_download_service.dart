@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -12,6 +13,10 @@ typedef UpdateDownloadProgress = void Function(int received, int? total);
 class UpdateDownloadService {
   const UpdateDownloadService({HttpClient? httpClient})
     : _httpClient = httpClient;
+
+  static const MethodChannel _deviceChannel = MethodChannel(
+    'dev.pulse.app/device',
+  );
 
   final HttpClient? _httpClient;
 
@@ -63,9 +68,41 @@ class UpdateDownloadService {
   }
 
   Future<void> openInstaller(File file) async {
+    if (Platform.isAndroid && !await _canRequestPackageInstalls()) {
+      await _openUnknownAppsSettings();
+      throw const UpdateInstallPermissionException();
+    }
+
     final result = await OpenFilex.open(file.path);
     if (result.type != ResultType.done) {
       throw FileSystemException(result.message, file.path);
     }
   }
+
+  Future<bool> _canRequestPackageInstalls() async {
+    try {
+      return await _deviceChannel.invokeMethod<bool>(
+            'canRequestPackageInstalls',
+          ) ??
+          true;
+    } on MissingPluginException {
+      return true;
+    } on PlatformException {
+      return true;
+    }
+  }
+
+  Future<void> _openUnknownAppsSettings() async {
+    try {
+      await _deviceChannel.invokeMethod<void>('openUnknownAppsSettings');
+    } on MissingPluginException {
+      // Ignore: the external APK URL fallback still lets users install manually.
+    } on PlatformException {
+      // Ignore: the external APK URL fallback still lets users install manually.
+    }
+  }
+}
+
+class UpdateInstallPermissionException implements Exception {
+  const UpdateInstallPermissionException();
 }

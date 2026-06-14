@@ -224,9 +224,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     try {
       AppLogger.d('AudioHandler', 'pause() called, current playing: $_playing');
 
-      if (_player.state.playing) {
-        await _player.pause();
-      }
+      await _player.pause();
       _playing = false;
       _broadcastState();
     } on Exception catch (e) {
@@ -296,7 +294,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     AppLogger.d('AudioHandler', 'click() called with button: $button');
     switch (button) {
       case MediaButton.media:
-        if (_player.state.playing) {
+        if (_playing) {
           await pause();
         } else {
           await play();
@@ -345,9 +343,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   @override
   Future<void> onTaskRemoved() async {
     // Keep the media session alive so Android notification controls can resume
-    // playback after the app task is swiped away. Keep skip callbacks too; the
-    // app process is still alive and Android media controls must not degrade to
-    // play/pause-only after task removal.
+    // playback after the app task is swiped away.
     try {
       await pause();
     } on Exception catch (e) {

@@ -72,6 +72,7 @@ class AppLocalizations {
   String get results => _t.results;
   String get tryOtherKeywords => _t.tryOtherKeywords;
   String get scanMusic => _t.scanMusic;
+  String get scanMusicDesc => _t.scanMusicDesc;
   String get refreshLibrary => _t.refreshLibrary;
   String get clearLibrary => _t.clearLibrary;
   String get clearLibraryConfirm => _t.clearLibraryConfirm;
@@ -99,6 +100,7 @@ class AppLocalizations {
 
   // ============== Settings Screen ==============
   String get settings => _t.settings;
+  String get settingsDesc => _t.settingsDesc;
   String get appearance => _t.appearance;
   String get darkMode => _t.darkMode;
   String get darkModeDesc => _t.darkModeDesc;
@@ -151,6 +153,8 @@ class AppLocalizations {
   String get updateDownloadPreparing => _t.updateDownloadPreparing;
   String get updateDownloadComplete => _t.updateDownloadComplete;
   String get updateDownloadFailed => _t.updateDownloadFailed;
+  String get updateInstallPermissionRequired =>
+      _t.updateInstallPermissionRequired;
 
   // ============== Sleep Timer ==============
   String get sleepTimerTitle => _t.sleepTimerTitle;
@@ -182,12 +186,17 @@ class AppLocalizations {
   String get importMusicDesc => _t.importMusicDesc;
   String get selectFiles => _t.selectFiles;
   String get selectFolder => _t.selectFolder;
+  String get selectAll => _t.selectAll;
+  String get selectNone => _t.selectNone;
   String get noFilesSelected => _t.noFilesSelected;
   String get import => _t.import;
   String get importedFiles => _t.importedFiles;
+  String foldersCount(int n) => _t.foldersCount(n);
+  String tracksCount(int n) => _t.tracksCount(n);
 
   // ============== Playlist ==============
   String get playlist => _t.playlist;
+  String get playlistDesc => _t.playlistDesc;
   String get playlistEmpty => _t.playlistEmpty;
   String get noPlaylists => _t.noPlaylists;
   String get noPlaylistsHint => _t.noPlaylistsHint;
@@ -283,6 +292,7 @@ abstract class Translations {
   String get results;
   String get tryOtherKeywords;
   String get scanMusic;
+  String get scanMusicDesc;
   String get refreshLibrary;
   String get clearLibrary;
   String get clearLibraryConfirm;
@@ -310,6 +320,7 @@ abstract class Translations {
 
   // ============== Settings Screen ==============
   String get settings;
+  String get settingsDesc;
   String get appearance;
   String get darkMode;
   String get darkModeDesc;
@@ -361,6 +372,7 @@ abstract class Translations {
   String get updateDownloadPreparing;
   String get updateDownloadComplete;
   String get updateDownloadFailed;
+  String get updateInstallPermissionRequired;
 
   // ============== Sleep Timer ==============
   String get sleepTimerTitle;
@@ -392,12 +404,17 @@ abstract class Translations {
   String get importMusicDesc;
   String get selectFiles;
   String get selectFolder;
+  String get selectAll;
+  String get selectNone;
   String get noFilesSelected;
   String get import;
   String get importedFiles;
+  String foldersCount(int n);
+  String tracksCount(int n);
 
   // ============== Playlist ==============
   String get playlist;
+  String get playlistDesc;
   String get playlistEmpty;
   String get noPlaylists;
   String get noPlaylistsHint;
