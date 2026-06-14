@@ -11,12 +11,13 @@ sealed class PlayerEvent extends Equatable {
 
 /// Load and prepare an audio file for playback
 class PlayerLoadAudio extends PlayerEvent {
-  const PlayerLoadAudio(this.audioFile);
+  const PlayerLoadAudio(this.audioFile, {this.forceRestart = false});
 
   final AudioFile audioFile;
+  final bool forceRestart;
 
   @override
-  List<Object?> get props => [audioFile];
+  List<Object?> get props => [audioFile, forceRestart];
 }
 
 /// Start or resume playback

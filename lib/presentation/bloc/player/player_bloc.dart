@@ -90,7 +90,8 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     Emitter<PlayerState> emit,
   ) async {
     // Skip reloading if it's the same audio file and already playing/ready
-    if (_lastLoadedAudioPath == event.audioFile.path &&
+    if (!event.forceRestart &&
+        _lastLoadedAudioPath == event.audioFile.path &&
         (state.isPlaying ||
             state.status == PlayerStatus.paused ||
             state.status == PlayerStatus.ready)) {
@@ -98,7 +99,14 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       return;
     }
 
-    emit(state.copyWith(status: PlayerStatus.loading));
+    emit(
+      state.copyWith(
+        status: PlayerStatus.loading,
+        currentAudio: event.audioFile,
+        position: Duration.zero,
+        duration: () => null,
+      ),
+    );
 
     try {
       // Load settings for skip durations
@@ -130,6 +138,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           status: PlayerStatus.ready,
           currentAudio: event.audioFile,
           position: savedPosition ?? Duration.zero,
+          duration: () => event.audioFile.duration,
           volume: settings.defaultVolume,
           speed: settings.defaultPlaybackSpeed,
         ),
@@ -309,7 +318,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerDurationUpdated event,
     Emitter<PlayerState> emit,
   ) {
-    emit(state.copyWith(duration: event.duration));
+    emit(state.copyWith(duration: () => event.duration));
   }
 
   void _onPlayingStateUpdated(

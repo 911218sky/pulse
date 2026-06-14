@@ -244,6 +244,8 @@ class EnTranslations extends Translations {
   @override
   String get playlistDeleted => 'Playlist deleted';
   @override
+  String get playlistNotFound => 'Playlist not found';
+  @override
   String get renamePlaylist => 'Rename';
   @override
   String get playlistName => 'Name';
@@ -256,6 +258,9 @@ class EnTranslations extends Translations {
   @override
   String deletePlaylistConfirm(String name) =>
       'Delete "$name"? This cannot be undone.';
+  @override
+  String removeFromPlaylistConfirm(String title) =>
+      'Remove "$title" from this playlist?';
   @override
   String get addSongs => 'Add Songs';
   @override

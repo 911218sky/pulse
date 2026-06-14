@@ -26,6 +26,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     onSkipToNext = onNext;
     onSkipToPrevious = onPrevious;
     AppLogger.d('AudioHandler', 'Skip callbacks set');
+    _broadcastState();
   }
 
   void _initPlaybackState() {
@@ -93,16 +94,30 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   void _broadcastState() {
     final controls = <MediaControl>[
       MediaControl.rewind, // 倒轉
-      MediaControl.skipToPrevious, // 上一首
+      if (onSkipToPrevious != null) MediaControl.skipToPrevious, // 上一首
       if (_playing) MediaControl.pause else MediaControl.play,
-      MediaControl.skipToNext, // 下一首
+      if (onSkipToNext != null) MediaControl.skipToNext, // 下一首
       MediaControl.fastForward, // 快轉
     ];
+    final playPauseIndex = controls.indexWhere(
+      (control) =>
+          control.action == MediaAction.play ||
+          control.action == MediaAction.pause,
+    );
+    final compactActionIndices = <int>[
+      controls.indexWhere(
+        (control) => control.action == MediaAction.skipToPrevious,
+      ),
+      playPauseIndex,
+      controls.indexWhere(
+        (control) => control.action == MediaAction.skipToNext,
+      ),
+    ].where((index) => index >= 0).toList(growable: false);
 
     playbackState.add(
       PlaybackState(
         controls: controls,
-        systemActions: const {
+        systemActions: {
           MediaAction.seek,
           MediaAction.seekForward,
           MediaAction.seekBackward,
@@ -111,10 +126,10 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
           MediaAction.stop,
           MediaAction.rewind,
           MediaAction.fastForward,
-          MediaAction.skipToNext,
-          MediaAction.skipToPrevious,
+          if (onSkipToNext != null) MediaAction.skipToNext,
+          if (onSkipToPrevious != null) MediaAction.skipToPrevious,
         },
-        androidCompactActionIndices: const [1, 2, 3], // 精簡模式顯示：上一首、播放/暫停、下一首
+        androidCompactActionIndices: compactActionIndices,
         processingState: _mapProcessingState(),
         playing: _playing,
         updatePosition: _position,
@@ -163,6 +178,10 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
         displayDescription: album,
       );
       mediaItem.add(item);
+
+      _position = Duration.zero;
+      _duration = duration;
+      _broadcastState();
 
       // Load the audio file using media_kit
       await _player.open(Media(path), play: false);
@@ -318,7 +337,9 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   @override
   Future<void> onTaskRemoved() async {
     // Keep the media session alive so Android notification controls can resume
-    // playback after the app task is swiped away.
+    // playback after the app task is swiped away. Skip callbacks are tied to
+    // the Flutter widget tree and must not outlive that context.
+    setSkipCallbacks();
     try {
       await pause();
     } on Exception catch (e) {

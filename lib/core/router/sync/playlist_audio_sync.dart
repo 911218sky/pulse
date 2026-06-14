@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/router/app_router.dart';
 import 'package:pulse/core/utils/app_logger.dart';
@@ -120,7 +120,18 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
                 );
               }
 
-              // Play next track
+              final playlistState = context.read<PlaylistBloc>().state;
+              final currentTrack = playlistState.currentTrack;
+
+              if (playlistState.repeatMode == RepeatMode.one &&
+                  currentTrack != null) {
+                AppLogger.d('PlaylistAudioSync', 'Repeating current track');
+                context.read<PlayerBloc>().add(
+                  PlayerLoadAudio(currentTrack, forceRestart: true),
+                );
+                return;
+              }
+
               AppLogger.d('PlaylistAudioSync', 'Playing next track');
               context.read<PlaylistBloc>().add(const PlaylistPlayNext());
             }

@@ -238,6 +238,8 @@ class ZhTwTranslations extends Translations {
   @override
   String get playlistDeleted => '播放清單已刪除';
   @override
+  String get playlistNotFound => '找不到播放清單';
+  @override
   String get renamePlaylist => '重新命名';
   @override
   String get playlistName => '名稱';
@@ -249,6 +251,8 @@ class ZhTwTranslations extends Translations {
   String songsCount(int n) => '$n 首歌曲';
   @override
   String deletePlaylistConfirm(String name) => '確定要刪除「$name」嗎？此操作無法復原。';
+  @override
+  String removeFromPlaylistConfirm(String title) => '要從播放清單移除「$title」嗎？';
   @override
   String get addSongs => '新增歌曲';
   @override

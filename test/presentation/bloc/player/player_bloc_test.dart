@@ -64,6 +64,91 @@ void main() {
         expect(bloc.state.status, PlayerStatus.stopped);
       },
     );
+
+    test('forceRestart reloads the same ready audio', () async {
+      const audioFile = AudioFile(
+        id: 'track-1',
+        path: '/music/track-1.mp3',
+        title: 'Track 1',
+        duration: Duration(minutes: 3),
+        fileSizeBytes: 1024,
+      );
+
+      bloc.add(const PlayerLoadAudio(audioFile));
+      await expectLater(
+        bloc.stream,
+        emitsThrough(
+          isA<PlayerState>().having(
+            (state) => state.status,
+            'status',
+            PlayerStatus.playing,
+          ),
+        ),
+      );
+
+      bloc.add(const PlayerLoadAudio(audioFile));
+      await Future<void>.delayed(Duration.zero);
+      expect(audioRepository.loadCount, 1);
+
+      bloc.add(const PlayerLoadAudio(audioFile, forceRestart: true));
+      await expectLater(
+        bloc.stream,
+        emitsThrough(
+          isA<PlayerState>().having(
+            (state) => state.status,
+            'status',
+            PlayerStatus.playing,
+          ),
+        ),
+      );
+
+      expect(audioRepository.loadCount, 2);
+      expect(audioRepository.playCount, 2);
+    });
+
+    test('loading a new audio clears stale position and duration', () async {
+      const oldDuration = Duration(minutes: 4);
+      const oldAudio = AudioFile(
+        id: 'old-track',
+        path: '/music/old.mp3',
+        title: 'Old',
+        duration: oldDuration,
+        fileSizeBytes: 1024,
+      );
+      const newAudio = AudioFile(
+        id: 'new-track',
+        path: '/music/new.mp3',
+        title: 'New',
+        duration: Duration(minutes: 2),
+        fileSizeBytes: 1024,
+      );
+
+      bloc.add(const PlayerLoadAudio(oldAudio));
+      await expectLater(
+        bloc.stream,
+        emitsThrough(
+          isA<PlayerState>().having(
+            (state) => state.duration,
+            'duration',
+            oldDuration,
+          ),
+        ),
+      );
+
+      bloc.add(const PlayerPositionUpdated(Duration(minutes: 1)));
+      await Future<void>.delayed(Duration.zero);
+
+      bloc.add(const PlayerLoadAudio(newAudio));
+      await expectLater(
+        bloc.stream,
+        emitsThrough(
+          isA<PlayerState>()
+              .having((state) => state.status, 'status', PlayerStatus.loading)
+              .having((state) => state.position, 'position', Duration.zero)
+              .having((state) => state.duration, 'duration', isNull),
+        ),
+      );
+    });
   });
 
   group('Skip Forward/Backward Bounds', () {
@@ -235,6 +320,8 @@ class _FakeAudioRepository implements AudioRepository {
   final _durationController = StreamController<Duration?>.broadcast();
   final _playingController = StreamController<bool>.broadcast();
   final _bufferedController = StreamController<Duration>.broadcast();
+  int loadCount = 0;
+  int playCount = 0;
 
   void emitPlaying({required bool isPlaying}) =>
       _playingController.add(isPlaying);
@@ -267,10 +354,14 @@ class _FakeAudioRepository implements AudioRepository {
   double get currentPlaybackSpeed => 1;
 
   @override
-  Future<void> loadAudio(AudioFile audioFile) async {}
+  Future<void> loadAudio(AudioFile audioFile) async {
+    loadCount++;
+  }
 
   @override
-  Future<void> play() async {}
+  Future<void> play() async {
+    playCount++;
+  }
 
   @override
   Future<void> pause() async {}

@@ -127,18 +127,12 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (m, from, to) async {
-      if (from < 2) {
-        await repairDuplicateAudioFilesByPath();
-        await customStatement(
-          'CREATE UNIQUE INDEX IF NOT EXISTS '
-          'idx_audio_files_file_path ON audio_files (file_path)',
-        );
-      }
+      if (from < 4) await repairCanonicalPathsForUpgrade();
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -363,6 +357,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// Collapses duplicate audio rows by canonical path and rewrites playlists.
   Future<int> repairDuplicateAudioFilesByPath() async {
+    await _repairFilePositionPaths();
+    await _repairPlaybackStatePaths();
+
     final rows =
         await customSelect(
           'SELECT id, file_path FROM audio_files '
@@ -425,6 +422,101 @@ class AppDatabase extends _$AppDatabase {
     });
 
     return removedCount;
+  }
+
+  /// Runs path canonicalization repairs required before schema version 4.
+  Future<void> repairCanonicalPathsForUpgrade() async {
+    await _ensureSettingsColumnsForUpgrade();
+    await repairDuplicateAudioFilesByPath();
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS '
+      'idx_audio_files_file_path ON audio_files (file_path)',
+    );
+  }
+
+  Future<void> _ensureSettingsColumnsForUpgrade() async {
+    await _tryAddColumn(
+      'ALTER TABLE settings ADD COLUMN '
+      "locale TEXT NOT NULL DEFAULT 'zh_TW'",
+    );
+    await _tryAddColumn(
+      'ALTER TABLE settings ADD COLUMN '
+      'sleep_timer_fade_out_enabled INTEGER NOT NULL DEFAULT 1',
+    );
+    await _tryAddColumn(
+      'ALTER TABLE settings ADD COLUMN '
+      'sleep_timer_fade_out_seconds INTEGER NOT NULL DEFAULT 5',
+    );
+    await _tryAddColumn(
+      'ALTER TABLE settings ADD COLUMN '
+      'navigate_to_player_on_resume INTEGER NOT NULL DEFAULT 0',
+    );
+  }
+
+  Future<void> _tryAddColumn(String statement) async {
+    try {
+      await customStatement(statement);
+    } on Exception {
+      // Existing installations may already have the column from older
+      // migrations. SQLite has no portable ADD COLUMN IF NOT EXISTS.
+    }
+  }
+
+  Future<void> _repairFilePositionPaths() async {
+    final rows =
+        await customSelect(
+          'SELECT file_path, position_ms FROM file_positions '
+          'ORDER BY file_path',
+          readsFrom: {filePositionsTable},
+        ).get();
+
+    if (rows.isEmpty) return;
+
+    final positionByPath = <String, int>{};
+    for (final row in rows) {
+      final canonicalPath = AudioPathUtils.canonicalize(
+        row.read<String>('file_path'),
+      );
+      final positionMs = row.read<int>('position_ms');
+      final existingPosition = positionByPath[canonicalPath];
+      if (existingPosition == null || positionMs > existingPosition) {
+        positionByPath[canonicalPath] = positionMs;
+      }
+    }
+
+    await transaction(() async {
+      await delete(filePositionsTable).go();
+      await batch((batch) {
+        for (final entry in positionByPath.entries) {
+          batch.insert(
+            filePositionsTable,
+            FilePositionsTableCompanion(
+              filePath: Value(entry.key),
+              positionMs: Value(entry.value),
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+        }
+      });
+    });
+  }
+
+  Future<void> _repairPlaybackStatePaths() async {
+    final rows = await select(playbackStatesTable).get();
+    if (rows.isEmpty) return;
+
+    await transaction(() async {
+      for (final row in rows) {
+        await (update(playbackStatesTable)
+          ..where((t) => t.id.equals(row.id))).write(
+          PlaybackStatesTableCompanion(
+            audioFilePath: Value(
+              AudioPathUtils.canonicalize(row.audioFilePath),
+            ),
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _normalizePlaylistSortOrders() async {

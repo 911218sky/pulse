@@ -15,6 +15,7 @@ import 'package:pulse/presentation/bloc/player/player_state.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
+import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/playing_indicator.dart';
 
@@ -45,7 +46,7 @@ class PlaylistDetailScreen extends StatelessWidget {
             if (playlist == null) {
               return Center(
                 child: Text(
-                  'Playlist not found',
+                  l10n.playlistNotFound,
                   style: TextStyle(
                     color: isDark ? AppColors.white : AppColors.black,
                   ),
@@ -308,68 +309,24 @@ class _TrackTile extends StatefulWidget {
 class _TrackTileState extends State<_TrackTile> {
   bool _isHovered = false;
 
-  void _showDeleteDialog() {
+  Future<void> _showDeleteDialog() async {
     final l10n = AppLocalizations.of(context);
-    final isDark = widget.isDark;
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: l10n.removeFromLibrary,
+      message: l10n.removeFromPlaylistConfirm(widget.audioFile.displayTitle),
+      confirmLabel: l10n.delete,
+      cancelLabel: l10n.cancel,
+    );
 
-    showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-              side: BorderSide(
-                color: isDark ? AppColors.gray800 : AppColors.gray200,
-              ),
-            ),
-            title: Row(
-              children: [
-                const Icon(
-                  Icons.warning_rounded,
-                  color: AppColors.error,
-                  size: 24,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  l10n.removeFromLibrary,
-                  style: const TextStyle(color: AppColors.error),
-                ),
-              ],
-            ),
-            content: Text(
-              'Remove "${widget.audioFile.displayTitle}" from playlist?',
-              style: TextStyle(
-                color: isDark ? AppColors.gray400 : AppColors.gray600,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  l10n.cancel,
-                  style: TextStyle(
-                    color: isDark ? AppColors.gray400 : AppColors.gray600,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                child: Text(l10n.delete),
-              ),
-            ],
-          ),
-    ).then((confirmed) {
-      if ((confirmed ?? false) && mounted) {
-        context.read<PlaylistBloc>().add(
-          PlaylistRemoveFile(
-            playlistId: widget.playlistId,
-            fileId: widget.audioFile.id,
-          ),
-        );
-      }
-    });
+    if (confirmed && mounted) {
+      context.read<PlaylistBloc>().add(
+        PlaylistRemoveFile(
+          playlistId: widget.playlistId,
+          fileId: widget.audioFile.id,
+        ),
+      );
+    }
   }
 
   @override
