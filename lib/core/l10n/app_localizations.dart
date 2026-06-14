@@ -179,6 +179,7 @@ class AppLocalizations {
   String get create => _t.create;
   String songsCount(int n) => _t.songsCount(n);
   String deletePlaylistConfirm(String name) => _t.deletePlaylistConfirm(name);
+  String get removeFromPlaylist => _t.removeFromPlaylist;
   String removeFromPlaylistConfirm(String title) =>
       _t.removeFromPlaylistConfirm(title);
   String get addSongs => _t.addSongs;
@@ -367,6 +368,7 @@ abstract class Translations {
   String get create;
   String songsCount(int n);
   String deletePlaylistConfirm(String name);
+  String get removeFromPlaylist;
   String removeFromPlaylistConfirm(String title);
   String get addSongs;
   String get add;

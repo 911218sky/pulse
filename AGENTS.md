@@ -18,9 +18,11 @@ Core responsibilities:
 - Check `git status --short` before editing.
 - Do not revert unrelated user changes.
 - Use `apply_patch` for manual file edits.
-- Prefer `find`/`grep` if `rg` is unavailable in this environment.
+- Prefer `rg`/`rg --files` for searches; use `find`/`grep` only when `rg` is unavailable.
+- If `/home/sbplab/sky/.tools/bin/rtk` is available, prefix shell commands with it to reduce noisy output. Use `rtk proxy <cmd>` when the command must run without RTK filtering.
 - Keep `.codegraph/` local-only. Never commit it.
 - Do not commit generated build/cache folders such as `.dart_tool/`, `build/`, platform `ephemeral/`, or `android/local.properties`.
+- Keep commits focused. Do not mix documentation-only cleanup with release-critical code fixes unless they are part of the same requested task.
 
 ## CodeGraph
 
@@ -33,6 +35,7 @@ Rules:
 - Use plain text search for Markdown, YAML, shell, generated files, localization strings, and simple config checks.
 - If the graph looks stale after edits, branch changes, or file moves, refresh it locally only.
 - Never stage, commit, push, or upload `.codegraph/`.
+- Do not treat CodeGraph as a substitute for reading the changed source files and tests before committing.
 
 If Flutter/Dart are not on `PATH` in this workspace, use:
 - `/home/sbplab/sky/.tools/flutter/flutter/bin/dart`
@@ -44,6 +47,13 @@ After editing Dart files, run:
 - `dart format --set-exit-if-changed .`
 - `flutter analyze`
 - `flutter test`
+
+When fixing a reported bug, add or update a regression test whenever the behavior can be exercised without device-only services.
+
+Before committing, run:
+- `git status --short`
+- `git diff --check`
+- A targeted diff review for every file you touched
 
 If Android build logic, manifest, signing, media service, or release packaging changes, also verify with an Android release build when the Android SDK is available:
 - `flutter build apk --release`
@@ -95,6 +105,13 @@ If a user reports `App not installed as package conflicts`, check these first:
 - The new APK has a lower or equal `versionCode`.
 - They downloaded the wrong artifact for their device; default them to `pulse-android-universal.apk`.
 
+Do not publish debug-signed APKs as release downloads. Release APKs must come from the GitHub Actions release workflow with the configured release signing secrets.
+
+For Android download guidance:
+- Normal Android users install `pulse-android-universal.apk`.
+- ABI-specific APKs are only for users who know their device CPU ABI.
+- The `.aab` file is for stores, not normal sideload installation.
+
 ## Persistence And Migration
 
 The app stores data in Drift SQLite at `pulse.db` under the app documents directory.
@@ -106,6 +123,8 @@ Preserve user data across upgrades:
 - Never clear library, playlists, settings, playback state, or file positions during normal startup or upgrade.
 - Keep audio file path canonicalization consistent; changing it can affect duplicate detection and saved positions.
 - Test migrations with an existing database whenever schema, path normalization, playlist relations, or playback-state storage changes.
+- Keep `schemaVersion` monotonic across all published releases, not only the current branch history.
+- When changing path normalization, verify imports, playlist membership, file positions, and playback state all use the same canonical form.
 
 Destructive actions must stay explicit and user-confirmed through a shared confirmation dialog.
 
@@ -129,6 +148,7 @@ Rules:
 - Rely on database uniqueness for `audio_files.filePath`, but also avoid no-op repository writes.
 - When adding files to an existing playlist, filter out paths already present before dispatching updates.
 - If `Playlist.addFile` or `Playlist.addFiles` returns the same instance, repository code should avoid persisting unchanged data.
+- Treat duplicate-prevention as a persistence invariant, not just a UI guard. UI-level filtering is useful but must not be the only protection.
 
 ## UI And Design System
 
@@ -151,8 +171,14 @@ Avoid:
 - repeated hand-built dialogs
 - one-off tile/card/button styling when an existing common widget fits
 - adding user-facing strings without localization
+- mixing platform-specific visual styles unless the screen already has a documented platform exception
 
 The visual style should remain minimal, high-contrast, and consistent with the existing black/white/blue Vercel-inspired language.
+
+When changing UI:
+- Reuse shared components first, then extend them if the pattern repeats.
+- Keep loading, empty, error, and destructive-confirmation states visually consistent.
+- Check both narrow mobile layouts and desktop layouts before release when the changed screen is responsive.
 
 ## Localization
 
@@ -181,6 +207,8 @@ Release flow:
 - Tag releases as `vX.Y.Z`.
 - Pushing a `v*` tag triggers the release workflow.
 - Verify GitHub Actions after pushing release tags.
+- If a release tag was pushed and the workflow fails, fix forward with a new commit and new tag; do not rewrite published tags unless explicitly instructed.
+- Confirm the GitHub release assets are attached after the workflow finishes, not only that CI jobs passed.
 
 For Android users, recommend the universal APK unless they know their CPU ABI:
 - `pulse-android-universal.apk`

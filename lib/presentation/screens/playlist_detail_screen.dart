@@ -313,9 +313,9 @@ class _TrackTileState extends State<_TrackTile> {
     final l10n = AppLocalizations.of(context);
     final confirmed = await AppConfirmDialog.show(
       context,
-      title: l10n.removeFromLibrary,
+      title: l10n.removeFromPlaylist,
       message: l10n.removeFromPlaylistConfirm(widget.audioFile.displayTitle),
-      confirmLabel: l10n.delete,
+      confirmLabel: l10n.removeFromPlaylist,
       cancelLabel: l10n.cancel,
     );
 
@@ -517,7 +517,7 @@ class _TrackTileState extends State<_TrackTile> {
                   minHeight: isCompact ? 28 : 32,
                 ),
                 onPressed: _showDeleteDialog,
-                tooltip: l10n.removeFromLibrary,
+                tooltip: l10n.removeFromPlaylist,
               ),
             ],
           ),

@@ -33,6 +33,11 @@ val hasReleaseSigning = listOf(
     releaseKeyAlias,
     releaseKeyPassword
 ).all { !it.isNullOrBlank() }
+val allowDebugReleaseSigning = (
+    providers.gradleProperty("allowDebugReleaseSigning").orNull?.toBooleanStrictOrNull()
+        ?: System.getenv("ALLOW_DEBUG_RELEASE_SIGNING")?.toBooleanStrictOrNull()
+        ?: false
+)
 
 android {
     namespace = "dev.pulse.app"
@@ -79,9 +84,15 @@ android {
         release {
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
-            } else {
-                // Keep local release builds usable; CI release builds provide real signing secrets.
+            } else if (allowDebugReleaseSigning) {
                 signingConfigs.getByName("debug")
+            } else {
+                throw GradleException(
+                    "Release signing is required for release builds. " +
+                        "Set ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, " +
+                        "ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD, or pass " +
+                        "-PallowDebugReleaseSigning=true only for local disposable builds."
+                )
             }
 
             // Enable code shrinking and resource optimization

@@ -252,6 +252,8 @@ class ZhTwTranslations extends Translations {
   @override
   String deletePlaylistConfirm(String name) => '確定要刪除「$name」嗎？此操作無法復原。';
   @override
+  String get removeFromPlaylist => '從播放清單移除';
+  @override
   String removeFromPlaylistConfirm(String title) => '要從播放清單移除「$title」嗎？';
   @override
   String get addSongs => '新增歌曲';
