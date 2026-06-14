@@ -125,6 +125,18 @@ class ZhTwTranslations extends Translations {
   @override
   String get autoUpdateDesc => '啟動時檢查新版本，並自動下載適合此裝置的安裝包';
   @override
+  String get checkForUpdates => '檢查更新';
+  @override
+  String get checkForUpdatesDesc => '立即手動檢查 GitHub Releases';
+  @override
+  String get checkingForUpdates => '正在檢查更新...';
+  @override
+  String get updateCheckInProgress => '已在檢查更新中';
+  @override
+  String get updateUpToDate => '目前已是最新版本';
+  @override
+  String get updateCheckFailed => '檢查更新失敗';
+  @override
   String get skipSettings => '快進/快退';
   @override
   String get skipForward => '快進秒數';

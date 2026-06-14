@@ -128,6 +128,18 @@ class EnTranslations extends Translations {
   String get autoUpdateDesc =>
       'Check for new versions at startup and download the right installer';
   @override
+  String get checkForUpdates => 'Check for Updates';
+  @override
+  String get checkForUpdatesDesc => 'Manually check GitHub Releases now';
+  @override
+  String get checkingForUpdates => 'Checking for Updates...';
+  @override
+  String get updateCheckInProgress => 'Update check is already running';
+  @override
+  String get updateUpToDate => 'You are using the latest version';
+  @override
+  String get updateCheckFailed => 'Update check failed';
+  @override
   String get skipSettings => 'Skip Forward/Backward';
   @override
   String get skipForward => 'Skip Forward';

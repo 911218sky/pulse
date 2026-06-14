@@ -6,6 +6,7 @@ import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
 import 'package:pulse/presentation/bloc/settings/settings_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
+import 'package:pulse/presentation/controllers/update_flow_controller.dart';
 import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -186,13 +187,14 @@ class _SettingsContent extends StatelessWidget {
           );
         },
       ),
+      _ManualUpdateTile(l10n: l10n, isDark: isDark),
       if (onFolderScanPressed != null)
         _ActionTile(
           title: l10n.scanFolders,
           subtitle: l10n.scanFoldersDesc,
           icon: Icons.folder_rounded,
           isDark: isDark,
-          onTap: onFolderScanPressed!,
+          onTap: onFolderScanPressed,
         ),
       const SizedBox(height: AppSpacing.xl),
       _SectionHeader(title: l10n.other, isDark: isDark),
@@ -250,6 +252,44 @@ class _SettingsContent extends StatelessWidget {
     if (confirmed && context.mounted) {
       context.read<SettingsBloc>().add(const SettingsResetAll());
       AppToast.warning(context, l10n.allDataCleared);
+    }
+  }
+}
+
+class _ManualUpdateTile extends StatefulWidget {
+  const _ManualUpdateTile({required this.l10n, required this.isDark});
+
+  final AppLocalizations l10n;
+  final bool isDark;
+
+  @override
+  State<_ManualUpdateTile> createState() => _ManualUpdateTileState();
+}
+
+class _ManualUpdateTileState extends State<_ManualUpdateTile> {
+  static const _updateFlow = UpdateFlowController();
+
+  bool _isChecking = false;
+
+  @override
+  Widget build(BuildContext context) => _ActionTile(
+    title:
+        _isChecking
+            ? widget.l10n.checkingForUpdates
+            : widget.l10n.checkForUpdates,
+    subtitle: widget.l10n.checkForUpdatesDesc,
+    icon: Icons.system_update_alt_rounded,
+    isDark: widget.isDark,
+    isLoading: _isChecking,
+    onTap: _isChecking ? null : _checkForUpdates,
+  );
+
+  Future<void> _checkForUpdates() async {
+    setState(() => _isChecking = true);
+    try {
+      await _updateFlow.checkForUpdate(context);
+    } finally {
+      if (mounted) setState(() => _isChecking = false);
     }
   }
 }
@@ -590,18 +630,20 @@ class _ActionTile extends StatefulWidget {
   const _ActionTile({
     required this.title,
     required this.icon,
-    required this.onTap,
     required this.isDark,
+    this.onTap,
     this.subtitle,
     this.isDanger = false,
+    this.isLoading = false,
   });
 
   final String title;
   final String? subtitle;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isDark;
   final bool isDanger;
+  final bool isLoading;
 
   @override
   State<_ActionTile> createState() => _ActionTileState();
@@ -690,11 +732,23 @@ class _ActionTileState extends State<_ActionTile> {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: widget.isDark ? AppColors.gray600 : AppColors.gray400,
-                size: 22,
-              ),
+              if (widget.isLoading)
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(
+                      widget.isDark ? AppColors.white : AppColors.accent,
+                    ),
+                  ),
+                )
+              else
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: widget.isDark ? AppColors.gray600 : AppColors.gray400,
+                  size: 22,
+                ),
             ],
           ),
         ),

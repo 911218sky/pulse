@@ -113,6 +113,12 @@ class AppLocalizations {
   String get navigateToPlayerOnResumeDesc => _t.navigateToPlayerOnResumeDesc;
   String get autoUpdate => _t.autoUpdate;
   String get autoUpdateDesc => _t.autoUpdateDesc;
+  String get checkForUpdates => _t.checkForUpdates;
+  String get checkForUpdatesDesc => _t.checkForUpdatesDesc;
+  String get checkingForUpdates => _t.checkingForUpdates;
+  String get updateCheckInProgress => _t.updateCheckInProgress;
+  String get updateUpToDate => _t.updateUpToDate;
+  String get updateCheckFailed => _t.updateCheckFailed;
   String get skipSettings => _t.skipSettings;
   String get skipForward => _t.skipForward;
   String get skipBackward => _t.skipBackward;
@@ -318,6 +324,12 @@ abstract class Translations {
   String get navigateToPlayerOnResumeDesc;
   String get autoUpdate;
   String get autoUpdateDesc;
+  String get checkForUpdates;
+  String get checkForUpdatesDesc;
+  String get checkingForUpdates;
+  String get updateCheckInProgress;
+  String get updateUpToDate;
+  String get updateCheckFailed;
   String get skipSettings;
   String get skipForward;
   String get skipBackward;
