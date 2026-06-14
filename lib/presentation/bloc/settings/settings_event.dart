@@ -53,6 +53,16 @@ class SettingsUpdateAutoResume extends SettingsEvent {
   List<Object?> get props => [enabled];
 }
 
+/// Update automatic update checking setting
+class SettingsUpdateAutoUpdate extends SettingsEvent {
+  const SettingsUpdateAutoUpdate({required this.enabled});
+
+  final bool enabled;
+
+  @override
+  List<Object?> get props => [enabled];
+}
+
 /// Update skip forward seconds setting
 class SettingsUpdateSkipForward extends SettingsEvent {
   const SettingsUpdateSkipForward(this.seconds);

@@ -17,6 +17,7 @@ Settings generateRandomSettings() => Settings(
   autoResume: PropertyTest.randomBool(),
   skipForwardSeconds: PropertyTest.randomInt(min: 5, max: 60),
   skipBackwardSeconds: PropertyTest.randomInt(min: 5, max: 60),
+  autoUpdateEnabled: PropertyTest.randomBool(),
   monitoredFolders: List.generate(
     PropertyTest.randomInt(max: 5),
     (_) => '/music/${PropertyTest.randomNonEmptyString()}',
@@ -45,6 +46,10 @@ void main() {
               equals(settings.defaultPlaybackSpeed),
             );
             expect(restored.autoResume, equals(settings.autoResume));
+            expect(
+              restored.autoUpdateEnabled,
+              equals(settings.autoUpdateEnabled),
+            );
             expect(
               restored.skipForwardSeconds,
               equals(settings.skipForwardSeconds),
@@ -85,6 +90,10 @@ void main() {
             );
             expect(restored.autoResume, equals(settings.autoResume));
             expect(
+              restored.autoUpdateEnabled,
+              equals(settings.autoUpdateEnabled),
+            );
+            expect(
               restored.skipForwardSeconds,
               equals(settings.skipForwardSeconds),
             );
@@ -109,6 +118,7 @@ void main() {
       expect(entity.defaultVolume, equals(1));
       expect(entity.defaultPlaybackSpeed, equals(1));
       expect(entity.autoResume, isTrue);
+      expect(entity.autoUpdateEnabled, isTrue);
       expect(entity.skipForwardSeconds, equals(10));
       expect(entity.skipBackwardSeconds, equals(10));
       expect(entity.monitoredFolders, isEmpty);

@@ -110,6 +110,8 @@ class AppLocalizations {
   String get autoResumeDesc => _t.autoResumeDesc;
   String get navigateToPlayerOnResume => _t.navigateToPlayerOnResume;
   String get navigateToPlayerOnResumeDesc => _t.navigateToPlayerOnResumeDesc;
+  String get autoUpdate => _t.autoUpdate;
+  String get autoUpdateDesc => _t.autoUpdateDesc;
   String get skipSettings => _t.skipSettings;
   String get skipForward => _t.skipForward;
   String get skipBackward => _t.skipBackward;
@@ -129,6 +131,19 @@ class AppLocalizations {
   String get clearAllDataConfirm => _t.clearAllDataConfirm;
   String get allDataCleared => _t.allDataCleared;
   String get version => _t.version;
+  String get updateAvailable => _t.updateAvailable;
+  String updateAvailableMessage(
+    String currentVersion,
+    String latestVersion,
+    String assetName,
+  ) => _t.updateAvailableMessage(currentVersion, latestVersion, assetName);
+  String get downloadUpdate => _t.downloadUpdate;
+  String get maybeLater => _t.maybeLater;
+  String updateDownloadProgress(int percent) =>
+      _t.updateDownloadProgress(percent);
+  String get updateDownloadPreparing => _t.updateDownloadPreparing;
+  String get updateDownloadComplete => _t.updateDownloadComplete;
+  String get updateDownloadFailed => _t.updateDownloadFailed;
 
   // ============== Sleep Timer ==============
   String get sleepTimerTitle => _t.sleepTimerTitle;
@@ -299,6 +314,8 @@ abstract class Translations {
   String get autoResumeDesc;
   String get navigateToPlayerOnResume;
   String get navigateToPlayerOnResumeDesc;
+  String get autoUpdate;
+  String get autoUpdateDesc;
   String get skipSettings;
   String get skipForward;
   String get skipBackward;
@@ -318,6 +335,18 @@ abstract class Translations {
   String get clearAllDataConfirm;
   String get allDataCleared;
   String get version;
+  String get updateAvailable;
+  String updateAvailableMessage(
+    String currentVersion,
+    String latestVersion,
+    String assetName,
+  );
+  String get downloadUpdate;
+  String get maybeLater;
+  String updateDownloadProgress(int percent);
+  String get updateDownloadPreparing;
+  String get updateDownloadComplete;
+  String get updateDownloadFailed;
 
   // ============== Sleep Timer ==============
   String get sleepTimerTitle;

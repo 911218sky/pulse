@@ -11,6 +11,7 @@ import 'package:pulse/core/di/service_locator.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/core/router/app_bloc_providers.dart';
 import 'package:pulse/core/router/app_router.dart';
+import 'package:pulse/core/router/sync/update_check_sync.dart';
 import 'package:pulse/core/theme/app_theme.dart';
 import 'package:pulse/core/utils/app_logger.dart';
 import 'package:pulse/data/database/app_database.dart';
@@ -120,6 +121,9 @@ class PulseApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           routerConfig: AppRouter.router,
+          builder:
+              (context, child) =>
+                  UpdateCheckSync(child: child ?? const SizedBox.shrink()),
         );
       },
     ),

@@ -18,6 +18,7 @@ class SettingsModel {
     required this.sleepTimerFadeOutEnabled,
     required this.sleepTimerFadeOutSeconds,
     required this.navigateToPlayerOnResume,
+    required this.autoUpdateEnabled,
   });
 
   factory SettingsModel.fromEntity(Settings entity) => SettingsModel(
@@ -32,6 +33,7 @@ class SettingsModel {
     sleepTimerFadeOutEnabled: entity.sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds: entity.sleepTimerFadeOutSeconds,
     navigateToPlayerOnResume: entity.navigateToPlayerOnResume,
+    autoUpdateEnabled: entity.autoUpdateEnabled,
   );
 
   factory SettingsModel.fromDrift(SettingsTableData row) => SettingsModel(
@@ -46,6 +48,7 @@ class SettingsModel {
     sleepTimerFadeOutEnabled: row.sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds: row.sleepTimerFadeOutSeconds,
     navigateToPlayerOnResume: row.navigateToPlayerOnResume,
+    autoUpdateEnabled: row.autoUpdateEnabled,
   );
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) => SettingsModel(
@@ -66,6 +69,7 @@ class SettingsModel {
     sleepTimerFadeOutSeconds: json['sleepTimerFadeOutSeconds'] as int? ?? 5,
     navigateToPlayerOnResume:
         json['navigateToPlayerOnResume'] as bool? ?? false,
+    autoUpdateEnabled: json['autoUpdateEnabled'] as bool? ?? true,
   );
 
   factory SettingsModel.defaults() => SettingsModel(
@@ -80,6 +84,7 @@ class SettingsModel {
     sleepTimerFadeOutEnabled: true,
     sleepTimerFadeOutSeconds: 5,
     navigateToPlayerOnResume: false,
+    autoUpdateEnabled: true,
   );
 
   final bool darkMode;
@@ -93,6 +98,7 @@ class SettingsModel {
   final bool sleepTimerFadeOutEnabled;
   final int sleepTimerFadeOutSeconds;
   final bool navigateToPlayerOnResume;
+  final bool autoUpdateEnabled;
 
   Settings toEntity() => Settings(
     darkMode: darkMode,
@@ -106,6 +112,7 @@ class SettingsModel {
     sleepTimerFadeOutEnabled: sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds: sleepTimerFadeOutSeconds,
     navigateToPlayerOnResume: navigateToPlayerOnResume,
+    autoUpdateEnabled: autoUpdateEnabled,
   );
 
   SettingsTableCompanion toCompanion() => SettingsTableCompanion(
@@ -120,6 +127,7 @@ class SettingsModel {
     sleepTimerFadeOutEnabled: Value(sleepTimerFadeOutEnabled),
     sleepTimerFadeOutSeconds: Value(sleepTimerFadeOutSeconds),
     navigateToPlayerOnResume: Value(navigateToPlayerOnResume),
+    autoUpdateEnabled: Value(autoUpdateEnabled),
   );
 
   Map<String, dynamic> toJson() => {
@@ -134,6 +142,7 @@ class SettingsModel {
     'sleepTimerFadeOutEnabled': sleepTimerFadeOutEnabled,
     'sleepTimerFadeOutSeconds': sleepTimerFadeOutSeconds,
     'navigateToPlayerOnResume': navigateToPlayerOnResume,
+    'autoUpdateEnabled': autoUpdateEnabled,
   };
 
   static List<String> _parseMonitoredFolders(String json) {

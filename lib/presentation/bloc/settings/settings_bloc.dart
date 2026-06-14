@@ -18,6 +18,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsUpdateDefaultVolume>(_onUpdateDefaultVolume);
     on<SettingsUpdateDefaultSpeed>(_onUpdateDefaultSpeed);
     on<SettingsUpdateAutoResume>(_onUpdateAutoResume);
+    on<SettingsUpdateAutoUpdate>(_onUpdateAutoUpdate);
     on<SettingsUpdateSkipForward>(_onUpdateSkipForward);
     on<SettingsUpdateSkipBackward>(_onUpdateSkipBackward);
     on<SettingsAddMonitoredFolder>(_onAddMonitoredFolder);
@@ -86,6 +87,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async =>
       _updateSettings(emit, state.settings.copyWith(autoResume: event.enabled));
+
+  Future<void> _onUpdateAutoUpdate(
+    SettingsUpdateAutoUpdate event,
+    Emitter<SettingsState> emit,
+  ) async => _updateSettings(
+    emit,
+    state.settings.copyWith(autoUpdateEnabled: event.enabled),
+  );
 
   Future<void> _onUpdateSkipForward(
     SettingsUpdateSkipForward event,

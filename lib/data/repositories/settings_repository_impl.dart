@@ -57,6 +57,8 @@ class SettingsRepositoryImpl implements SettingsRepository {
         return settings.copyWith(defaultPlaybackSpeed: value as double);
       case 'autoResume':
         return settings.copyWith(autoResume: value as bool);
+      case 'autoUpdateEnabled':
+        return settings.copyWith(autoUpdateEnabled: value as bool);
       case 'skipForwardSeconds':
         return settings.copyWith(skipForwardSeconds: value as int);
       case 'skipBackwardSeconds':

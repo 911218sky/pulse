@@ -119,6 +119,10 @@ class ZhTwTranslations extends Translations {
   @override
   String get navigateToPlayerOnResumeDesc => '當應用程式從背景恢復且有音樂播放時，自動跳轉到播放器畫面';
   @override
+  String get autoUpdate => '自動更新';
+  @override
+  String get autoUpdateDesc => '啟動時檢查新版本，並自動下載適合此裝置的安裝包';
+  @override
   String get skipSettings => '快進/快退';
   @override
   String get skipForward => '快進秒數';
@@ -157,6 +161,26 @@ class ZhTwTranslations extends Translations {
   String get allDataCleared => '所有資料已清除';
   @override
   String get version => '版本';
+  @override
+  String get updateAvailable => '有新版本';
+  @override
+  String updateAvailableMessage(
+    String currentVersion,
+    String latestVersion,
+    String assetName,
+  ) => '目前版本：$currentVersion\n最新版本：$latestVersion\n安裝包：$assetName';
+  @override
+  String get downloadUpdate => '下載更新';
+  @override
+  String get maybeLater => '稍後';
+  @override
+  String updateDownloadProgress(int percent) => '正在下載更新... $percent%';
+  @override
+  String get updateDownloadPreparing => '正在準備下載...';
+  @override
+  String get updateDownloadComplete => '下載完成，正在開啟安裝程式...';
+  @override
+  String get updateDownloadFailed => '更新下載失敗';
 
   // ============== Sleep Timer ==============
   @override

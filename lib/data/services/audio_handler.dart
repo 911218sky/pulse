@@ -337,9 +337,9 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   @override
   Future<void> onTaskRemoved() async {
     // Keep the media session alive so Android notification controls can resume
-    // playback after the app task is swiped away. Skip callbacks are tied to
-    // the Flutter widget tree and must not outlive that context.
-    setSkipCallbacks();
+    // playback after the app task is swiped away. Keep skip callbacks too; the
+    // app process is still alive and Android media controls must not degrade to
+    // play/pause-only after task removal.
     try {
       await pause();
     } on Exception catch (e) {

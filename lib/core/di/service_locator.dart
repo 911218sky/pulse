@@ -6,6 +6,8 @@ import 'package:pulse/data/repositories/file_scanner_repository_impl.dart';
 import 'package:pulse/data/repositories/playback_state_repository_impl.dart';
 import 'package:pulse/data/repositories/playlist_repository_impl.dart';
 import 'package:pulse/data/repositories/settings_repository_impl.dart';
+import 'package:pulse/core/services/update_check_service.dart';
+import 'package:pulse/core/services/update_download_service.dart';
 import 'package:pulse/domain/repositories/audio_repository.dart';
 import 'package:pulse/domain/repositories/file_scanner_repository.dart';
 import 'package:pulse/domain/repositories/playback_state_repository.dart';
@@ -44,6 +46,8 @@ Future<void> initServiceLocator() async {
     ..registerLazySingleton<FileScannerRepository>(
       () => FileScannerRepositoryImpl(sl()),
     )
+    ..registerLazySingleton<UpdateCheckService>(UpdateCheckService.new)
+    ..registerLazySingleton<UpdateDownloadService>(UpdateDownloadService.new)
     // BLoCs
     ..registerFactory<PlayerBloc>(
       () => PlayerBloc(

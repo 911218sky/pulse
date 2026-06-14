@@ -120,6 +120,11 @@ class EnTranslations extends Translations {
   String get navigateToPlayerOnResumeDesc =>
       'Automatically go to player screen when app resumes with music playing';
   @override
+  String get autoUpdate => 'Automatic Updates';
+  @override
+  String get autoUpdateDesc =>
+      'Check for new versions at startup and download the right installer';
+  @override
   String get skipSettings => 'Skip Forward/Backward';
   @override
   String get skipForward => 'Skip Forward';
@@ -160,6 +165,29 @@ class EnTranslations extends Translations {
   String get allDataCleared => 'All data cleared';
   @override
   String get version => 'Version';
+  @override
+  String get updateAvailable => 'Update Available';
+  @override
+  String updateAvailableMessage(
+    String currentVersion,
+    String latestVersion,
+    String assetName,
+  ) =>
+      'Current version: $currentVersion\nLatest version: $latestVersion\nPackage: $assetName';
+  @override
+  String get downloadUpdate => 'Download Update';
+  @override
+  String get maybeLater => 'Later';
+  @override
+  String updateDownloadProgress(int percent) =>
+      'Downloading update... $percent%';
+  @override
+  String get updateDownloadPreparing => 'Preparing download...';
+  @override
+  String get updateDownloadComplete =>
+      'Download complete. Opening installer...';
+  @override
+  String get updateDownloadFailed => 'Update download failed';
 
   // ============== Sleep Timer ==============
   @override

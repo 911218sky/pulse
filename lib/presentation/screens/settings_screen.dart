@@ -8,6 +8,7 @@ import 'package:pulse/presentation/bloc/settings/settings_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
 import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 /// Settings screen
 class SettingsScreen extends StatelessWidget {
@@ -174,6 +175,17 @@ class _SettingsContent extends StatelessWidget {
       ),
       const SizedBox(height: AppSpacing.xl),
       _SectionHeader(title: l10n.features, isDark: isDark),
+      _SwitchTile(
+        title: l10n.autoUpdate,
+        subtitle: l10n.autoUpdateDesc,
+        value: state.settings.autoUpdateEnabled,
+        isDark: isDark,
+        onChanged: (value) {
+          context.read<SettingsBloc>().add(
+            SettingsUpdateAutoUpdate(enabled: value),
+          );
+        },
+      ),
       if (onFolderScanPressed != null)
         _ActionTile(
           title: l10n.scanFolders,
@@ -710,12 +722,22 @@ class _AppInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          '${l10n.version} 1.0.0',
-          style: TextStyle(
-            color: isDark ? AppColors.gray600 : AppColors.gray500,
-            fontSize: 12,
-          ),
+        FutureBuilder<PackageInfo>(
+          future: PackageInfo.fromPlatform(),
+          builder: (context, snapshot) {
+            final packageInfo = snapshot.data;
+            final version =
+                packageInfo == null
+                    ? ''
+                    : '${packageInfo.version}+${packageInfo.buildNumber}';
+            return Text(
+              version.isEmpty ? l10n.version : '${l10n.version} $version',
+              style: TextStyle(
+                color: isDark ? AppColors.gray600 : AppColors.gray500,
+                fontSize: 12,
+              ),
+            );
+          },
         ),
       ],
     );

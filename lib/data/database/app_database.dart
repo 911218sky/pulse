@@ -53,6 +53,8 @@ class SettingsTable extends Table {
       integer().withDefault(const Constant(5))();
   BoolColumn get navigateToPlayerOnResume =>
       boolean().withDefault(const Constant(false))();
+  BoolColumn get autoUpdateEnabled =>
+      boolean().withDefault(const Constant(true))();
 }
 
 /// Playback state table (single row for last state)
@@ -127,12 +129,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (m, from, to) async {
       if (from < 4) await repairCanonicalPathsForUpgrade();
+      if (from < 5) await _ensureAutoUpdateColumnForUpgrade();
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -450,6 +453,14 @@ class AppDatabase extends _$AppDatabase {
     await _tryAddColumn(
       'ALTER TABLE settings ADD COLUMN '
       'navigate_to_player_on_resume INTEGER NOT NULL DEFAULT 0',
+    );
+    await _ensureAutoUpdateColumnForUpgrade();
+  }
+
+  Future<void> _ensureAutoUpdateColumnForUpgrade() async {
+    await _tryAddColumn(
+      'ALTER TABLE settings ADD COLUMN '
+      'auto_update_enabled INTEGER NOT NULL DEFAULT 1',
     );
   }
 

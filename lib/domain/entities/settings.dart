@@ -14,6 +14,7 @@ class Settings extends Equatable {
     this.sleepTimerFadeOutEnabled = true,
     this.sleepTimerFadeOutSeconds = 5,
     this.navigateToPlayerOnResume = false,
+    this.autoUpdateEnabled = true,
   });
 
   final bool darkMode;
@@ -27,6 +28,7 @@ class Settings extends Equatable {
   final bool sleepTimerFadeOutEnabled;
   final int sleepTimerFadeOutSeconds;
   final bool navigateToPlayerOnResume;
+  final bool autoUpdateEnabled;
 
   static const Settings defaults = Settings();
 
@@ -42,6 +44,7 @@ class Settings extends Equatable {
     bool? sleepTimerFadeOutEnabled,
     int? sleepTimerFadeOutSeconds,
     bool? navigateToPlayerOnResume,
+    bool? autoUpdateEnabled,
   }) => Settings(
     darkMode: darkMode ?? this.darkMode,
     locale: locale ?? this.locale,
@@ -57,6 +60,7 @@ class Settings extends Equatable {
         sleepTimerFadeOutSeconds ?? this.sleepTimerFadeOutSeconds,
     navigateToPlayerOnResume:
         navigateToPlayerOnResume ?? this.navigateToPlayerOnResume,
+    autoUpdateEnabled: autoUpdateEnabled ?? this.autoUpdateEnabled,
   );
 
   @override
@@ -72,5 +76,6 @@ class Settings extends Equatable {
     sleepTimerFadeOutEnabled,
     sleepTimerFadeOutSeconds,
     navigateToPlayerOnResume,
+    autoUpdateEnabled,
   ];
 }
