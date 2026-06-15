@@ -190,7 +190,17 @@ class ZhTwTranslations extends Translations {
   @override
   String get downloadUpdate => '下載更新';
   @override
+  String get installNow => '立即安裝';
+  @override
   String get maybeLater => '稍後';
+  @override
+  String get skipThisVersion => '永久跳過此版本';
+  @override
+  String get updatePackage => '更新安裝包';
+  @override
+  String get recommended => '建議';
+  @override
+  String updateSkippedVersion(String version) => '已永久跳過版本 $version';
   @override
   String updateDownloadProgress(int percent) => '正在下載更新... $percent%';
   @override

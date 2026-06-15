@@ -56,6 +56,37 @@ void main() {
       expect(update.canDownloadDirectly, isTrue);
     });
 
+    test('selects ABI-specific APK first when Android ABI is known', () {
+      final update = UpdateCheckService.buildUpdateFromReleaseForTesting(
+        _releaseJson(
+          assets: [
+            _asset('pulse-android-universal.apk'),
+            _asset('pulse-android-arm64-v8a.apk'),
+            _asset('pulse-android-armeabi-v7a.apk'),
+            _asset('pulse-android-x86_64.apk'),
+          ],
+        ),
+        '0.1.17',
+        isAndroid: true,
+        isWindows: false,
+        isLinux: false,
+        isMacOS: false,
+        supportedAbis: const ['arm64-v8a', 'armeabi-v7a'],
+      );
+
+      expect(update, isNotNull);
+      expect(update!.assetName, equals('pulse-android-arm64-v8a.apk'));
+      expect(
+        update.availableAssets.map((asset) => asset.name),
+        containsAll([
+          'pulse-android-universal.apk',
+          'pulse-android-arm64-v8a.apk',
+          'pulse-android-armeabi-v7a.apk',
+          'pulse-android-x86_64.apk',
+        ]),
+      );
+    });
+
     test('uses release page on Android when APK assets are missing', () {
       final update = UpdateCheckService.buildUpdateFromReleaseForTesting(
         _releaseJson(assets: []),

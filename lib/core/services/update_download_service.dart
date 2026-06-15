@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:pulse/core/utils/app_logger.dart';
 import 'package:pulse/domain/entities/app_update.dart';
 
 typedef UpdateDownloadProgress = void Function(int received, int? total);
@@ -42,14 +43,20 @@ class UpdateDownloadService {
       }
 
       final directory = await getTemporaryDirectory();
-      final fileName = update.assetName.replaceAll(
-        RegExp(r'[^A-Za-z0-9._-]'),
-        '_',
-      );
+      final safeVersion = _safeFilePart(update.version);
+      final safeAssetName = _safeFilePart(update.assetName);
+      final fileName = 'pulse-$safeVersion-$safeAssetName';
       final file = File(p.join(directory.path, fileName));
+      await cleanDownloadedInstallers(keep: file);
+
+      final total = response.contentLength > 0 ? response.contentLength : null;
+      if (total != null && file.existsSync() && file.lengthSync() == total) {
+        onProgress?.call(total, total);
+        return file;
+      }
+
       final sink = file.openWrite();
       var received = 0;
-      final total = response.contentLength > 0 ? response.contentLength : null;
 
       try {
         await for (final chunk in response) {
@@ -77,7 +84,45 @@ class UpdateDownloadService {
     if (result.type != ResultType.done) {
       throw FileSystemException(result.message, file.path);
     }
+
+    unawaited(cleanDownloadedInstallers(delay: const Duration(minutes: 5)));
   }
+
+  Future<void> cleanDownloadedInstallers({
+    File? keep,
+    Duration delay = Duration.zero,
+  }) async {
+    if (delay > Duration.zero) {
+      await Future<void>.delayed(delay);
+    }
+
+    try {
+      final directory = await getTemporaryDirectory();
+      final keepPath = keep == null ? null : p.normalize(keep.path);
+      await for (final entity in directory.list()) {
+        if (entity is! File) continue;
+        final normalizedPath = p.normalize(entity.path);
+        if (normalizedPath == keepPath) continue;
+        if (!_isPulseInstallerName(p.basename(entity.path))) continue;
+        await entity.delete();
+      }
+    } on Exception catch (error, stackTrace) {
+      AppLogger.w('UpdateDownloadService', 'Installer cleanup failed: $error');
+      AppLogger.d('UpdateDownloadService', stackTrace.toString());
+    }
+  }
+
+  bool _isPulseInstallerName(String fileName) {
+    final lowerName = fileName.toLowerCase();
+    return lowerName.startsWith('pulse-') &&
+        (lowerName.endsWith('.apk') ||
+            lowerName.endsWith('.aab') ||
+            lowerName.endsWith('.zip') ||
+            lowerName.endsWith('.tar.gz'));
+  }
+
+  String _safeFilePart(String value) =>
+      value.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
 
   Future<bool> _canRequestPackageInstalls() async {
     try {

@@ -198,7 +198,18 @@ class EnTranslations extends Translations {
   @override
   String get downloadUpdate => 'Download Update';
   @override
+  String get installNow => 'Install Now';
+  @override
   String get maybeLater => 'Later';
+  @override
+  String get skipThisVersion => 'Skip This Version';
+  @override
+  String get updatePackage => 'Update package';
+  @override
+  String get recommended => 'recommended';
+  @override
+  String updateSkippedVersion(String version) =>
+      'Version $version will be skipped';
   @override
   String updateDownloadProgress(int percent) =>
       'Downloading update... $percent%';

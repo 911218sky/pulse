@@ -147,7 +147,13 @@ class AppLocalizations {
     String assetName,
   ) => _t.updateAvailableMessage(currentVersion, latestVersion, assetName);
   String get downloadUpdate => _t.downloadUpdate;
+  String get installNow => _t.installNow;
   String get maybeLater => _t.maybeLater;
+  String get skipThisVersion => _t.skipThisVersion;
+  String get updatePackage => _t.updatePackage;
+  String get recommended => _t.recommended;
+  String updateSkippedVersion(String version) =>
+      _t.updateSkippedVersion(version);
   String updateDownloadProgress(int percent) =>
       _t.updateDownloadProgress(percent);
   String get updateDownloadPreparing => _t.updateDownloadPreparing;
@@ -367,7 +373,12 @@ abstract class Translations {
     String assetName,
   );
   String get downloadUpdate;
+  String get installNow;
   String get maybeLater;
+  String get skipThisVersion;
+  String get updatePackage;
+  String get recommended;
+  String updateSkippedVersion(String version);
   String updateDownloadProgress(int percent);
   String get updateDownloadPreparing;
   String get updateDownloadComplete;

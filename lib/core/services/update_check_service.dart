@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pulse/core/utils/app_logger.dart';
 import 'package:pulse/domain/entities/app_update.dart';
@@ -13,6 +14,9 @@ class UpdateCheckService {
   static final Uri _latestReleaseUri = Uri.https(
     'api.github.com',
     '/repos/911218sky/pulse/releases/latest',
+  );
+  static const MethodChannel _deviceChannel = MethodChannel(
+    'dev.pulse.app/device',
   );
   final HttpClient? _httpClient;
 
@@ -49,6 +53,7 @@ class UpdateCheckService {
 
       final body = await utf8.decoder.bind(response).join();
       final json = jsonDecode(body) as Map<String, dynamic>;
+      final supportedAbis = await _supportedAbis();
       final update = buildUpdateFromRelease(
         json,
         currentVersion,
@@ -56,6 +61,7 @@ class UpdateCheckService {
         isWindows: Platform.isWindows,
         isLinux: Platform.isLinux,
         isMacOS: Platform.isMacOS,
+        supportedAbis: supportedAbis,
       );
       if (update == null) return null;
       AppLogger.i(
@@ -76,6 +82,7 @@ class UpdateCheckService {
     required bool isWindows,
     required bool isLinux,
     required bool isMacOS,
+    List<String> supportedAbis = const [],
   }) {
     final tagName = json['tag_name'] as String?;
     if (tagName == null || tagName.trim().isEmpty) {
@@ -104,35 +111,39 @@ class UpdateCheckService {
       throw const FormatException('Missing html_url in latest release');
     }
 
-    final selectedAsset = _findReleaseAsset(
-      json,
-      tagName,
-      _preferredAssetNames(
-        isAndroid: isAndroid,
-        isWindows: isWindows,
-        isLinux: isLinux,
-        isMacOS: isMacOS,
-      ),
+    final preferredNames = _preferredAssetNames(
       isAndroid: isAndroid,
+      isWindows: isWindows,
+      isLinux: isLinux,
+      isMacOS: isMacOS,
+      supportedAbis: supportedAbis,
+    );
+    final releaseAssets = _releaseAssetsFromJson(json);
+    final selectedAsset = _findReleaseAsset(
+      releaseAssets,
+      tagName,
+      preferredNames,
+    );
+    final availableAssets = _availableAssetsForPlatform(
+      releaseAssets,
+      selectedAsset,
+      isAndroid: isAndroid,
+      isWindows: isWindows,
+      isLinux: isLinux,
+      isMacOS: isMacOS,
     );
 
     return AppUpdate(
       currentVersion: currentVersion,
       version: latestVersion,
       releaseUrl: releaseUrl,
-      downloadUrl: selectedAsset.url,
-      assetName: selectedAsset.name,
-      canDownloadDirectly: selectedAsset.canDownloadDirectly,
+      selectedAsset: selectedAsset,
+      availableAssets: availableAssets,
     );
   }
 
-  static _ReleaseAsset _findReleaseAsset(
-    Map<String, dynamic> json,
-    String tagName,
-    List<String> preferredNames, {
-    required bool isAndroid,
-  }) {
-    final releaseAssets = <_ReleaseAsset>[];
+  static List<UpdateAsset> _releaseAssetsFromJson(Map<String, dynamic> json) {
+    final releaseAssets = <UpdateAsset>[];
     final assets = json['assets'];
     if (assets is List) {
       for (final asset in assets) {
@@ -142,29 +153,69 @@ class UpdateCheckService {
         final parsedUrl = Uri.tryParse(url);
         if (parsedUrl == null) continue;
         releaseAssets.add(
-          _ReleaseAsset(name: name, url: parsedUrl, canDownloadDirectly: true),
+          UpdateAsset(
+            name: name,
+            downloadUrl: parsedUrl,
+            canDownloadDirectly: true,
+          ),
         );
       }
     }
+    return releaseAssets;
+  }
 
+  static List<UpdateAsset> _availableAssetsForPlatform(
+    List<UpdateAsset> releaseAssets,
+    UpdateAsset selectedAsset, {
+    required bool isAndroid,
+    required bool isWindows,
+    required bool isLinux,
+    required bool isMacOS,
+  }) {
+    final preferredNames =
+        _preferredAssetNames(
+          isAndroid: isAndroid,
+          isWindows: isWindows,
+          isLinux: isLinux,
+          isMacOS: isMacOS,
+        ).toSet();
+    final assets =
+        releaseAssets
+            .where((asset) => preferredNames.contains(asset.name.toLowerCase()))
+            .map(
+              (asset) => asset.copyWith(
+                isRecommended: asset.name == selectedAsset.name,
+              ),
+            )
+            .toList();
+
+    if (assets.isEmpty || !selectedAsset.canDownloadDirectly) {
+      return [selectedAsset.copyWith(isRecommended: true)];
+    }
+    return assets;
+  }
+
+  static UpdateAsset _findReleaseAsset(
+    List<UpdateAsset> releaseAssets,
+    String tagName,
+    List<String> preferredNames,
+  ) {
     for (final preferredName in preferredNames) {
       for (final asset in releaseAssets) {
-        if (asset.name.toLowerCase() == preferredName) return asset;
+        if (asset.name.toLowerCase() == preferredName) {
+          return asset.copyWith(isRecommended: true);
+        }
       }
     }
 
-    if (isAndroid) {
-      return _ReleaseAsset(
-        name: 'GitHub Releases',
-        url: Uri.https('github.com', '/911218sky/pulse/releases/tag/$tagName'),
-        canDownloadDirectly: false,
-      );
-    }
-
-    return _ReleaseAsset(
+    return UpdateAsset(
       name: 'GitHub Releases',
-      url: Uri.https('github.com', '/911218sky/pulse/releases/tag/$tagName'),
+      downloadUrl: Uri.https(
+        'github.com',
+        '/911218sky/pulse/releases/tag/$tagName',
+      ),
       canDownloadDirectly: false,
+      isRecommended: true,
     );
   }
 
@@ -173,18 +224,50 @@ class UpdateCheckService {
     required bool isWindows,
     required bool isLinux,
     required bool isMacOS,
+    List<String> supportedAbis = const [],
   }) {
     if (isWindows) return const ['pulse-windows-x64.zip'];
     if (isLinux) return const ['pulse-linux-x64.tar.gz'];
     if (isMacOS) return const ['pulse-macos-universal.zip'];
     if (!isAndroid) return const [];
 
-    return const [
+    final names = <String>[];
+    for (final abi in supportedAbis.map((abi) => abi.toLowerCase())) {
+      switch (abi) {
+        case 'arm64-v8a':
+          names.add('pulse-android-arm64-v8a.apk');
+          break;
+        case 'armeabi-v7a':
+          names.add('pulse-android-armeabi-v7a.apk');
+          break;
+        case 'x86_64':
+          names.add('pulse-android-x86_64.apk');
+          break;
+      }
+    }
+
+    names.addAll(const [
       'pulse-android-universal.apk',
       'pulse-android-arm64-v8a.apk',
       'pulse-android-armeabi-v7a.apk',
       'pulse-android-x86_64.apk',
-    ];
+    ]);
+
+    return names.toSet().toList(growable: false);
+  }
+
+  Future<List<String>> _supportedAbis() async {
+    if (!Platform.isAndroid) return const [];
+    try {
+      final abis = await _deviceChannel.invokeListMethod<String>(
+        'supportedAbis',
+      );
+      return abis ?? const [];
+    } on MissingPluginException {
+      return const [];
+    } on PlatformException {
+      return const [];
+    }
   }
 
   static String _normalizeVersion(String version) =>
@@ -200,6 +283,7 @@ class UpdateCheckService {
     required bool isWindows,
     required bool isLinux,
     required bool isMacOS,
+    List<String> supportedAbis = const [],
   }) => buildUpdateFromRelease(
     json,
     currentVersion,
@@ -207,6 +291,7 @@ class UpdateCheckService {
     isWindows: isWindows,
     isLinux: isLinux,
     isMacOS: isMacOS,
+    supportedAbis: supportedAbis,
   );
 
   static bool _isNewerVersion(String latest, String current) {
@@ -233,16 +318,4 @@ class UpdateCheckService {
           .map((part) => int.tryParse(part.replaceAll(RegExp(r'\D.*$'), '')))
           .whereType<int>()
           .toList();
-}
-
-class _ReleaseAsset {
-  const _ReleaseAsset({
-    required this.name,
-    required this.url,
-    required this.canDownloadDirectly,
-  });
-
-  final String name;
-  final Uri url;
-  final bool canDownloadDirectly;
 }
