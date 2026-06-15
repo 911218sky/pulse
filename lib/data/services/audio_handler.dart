@@ -55,10 +55,32 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   StreamSubscription<Duration>? _durationSub;
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<bool>? _completedSub;
+  Future<void> _playerOperation = Future<void>.value();
 
   Duration _position = Duration.zero;
   Duration? _duration;
   bool _playing = false;
+  bool _hasLoadedMedia = false;
+  String? _currentMediaPath;
+
+  Future<T> _runPlayerOperation<T>(
+    String operationName,
+    Future<T> Function() operation,
+  ) {
+    final pending = _playerOperation.then((_) => operation());
+    _playerOperation = pending.then<void>(
+      (_) {},
+      onError: (Object error, StackTrace stackTrace) {
+        AppLogger.e(
+          'AudioHandler',
+          'Player operation failed: $operationName',
+          error,
+          stackTrace,
+        );
+      },
+    );
+    return pending;
+  }
 
   void _init() {
     // Listen to position changes (throttled)
@@ -144,11 +166,11 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     if (_player.state.buffering) {
       return AudioProcessingState.buffering;
     }
-    if (_duration == null || _duration == Duration.zero) {
-      return AudioProcessingState.loading;
-    }
     if (_player.state.completed) {
       return AudioProcessingState.completed;
+    }
+    if (!_hasLoadedMedia && _player.state.playlist.medias.isEmpty) {
+      return AudioProcessingState.loading;
     }
     return AudioProcessingState.ready;
   }
@@ -161,7 +183,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     String? album,
     Duration? duration,
     String? artworkUri,
-  }) async {
+  }) => _runPlayerOperation('loadAudio', () async {
     try {
       // Update media item for notification
       final item = MediaItem(
@@ -178,6 +200,8 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
         displayDescription: album,
       );
       mediaItem.add(item);
+      _currentMediaPath = path;
+      _hasLoadedMedia = false;
 
       _position = Duration.zero;
       _duration = duration;
@@ -185,6 +209,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
 
       // Load the audio file using media_kit
       await _player.open(Media(path), play: false);
+      _hasLoadedMedia = true;
 
       // Broadcast initial state to show notification
       _broadcastState();
@@ -192,35 +217,76 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       AppLogger.e('AudioHandler', 'Error loading audio', e);
       rethrow;
     }
-  }
+  });
 
   @override
-  Future<void> play() async {
+  Future<void> play() => _runPlayerOperation('play', () async {
     try {
       AppLogger.d('AudioHandler', 'play() called, current playing: $_playing');
+
+      final path = _currentMediaPath ?? mediaItem.value?.id;
+      final resumePosition =
+          _player.state.completed ? Duration.zero : _position;
 
       if (_player.state.completed) {
         await _player.seek(Duration.zero);
       }
 
-      if (_player.state.playlist.medias.isEmpty && mediaItem.value != null) {
-        await _player.open(Media(mediaItem.value!.id), play: false);
-        if (_position > Duration.zero) {
-          await _player.seek(_position);
-        }
+      if (_player.state.playlist.medias.isEmpty && path != null) {
+        await _reopenCurrentMedia(path, resumePosition, play: false);
       }
 
       await _player.play();
-      _playing = true;
+      if (!await _waitForPlayingState()) {
+        AppLogger.w(
+          'AudioHandler',
+          'play() did not resume immediately; reopening current media',
+        );
+        if (path != null) {
+          await _reopenCurrentMedia(path, resumePosition, play: true);
+          await _waitForPlayingState();
+        }
+      }
+
+      _playing = _player.state.playing;
       _broadcastState();
     } on Exception catch (e) {
       AppLogger.e('AudioHandler', 'Error playing', e);
       rethrow;
     }
+  });
+
+  Future<void> _reopenCurrentMedia(
+    String path,
+    Duration resumePosition, {
+    required bool play,
+  }) async {
+    _currentMediaPath = path;
+    _hasLoadedMedia = false;
+    await _player.open(Media(path), play: false);
+    _hasLoadedMedia = true;
+    if (resumePosition > Duration.zero) {
+      await _player.seek(resumePosition);
+    }
+    if (play) {
+      await _player.play();
+    }
+  }
+
+  Future<bool> _waitForPlayingState() async {
+    if (_player.state.playing) return true;
+
+    try {
+      return await _player.stream.playing
+          .firstWhere((playing) => playing)
+          .timeout(const Duration(milliseconds: 700));
+    } on TimeoutException {
+      return _player.state.playing;
+    }
   }
 
   @override
-  Future<void> pause() async {
+  Future<void> pause() => _runPlayerOperation('pause', () async {
     try {
       AppLogger.d('AudioHandler', 'pause() called, current playing: $_playing');
 
@@ -231,10 +297,10 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       AppLogger.e('AudioHandler', 'Error pausing', e);
       rethrow;
     }
-  }
+  });
 
   @override
-  Future<void> stop() async {
+  Future<void> stop() => _runPlayerOperation('stop', () async {
     try {
       await _player.stop();
       _playing = false;
@@ -243,10 +309,10 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       AppLogger.e('AudioHandler', 'Error stopping', e);
       rethrow;
     }
-  }
+  });
 
   @override
-  Future<void> seek(Duration position) async {
+  Future<void> seek(Duration position) => _runPlayerOperation('seek', () async {
     try {
       // Remember playing state before seek
       final wasPlaying = _playing;
@@ -263,7 +329,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       AppLogger.e('AudioHandler', 'Error seeking', e);
       rethrow;
     }
-  }
+  });
 
   @override
   Future<void> skipToNext() async {
@@ -310,23 +376,25 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   }
 
   @override
-  Future<void> setSpeed(double speed) async {
-    try {
-      await _player.setRate(speed);
-    } on Exception catch (e) {
-      AppLogger.e('AudioHandler', 'Error setting speed', e);
-      rethrow;
-    }
-  }
+  Future<void> setSpeed(double speed) =>
+      _runPlayerOperation('setSpeed', () async {
+        try {
+          await _player.setRate(speed);
+        } on Exception catch (e) {
+          AppLogger.e('AudioHandler', 'Error setting speed', e);
+          rethrow;
+        }
+      });
 
-  Future<void> setVolume(double volume) async {
-    try {
-      await _player.setVolume(volume * 100); // media_kit uses 0-100
-    } on Exception catch (e) {
-      AppLogger.e('AudioHandler', 'Error setting volume', e);
-      rethrow;
-    }
-  }
+  Future<void> setVolume(double volume) =>
+      _runPlayerOperation('setVolume', () async {
+        try {
+          await _player.setVolume(volume * 100); // media_kit uses 0-100
+        } on Exception catch (e) {
+          AppLogger.e('AudioHandler', 'Error setting volume', e);
+          rethrow;
+        }
+      });
 
   // Expose streams for UI
   Stream<Duration> get positionStream => _player.stream.position;

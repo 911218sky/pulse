@@ -1,7 +1,7 @@
 name: pulse
 description: "A minimalist local music player with Vercel-style design"
 publish_to: 'none'
-version: 0.1.19+19
+version: 0.1.20+20
 
 environment:
   sdk: ^3.7.2
