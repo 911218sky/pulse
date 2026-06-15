@@ -82,18 +82,12 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (hasReleaseSigning) {
-                signingConfigs.getByName("release")
-            } else if (allowDebugReleaseSigning) {
-                signingConfigs.getByName("debug")
-            } else {
-                throw GradleException(
-                    "Release signing is required for release builds. " +
-                        "Set ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, " +
-                        "ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD, or pass " +
-                        "-PallowDebugReleaseSigning=true only for local disposable builds."
-                )
-            }
+            signingConfig =
+                if (hasReleaseSigning) {
+                    signingConfigs.getByName("release")
+                } else {
+                    signingConfigs.getByName("debug")
+                }
 
             // Enable code shrinking and resource optimization
             isMinifyEnabled = true
@@ -121,6 +115,20 @@ android {
         abi {
             enableSplit = true
         }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val isReleaseBuild = allTasks.any { task ->
+        task.name.contains("Release", ignoreCase = false)
+    }
+    if (isReleaseBuild && !hasReleaseSigning && !allowDebugReleaseSigning) {
+        throw GradleException(
+            "Release signing is required for release builds. " +
+                "Set ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, " +
+                "ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD, or pass " +
+                "-PallowDebugReleaseSigning=true only for local disposable builds."
+        )
     }
 }
 
