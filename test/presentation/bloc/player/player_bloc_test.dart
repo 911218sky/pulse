@@ -234,6 +234,55 @@ void main() {
     );
 
     test(
+      'play resumes from the paused position instead of restarting',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-resume-play',
+          path: '/music/resume-play.mp3',
+          title: 'Resume Play',
+          duration: Duration(minutes: 3),
+          fileSizeBytes: 1024,
+        );
+
+        bloc.add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          bloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.status,
+              'status',
+              PlayerStatus.playing,
+            ),
+          ),
+        );
+
+        bloc.add(const PlayerPositionUpdated(Duration(seconds: 47)));
+        await Future<void>.delayed(Duration.zero);
+
+        bloc.add(const PlayerPause());
+        await expectLater(
+          bloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.status,
+              'status',
+              PlayerStatus.paused,
+            ),
+          ),
+        );
+
+        final seekCallsBeforePlay = audioRepository.seekCalls.length;
+        bloc.add(const PlayerPlay());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          audioRepository.seekCalls.skip(seekCallsBeforePlay),
+          contains(const Duration(seconds: 47)),
+        );
+      },
+    );
+
+    test(
       'restore from library resumes the last saved track and position',
       () async {
         const audioFile = AudioFile(

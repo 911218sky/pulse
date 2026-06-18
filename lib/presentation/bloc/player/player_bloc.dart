@@ -162,6 +162,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     if (!state.isReady && state.status != PlayerStatus.paused) return;
 
     try {
+      if (state.status == PlayerStatus.paused &&
+          state.position > Duration.zero) {
+        await _audioRepository.seekTo(state.position);
+      }
       await _audioRepository.play();
       emit(state.copyWith(status: PlayerStatus.playing));
     } on Exception catch (e) {
