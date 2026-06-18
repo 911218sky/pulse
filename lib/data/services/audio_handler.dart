@@ -59,6 +59,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
 
   Duration _position = Duration.zero;
   Duration? _duration;
+  Duration? _resumePositionGuard;
   bool _playing = false;
   bool _hasLoadedMedia = false;
   String? _currentMediaPath;
@@ -84,9 +85,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
 
   void _init() {
     // Listen to position changes (throttled)
-    _positionSub = _player.stream.position.listen((pos) {
-      _position = pos;
-    });
+    _positionSub = _player.stream.position.listen(_recordPlayerPosition);
 
     // Listen to duration changes
     _durationSub = _player.stream.duration.listen((dur) {
@@ -204,6 +203,8 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       _currentMediaPath = path;
       _hasLoadedMedia = false;
 
+      _resumePositionGuard =
+          initialPosition > Duration.zero ? initialPosition : null;
       _position = initialPosition;
       _duration = duration;
       _broadcastState();
@@ -230,12 +231,19 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       AppLogger.d('AudioHandler', 'play() called, current playing: $_playing');
 
       final path = _currentMediaPath ?? mediaItem.value?.id;
-      final resumePosition =
-          _player.state.completed ? Duration.zero : _position;
 
       if (_player.state.completed) {
+        _resumePositionGuard = null;
         await _player.seek(Duration.zero);
       }
+
+      if (_resumePositionGuard != null) {
+        await _player.seek(_resumePositionGuard!);
+        _position = _resumePositionGuard!;
+      }
+
+      final resumePosition =
+          _player.state.completed ? Duration.zero : _position;
 
       if (_player.state.playlist.medias.isEmpty && path != null) {
         await _reopenCurrentMedia(path, resumePosition, play: false);
@@ -268,6 +276,8 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   }) async {
     _currentMediaPath = path;
     _hasLoadedMedia = false;
+    _resumePositionGuard =
+        resumePosition > Duration.zero ? resumePosition : null;
     await _player.open(Media(path), play: false);
     _hasLoadedMedia = true;
     if (resumePosition > Duration.zero) {
@@ -322,6 +332,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       // Remember playing state before seek
       final wasPlaying = _playing;
 
+      _resumePositionGuard = null;
       await _player.seek(position);
 
       // Ensure playback continues if it was playing
@@ -402,7 +413,9 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       });
 
   // Expose streams for UI
-  Stream<Duration> get positionStream => _player.stream.position;
+  Stream<Duration> get positionStream => _player.stream.position.map(
+    (position) => _shouldHoldResumePosition(position) ? _position : position,
+  );
   Stream<Duration> get durationStream => _player.stream.duration;
   Stream<bool> get playingStream => _player.stream.playing;
   Stream<Duration> get bufferedPositionStream => _player.stream.buffer;
@@ -412,6 +425,20 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   bool get playing => _playing;
   double get volume => _player.state.volume / 100;
   double get speed => _player.state.rate;
+
+  bool _shouldHoldResumePosition(Duration position) {
+    final guard = _resumePositionGuard;
+    return guard != null && position < guard;
+  }
+
+  void _recordPlayerPosition(Duration position) {
+    if (_shouldHoldResumePosition(position)) return;
+    _position = position;
+    final guard = _resumePositionGuard;
+    if (guard != null && position >= guard) {
+      _resumePositionGuard = null;
+    }
+  }
 
   @override
   Future<void> onTaskRemoved() async {

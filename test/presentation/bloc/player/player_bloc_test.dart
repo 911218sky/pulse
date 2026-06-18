@@ -223,6 +223,44 @@ void main() {
     });
 
     test(
+      'delayed zero position after resume does not reset playback',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-delayed-zero',
+          path: '/music/delayed-zero.mp3',
+          title: 'Delayed Zero',
+          duration: Duration(minutes: 4),
+          fileSizeBytes: 1024,
+        );
+        const resumePosition = Duration(minutes: 2, seconds: 35);
+        final playbackStateRepository =
+            _FakePlaybackStateRepository()
+              ..savedPositions[audioFile.path] = resumePosition;
+        final savingBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(),
+        );
+        addTearDown(savingBloc.close);
+
+        savingBloc.add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          savingBloc.stream,
+          emitsThrough(
+            isA<PlayerState>()
+                .having((state) => state.status, 'status', PlayerStatus.playing)
+                .having((state) => state.position, 'position', resumePosition),
+          ),
+        );
+
+        savingBloc.add(const PlayerPositionUpdated(Duration.zero));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(savingBloc.state.position, resumePosition);
+      },
+    );
+
+    test(
       'external pause event saves the current position immediately',
       () async {
         const audioFile = AudioFile(

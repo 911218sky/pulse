@@ -64,6 +64,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
   // Throttle position updates to reduce UI rebuilds
   Duration? _pendingPosition;
+  Duration? _resumePositionGuard;
   static const _positionUpdateInterval = Duration(milliseconds: 250);
 
   void _subscribeToStreams() {
@@ -120,6 +121,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       final savedPosition = await _playbackStateRepository.getPositionForFile(
         event.audioFile.path,
       );
+      _resumePositionGuard = savedPosition;
 
       // Load audio file at its saved position before play starts.
       await _audioRepository.loadAudio(
@@ -193,6 +195,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     try {
       add(const PlayerSaveState());
       await _audioRepository.stop();
+      _resumePositionGuard = null;
       emit(
         state.copyWith(status: PlayerStatus.stopped, position: Duration.zero),
       );
@@ -213,6 +216,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       // Clamp position to valid range
       final maxDuration = state.duration ?? Duration.zero;
       var targetPosition = event.position;
+      _resumePositionGuard = null;
 
       if (targetPosition.isNegative) {
         targetPosition = Duration.zero;
@@ -317,6 +321,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerPositionUpdated event,
     Emitter<PlayerState> emit,
   ) {
+    final resumePositionGuard = _resumePositionGuard;
+    if (resumePositionGuard != null && event.position < resumePositionGuard) {
+      return;
+    }
+    if (resumePositionGuard != null && event.position >= resumePositionGuard) {
+      _resumePositionGuard = null;
+    }
     emit(state.copyWith(position: event.position));
   }
 
@@ -420,6 +431,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         ),
       );
 
+      _resumePositionGuard = lastState.position;
       await _audioRepository.loadAudio(
         audioFile,
         initialPosition: lastState.position,
