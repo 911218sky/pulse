@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/utils/version_utils.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
 import 'package:pulse/presentation/bloc/settings/settings_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
@@ -766,7 +767,7 @@ class _AppInfo extends StatelessWidget {
           future: PackageInfo.fromPlatform(),
           builder: (context, snapshot) {
             final packageInfo = snapshot.data;
-            final version = packageInfo?.version ?? '';
+            final version = VersionUtils.display(packageInfo?.version ?? '');
             return Text(
               version.isEmpty ? l10n.version : '${l10n.version} $version',
               style: TextStyle(

@@ -6,6 +6,7 @@ import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/core/services/update_check_service.dart';
 import 'package:pulse/core/services/update_download_service.dart';
 import 'package:pulse/core/utils/app_logger.dart';
+import 'package:pulse/core/utils/version_utils.dart';
 import 'package:pulse/domain/entities/app_update.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -79,7 +80,10 @@ class UpdateFlowController {
         case _UpdatePromptAction.skipVersion:
           await _skipVersion(update.version);
           if (context.mounted) {
-            AppToast.info(context, l10n.updateSkippedVersion(update.version));
+            AppToast.info(
+              context,
+              l10n.updateSkippedVersion(VersionUtils.display(update.version)),
+            );
           }
           break;
         case _UpdatePromptAction.later:
@@ -131,8 +135,8 @@ class UpdateFlowController {
                     children: [
                       Text(
                         l10n.updateAvailableMessage(
-                          update.currentVersion,
-                          update.version,
+                          VersionUtils.display(update.currentVersion),
+                          VersionUtils.display(update.version),
                           selectedAsset.name,
                         ),
                       ),
