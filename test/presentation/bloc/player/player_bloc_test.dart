@@ -190,6 +190,38 @@ void main() {
       },
     );
 
+    test('loading a track starts from its saved position', () async {
+      const audioFile = AudioFile(
+        id: 'track-saved-position',
+        path: '/music/saved-position.mp3',
+        title: 'Saved Position',
+        duration: Duration(minutes: 4),
+        fileSizeBytes: 1024,
+      );
+      const resumePosition = Duration(minutes: 2, seconds: 35);
+      final playbackStateRepository =
+          _FakePlaybackStateRepository()
+            ..savedPositions[audioFile.path] = resumePosition;
+      final savingBloc = PlayerBloc(
+        audioRepository: audioRepository,
+        playbackStateRepository: playbackStateRepository,
+        settingsRepository: _FakeSettingsRepository(),
+      );
+      addTearDown(savingBloc.close);
+
+      savingBloc.add(const PlayerLoadAudio(audioFile));
+      await expectLater(
+        savingBloc.stream,
+        emitsThrough(
+          isA<PlayerState>()
+              .having((state) => state.status, 'status', PlayerStatus.playing)
+              .having((state) => state.position, 'position', resumePosition),
+        ),
+      );
+
+      expect(audioRepository.lastInitialPosition, resumePosition);
+    });
+
     test(
       'external pause event saves the current position immediately',
       () async {
@@ -328,7 +360,7 @@ void main() {
         );
 
         expect(audioRepository.lastLoadedAudio, audioFile);
-        expect(audioRepository.seekCalls, contains(resumePosition));
+        expect(audioRepository.lastInitialPosition, resumePosition);
         expect(audioRepository.lastVolume, 0.6);
         expect(audioRepository.lastPlaybackSpeed, 1.25);
       },
@@ -677,6 +709,7 @@ class _FakeAudioRepository implements AudioRepository {
   int loadCount = 0;
   int playCount = 0;
   AudioFile? lastLoadedAudio;
+  Duration lastInitialPosition = Duration.zero;
   final List<Duration> seekCalls = [];
   double lastVolume = 1;
   double lastPlaybackSpeed = 1;
@@ -715,11 +748,15 @@ class _FakeAudioRepository implements AudioRepository {
   double get currentPlaybackSpeed => 1;
 
   @override
-  Future<void> loadAudio(AudioFile audioFile) async {
+  Future<void> loadAudio(
+    AudioFile audioFile, {
+    Duration initialPosition = Duration.zero,
+  }) async {
     loadCount++;
     lastLoadedAudio = audioFile;
+    lastInitialPosition = initialPosition;
     _currentDuration = audioFile.duration;
-    _currentPosition = Duration.zero;
+    _currentPosition = initialPosition;
   }
 
   @override

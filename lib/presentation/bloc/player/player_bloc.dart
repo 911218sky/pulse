@@ -116,20 +116,19 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       _skipForwardSeconds = settings.skipForwardSeconds;
       _skipBackwardSeconds = settings.skipBackwardSeconds;
 
-      // Load audio file
-      await _audioRepository.loadAudio(event.audioFile);
-
-      // Track the loaded audio path
-      _lastLoadedAudioPath = event.audioFile.path;
-
       // Check for saved position
       final savedPosition = await _playbackStateRepository.getPositionForFile(
         event.audioFile.path,
       );
 
-      if (savedPosition != null) {
-        await _audioRepository.seekTo(savedPosition);
-      }
+      // Load audio file at its saved position before play starts.
+      await _audioRepository.loadAudio(
+        event.audioFile,
+        initialPosition: savedPosition ?? Duration.zero,
+      );
+
+      // Track the loaded audio path
+      _lastLoadedAudioPath = event.audioFile.path;
 
       // Apply default settings
       await _audioRepository.setVolume(settings.defaultVolume);
@@ -421,8 +420,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         ),
       );
 
-      await _audioRepository.loadAudio(audioFile);
-      await _audioRepository.seekTo(lastState.position);
+      await _audioRepository.loadAudio(
+        audioFile,
+        initialPosition: lastState.position,
+      );
       await _audioRepository.setVolume(lastState.volume);
       await _audioRepository.setPlaybackSpeed(lastState.playbackSpeed);
 

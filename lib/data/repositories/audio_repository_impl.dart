@@ -25,7 +25,10 @@ class AudioRepositoryImpl implements AudioRepository {
   }
 
   @override
-  Future<void> loadAudio(AudioFile audioFile) async {
+  Future<void> loadAudio(
+    AudioFile audioFile, {
+    Duration initialPosition = Duration.zero,
+  }) async {
     try {
       await _handler.loadAudio(
         path: audioFile.path,
@@ -33,6 +36,7 @@ class AudioRepositoryImpl implements AudioRepository {
         artist: audioFile.artist,
         album: audioFile.album,
         duration: audioFile.duration,
+        initialPosition: initialPosition,
       );
     } on Exception catch (e) {
       AppLogger.e('AudioRepository', 'Error loading audio', e);

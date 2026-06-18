@@ -183,6 +183,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     String? album,
     Duration? duration,
     String? artworkUri,
+    Duration initialPosition = Duration.zero,
   }) => _runPlayerOperation('loadAudio', () async {
     try {
       // Update media item for notification
@@ -203,13 +204,17 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       _currentMediaPath = path;
       _hasLoadedMedia = false;
 
-      _position = Duration.zero;
+      _position = initialPosition;
       _duration = duration;
       _broadcastState();
 
       // Load the audio file using media_kit
       await _player.open(Media(path), play: false);
       _hasLoadedMedia = true;
+      if (initialPosition > Duration.zero) {
+        await _player.seek(initialPosition);
+        _position = initialPosition;
+      }
 
       // Broadcast initial state to show notification
       _broadcastState();

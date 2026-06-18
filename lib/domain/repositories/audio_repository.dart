@@ -6,7 +6,10 @@ enum LoopMode { off, one, all }
 /// Repository interface for audio playback operations
 abstract class AudioRepository {
   /// Loads an audio file and prepares it for playback
-  Future<void> loadAudio(AudioFile audioFile);
+  Future<void> loadAudio(
+    AudioFile audioFile, {
+    Duration initialPosition = Duration.zero,
+  });
 
   /// Starts or resumes playback
   Future<void> play();
