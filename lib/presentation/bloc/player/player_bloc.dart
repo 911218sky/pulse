@@ -37,6 +37,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     on<PlayerPlayingStateUpdated>(_onPlayingStateUpdated);
     on<PlayerSaveState>(_onSaveState);
     on<PlayerRestoreState>(_onRestoreState);
+    on<PlayerRestoreFromLibrary>(_onRestoreFromLibrary);
     on<PlayerSetSleepFadeVolume>(_onSetSleepFadeVolume);
     on<PlayerRestoreVolumeAfterSleep>(_onRestoreVolumeAfterSleep);
     on<PlayerClearCompletedTrackPosition>(_onClearCompletedTrackPosition);
@@ -217,6 +218,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
       await _audioRepository.seekTo(targetPosition);
       emit(state.copyWith(position: targetPosition));
+      await _saveCurrentPlaybackState();
 
       // Resume playback if we were playing before seek
       if (wasPlaying) {
@@ -368,6 +370,65 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     }
   }
 
+  Future<void> _onRestoreFromLibrary(
+    PlayerRestoreFromLibrary event,
+    Emitter<PlayerState> emit,
+  ) async {
+    if (state.currentAudio != null || event.libraryFiles.isEmpty) return;
+
+    try {
+      final settings = await _settingsRepository.loadSettings();
+      _skipForwardSeconds = settings.skipForwardSeconds;
+      _skipBackwardSeconds = settings.skipBackwardSeconds;
+
+      if (!settings.autoResume) return;
+
+      final lastState = await _playbackStateRepository.getLastPlaybackState();
+      if (lastState == null) return;
+
+      final audioFile =
+          event.libraryFiles
+              .where((file) => file.path == lastState.audioFilePath)
+              .firstOrNull;
+      if (audioFile == null) return;
+
+      emit(
+        state.copyWith(
+          status: PlayerStatus.loading,
+          currentAudio: audioFile,
+          position: Duration.zero,
+          duration: () => null,
+        ),
+      );
+
+      await _audioRepository.loadAudio(audioFile);
+      await _audioRepository.seekTo(lastState.position);
+      await _audioRepository.setVolume(lastState.volume);
+      await _audioRepository.setPlaybackSpeed(lastState.playbackSpeed);
+
+      _lastLoadedAudioPath = audioFile.path;
+
+      emit(
+        state.copyWith(
+          status: PlayerStatus.ready,
+          currentAudio: audioFile,
+          position: lastState.position,
+          duration: () => audioFile.duration,
+          volume: lastState.volume,
+          speed: lastState.playbackSpeed,
+        ),
+      );
+
+      _startAutoSaveTimer();
+      await _audioRepository.play();
+      emit(state.copyWith(status: PlayerStatus.playing));
+    } on Exception catch (e) {
+      emit(
+        state.copyWith(status: PlayerStatus.error, errorMessage: e.toString()),
+      );
+    }
+  }
+
   /// Handle sleep timer fade out - only affects audio, not saved volume state
   Future<void> _onSetSleepFadeVolume(
     PlayerSetSleepFadeVolume event,
@@ -401,6 +462,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     Emitter<PlayerState> emit,
   ) async {
     try {
+      final lastState = await _playbackStateRepository.getLastPlaybackState();
+      if (lastState?.audioFilePath == event.filePath) {
+        await _playbackStateRepository.clearPlaybackState();
+      }
       await _playbackStateRepository.clearPositionForFile(event.filePath);
       AppLogger.d(
         'PlayerBloc',
@@ -422,6 +487,17 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
   Future<void> _saveCurrentPlaybackState() async {
     if (state.currentAudio == null) return;
+    final duration = state.duration;
+
+    if (duration != null &&
+        duration > Duration.zero &&
+        state.position >= duration) {
+      await _playbackStateRepository.clearPlaybackState();
+      await _playbackStateRepository.clearPositionForFile(
+        state.currentAudio!.path,
+      );
+      return;
+    }
 
     final playbackState = PlaybackState.create(
       audioFilePath: state.currentAudio!.path,

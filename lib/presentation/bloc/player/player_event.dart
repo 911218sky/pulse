@@ -120,6 +120,16 @@ class PlayerRestoreState extends PlayerEvent {
   const PlayerRestoreState();
 }
 
+/// Restore the last saved track from the current library on app startup
+class PlayerRestoreFromLibrary extends PlayerEvent {
+  const PlayerRestoreFromLibrary(this.libraryFiles);
+
+  final List<AudioFile> libraryFiles;
+
+  @override
+  List<Object?> get props => [libraryFiles];
+}
+
 /// Set temporary volume for sleep timer fade out (doesn't affect saved volume)
 class PlayerSetSleepFadeVolume extends PlayerEvent {
   const PlayerSetSleepFadeVolume(this.volume);

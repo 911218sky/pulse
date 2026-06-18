@@ -149,6 +149,225 @@ void main() {
         ),
       );
     });
+
+    test(
+      'seek saves the new position for the current track immediately',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-1',
+          path: '/music/track-1.mp3',
+          title: 'Track 1',
+          duration: Duration(minutes: 3),
+          fileSizeBytes: 1024,
+        );
+        final playbackStateRepository = _FakePlaybackStateRepository();
+        final savingBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(),
+        );
+        addTearDown(savingBloc.close);
+
+        savingBloc.add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          savingBloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.status,
+              'status',
+              PlayerStatus.playing,
+            ),
+          ),
+        );
+
+        savingBloc.add(const PlayerSeekTo(Duration(minutes: 1, seconds: 15)));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          playbackStateRepository.savedPositions[audioFile.path],
+          const Duration(minutes: 1, seconds: 15),
+        );
+      },
+    );
+
+    test(
+      'restore from library resumes the last saved track and position',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-2',
+          path: '/music/track-2.mp3',
+          title: 'Track 2',
+          duration: Duration(minutes: 5),
+          fileSizeBytes: 2048,
+        );
+        const resumePosition = Duration(minutes: 1, seconds: 23);
+        final restoreRepository =
+            _FakePlaybackStateRepository()
+              ..lastPlaybackState = playback.PlaybackState.create(
+                audioFilePath: audioFile.path,
+                position: resumePosition,
+                volume: 0.6,
+                playbackSpeed: 1.25,
+              )
+              ..savedPositions[audioFile.path] = resumePosition;
+        final restoreSettingsRepository = _FakeSettingsRepository(
+          settings: Settings.defaults.copyWith(autoResume: true),
+        );
+        final restoreBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: restoreRepository,
+          settingsRepository: restoreSettingsRepository,
+        );
+        addTearDown(restoreBloc.close);
+
+        restoreBloc.add(const PlayerRestoreFromLibrary([audioFile]));
+        await expectLater(
+          restoreBloc.stream,
+          emitsThrough(
+            isA<PlayerState>()
+                .having((state) => state.status, 'status', PlayerStatus.playing)
+                .having(
+                  (state) => state.currentAudio?.path,
+                  'path',
+                  audioFile.path,
+                )
+                .having((state) => state.position, 'position', resumePosition),
+          ),
+        );
+
+        expect(audioRepository.lastLoadedAudio, audioFile);
+        expect(audioRepository.seekCalls, contains(resumePosition));
+        expect(audioRepository.lastVolume, 0.6);
+        expect(audioRepository.lastPlaybackSpeed, 1.25);
+      },
+    );
+
+    test('restore from library applies configured skip durations', () async {
+      const audioFile = AudioFile(
+        id: 'track-2b',
+        path: '/music/track-2b.mp3',
+        title: 'Track 2B',
+        duration: Duration(minutes: 5),
+        fileSizeBytes: 2048,
+      );
+      final restoreRepository =
+          _FakePlaybackStateRepository()
+            ..lastPlaybackState = playback.PlaybackState.create(
+              audioFilePath: audioFile.path,
+              position: const Duration(seconds: 30),
+            );
+      final restoreSettingsRepository = _FakeSettingsRepository(
+        settings: Settings.defaults.copyWith(
+          autoResume: true,
+          skipForwardSeconds: 42,
+          skipBackwardSeconds: 7,
+        ),
+      );
+      final restoreBloc = PlayerBloc(
+        audioRepository: audioRepository,
+        playbackStateRepository: restoreRepository,
+        settingsRepository: restoreSettingsRepository,
+      );
+      addTearDown(restoreBloc.close);
+
+      restoreBloc.add(const PlayerRestoreFromLibrary([audioFile]));
+      await expectLater(
+        restoreBloc.stream,
+        emitsThrough(
+          isA<PlayerState>().having(
+            (state) => state.status,
+            'status',
+            PlayerStatus.playing,
+          ),
+        ),
+      );
+
+      restoreBloc.add(const PlayerSkipForward());
+      await Future<void>.delayed(Duration.zero);
+      restoreBloc.add(const PlayerSkipBackward());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(audioRepository.seekCalls, contains(const Duration(seconds: 72)));
+      expect(audioRepository.seekCalls, contains(const Duration(seconds: 65)));
+    });
+
+    test(
+      'clearing a completed track prevents it from being restored on startup',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-3',
+          path: '/music/track-3.mp3',
+          title: 'Track 3',
+          duration: Duration(minutes: 4),
+          fileSizeBytes: 1024,
+        );
+        const resumePosition = Duration(minutes: 4);
+        final playbackStateRepository =
+            _FakePlaybackStateRepository()
+              ..lastPlaybackState = playback.PlaybackState.create(
+                audioFilePath: audioFile.path,
+                position: resumePosition,
+              )
+              ..savedPositions[audioFile.path] = resumePosition;
+        final restoreBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(
+            settings: Settings.defaults.copyWith(autoResume: true),
+          ),
+        );
+        addTearDown(restoreBloc.close);
+
+        restoreBloc.add(PlayerClearCompletedTrackPosition(audioFile.path));
+        await Future<void>.delayed(Duration.zero);
+
+        restoreBloc.add(const PlayerRestoreFromLibrary([audioFile]));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(playbackStateRepository.lastPlaybackState, isNull);
+        expect(playbackStateRepository.savedPositions[audioFile.path], isNull);
+        expect(restoreBloc.state.currentAudio, isNull);
+        expect(audioRepository.playCount, 0);
+      },
+    );
+
+    test('saving a completed track clears resumable playback state', () async {
+      const audioFile = AudioFile(
+        id: 'track-4',
+        path: '/music/track-4.mp3',
+        title: 'Track 4',
+        duration: Duration(minutes: 2),
+        fileSizeBytes: 1024,
+      );
+      final playbackStateRepository = _FakePlaybackStateRepository();
+      final savingBloc = PlayerBloc(
+        audioRepository: audioRepository,
+        playbackStateRepository: playbackStateRepository,
+        settingsRepository: _FakeSettingsRepository(),
+      );
+      addTearDown(savingBloc.close);
+
+      savingBloc.add(const PlayerLoadAudio(audioFile));
+      await expectLater(
+        savingBloc.stream,
+        emitsThrough(
+          isA<PlayerState>().having(
+            (state) => state.status,
+            'status',
+            PlayerStatus.playing,
+          ),
+        ),
+      );
+
+      savingBloc.add(const PlayerPositionUpdated(Duration(minutes: 2)));
+      await Future<void>.delayed(Duration.zero);
+
+      savingBloc.add(const PlayerSaveState());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(playbackStateRepository.lastPlaybackState, isNull);
+      expect(playbackStateRepository.savedPositions[audioFile.path], isNull);
+    });
   });
 
   group('Skip Forward/Backward Bounds', () {
@@ -322,6 +541,13 @@ class _FakeAudioRepository implements AudioRepository {
   final _bufferedController = StreamController<Duration>.broadcast();
   int loadCount = 0;
   int playCount = 0;
+  AudioFile? lastLoadedAudio;
+  final List<Duration> seekCalls = [];
+  double lastVolume = 1;
+  double lastPlaybackSpeed = 1;
+  Duration _currentPosition = Duration.zero;
+  Duration? _currentDuration;
+  bool _isPlaying = false;
 
   void emitPlaying({required bool isPlaying}) =>
       _playingController.add(isPlaying);
@@ -339,13 +565,13 @@ class _FakeAudioRepository implements AudioRepository {
   Stream<Duration?> get durationStream => _durationController.stream;
 
   @override
-  Duration get currentPosition => Duration.zero;
+  Duration get currentPosition => _currentPosition;
 
   @override
-  Duration? get currentDuration => null;
+  Duration? get currentDuration => _currentDuration;
 
   @override
-  bool get isPlaying => false;
+  bool get isPlaying => _isPlaying;
 
   @override
   double get currentVolume => 1;
@@ -356,29 +582,43 @@ class _FakeAudioRepository implements AudioRepository {
   @override
   Future<void> loadAudio(AudioFile audioFile) async {
     loadCount++;
+    lastLoadedAudio = audioFile;
+    _currentDuration = audioFile.duration;
+    _currentPosition = Duration.zero;
   }
 
   @override
   Future<void> play() async {
     playCount++;
+    _isPlaying = true;
   }
 
   @override
-  Future<void> pause() async {}
+  Future<void> pause() async {
+    _isPlaying = false;
+  }
 
   @override
   Future<void> stop() async {
+    _isPlaying = false;
     emitPlaying(isPlaying: false);
   }
 
   @override
-  Future<void> seekTo(Duration position) async {}
+  Future<void> seekTo(Duration position) async {
+    seekCalls.add(position);
+    _currentPosition = position;
+  }
 
   @override
-  Future<void> setVolume(double volume) async {}
+  Future<void> setVolume(double volume) async {
+    lastVolume = volume;
+  }
 
   @override
-  Future<void> setPlaybackSpeed(double speed) async {}
+  Future<void> setPlaybackSpeed(double speed) async {
+    lastPlaybackSpeed = speed;
+  }
 
   @override
   Future<void> setLoopMode(LoopMode mode) async {}
@@ -393,33 +633,51 @@ class _FakeAudioRepository implements AudioRepository {
 }
 
 class _FakePlaybackStateRepository implements PlaybackStateRepository {
-  @override
-  Future<void> savePlaybackState(playback.PlaybackState state) async {}
+  playback.PlaybackState? lastPlaybackState;
+  final Map<String, Duration> savedPositions = {};
+  playback.PlaybackState? savedPlaybackState;
 
   @override
-  Future<playback.PlaybackState?> getLastPlaybackState() async => null;
+  Future<void> savePlaybackState(playback.PlaybackState state) async {
+    savedPlaybackState = state;
+    lastPlaybackState = state;
+  }
 
   @override
-  Future<void> clearPlaybackState() async {}
+  Future<playback.PlaybackState?> getLastPlaybackState() async =>
+      lastPlaybackState;
 
   @override
-  Future<Duration?> getPositionForFile(String filePath) async => null;
+  Future<void> clearPlaybackState() async {
+    lastPlaybackState = null;
+  }
 
   @override
-  Future<void> savePositionForFile(String filePath, Duration position) async {}
+  Future<Duration?> getPositionForFile(String filePath) async =>
+      savedPositions[filePath];
 
   @override
-  Future<Map<String, Duration>> getAllFilePositions() async => {};
+  Future<void> savePositionForFile(String filePath, Duration position) async {
+    savedPositions[filePath] = position;
+  }
 
   @override
-  Future<void> clearPositionForFile(String filePath) async {}
+  Future<Map<String, Duration>> getAllFilePositions() async => savedPositions;
+
+  @override
+  Future<void> clearPositionForFile(String filePath) async {
+    savedPositions.remove(filePath);
+  }
 }
 
 class _FakeSettingsRepository implements SettingsRepository {
+  _FakeSettingsRepository({this.settings = Settings.defaults});
+
+  final Settings settings;
   final _controller = StreamController<Settings>.broadcast();
 
   @override
-  Future<Settings> loadSettings() async => Settings.defaults;
+  Future<Settings> loadSettings() async => settings;
 
   @override
   Future<void> saveSettings(Settings settings) async {

@@ -47,6 +47,12 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
   /// Handle app lifecycle changes
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      context.read<PlayerBloc>().add(const PlayerSaveState());
+    }
+
     if (state == AppLifecycleState.paused) {
       // Save path before going to background
       _lastKnownPath =

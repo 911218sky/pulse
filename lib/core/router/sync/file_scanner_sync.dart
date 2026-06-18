@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_state.dart';
+import 'package:pulse/presentation/bloc/player/player_bloc.dart';
+import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/search/search_bloc.dart';
@@ -70,6 +72,11 @@ class _FileScannerSyncState extends State<FileScannerSync> {
           state.selectedFolders.isNotEmpty) {
         // On initial load, just sync existing playlists with library files.
         _syncExistingPlaylists(context, state);
+      }
+      if (state.libraryFiles.isNotEmpty) {
+        context.read<PlayerBloc>().add(
+          PlayerRestoreFromLibrary(state.libraryFiles),
+        );
       }
       return;
     }
