@@ -90,3 +90,86 @@
 
 - Save the current playback state when `PlayerBloc` transitions from `playing` to `paused` through `PlayerPlayingStateUpdated(isPlaying: false)`.
 - When `PlayerPlay` resumes from a paused state, seek to `state.position` first, then call `play()`.
+
+## Observations - 2026-06-18 Follow-up
+
+- User reported that playback state is saved, but pressing play after restore can still start from the beginning.
+- A focused regression test with saved path `/music/./track-normalized.mp3` and library path `/music/track-normalized.mp3` timed out because restore never found the saved audio file.
+- `PlayerBloc._onRestoreFromLibrary()` matched saved playback state by raw string equality: `file.path == lastState.audioFilePath`.
+- The project already has `AudioPathUtils.canonicalize()` and repository guidance says audio path comparisons must use canonicalized paths.
+- User also reported app updates sometimes cannot install, and downloaded APKs should be cached for retry instead of downloaded again.
+- `UpdateFlowController.checkForUpdate()` deleted all downloaded installers before showing the update prompt.
+- `UpdateDownloadService.openInstaller()` deleted downloaded installers five minutes after handing the file to the system installer.
+- `UpdateDownloadService.download()` opened the network request before checking whether the same update asset already existed locally.
+
+## Hypotheses - 2026-06-18 Follow-up
+
+### H5: Restore misses the saved track when equivalent paths are formatted differently (ROOT HYPOTHESIS)
+- Supports:
+  - The failing test uses two equivalent paths that differ only by `./`.
+  - Existing code compares paths using raw string equality.
+  - The database migration canonicalizes playback paths, but older or external state can still contain non-canonical path text.
+- Conflicts:
+  - Exact path matches already work.
+- Test:
+  - Restore from library with equivalent but non-identical saved/library paths must load, seek, and play the saved track.
+
+### H6: Update install retry redownloads because the app deletes or ignores cached installers (ROOT HYPOTHESIS)
+- Supports:
+  - Update check deletes installers before prompting.
+  - Opening the installer schedules cleanup shortly after install handoff.
+  - Download starts network I/O before checking the target cached file.
+- Conflicts:
+  - A retry can work if the network is still available and the server responds.
+- Test:
+  - Pre-create the expected installer file and inject an HTTP client that fails if used; download must return the cached file without network access.
+
+### H7: Failed partial downloads could be mistaken as reusable installers
+- Supports:
+  - Download previously wrote directly to the final APK path.
+  - A future cache-first check would treat any non-empty final file as reusable.
+- Conflicts:
+  - No direct user report of corrupt cached APKs yet.
+- Test:
+  - Simulate content length mismatch; service must throw and leave neither final installer nor partial download behind.
+
+## Experiments - 2026-06-18 Follow-up
+
+### E3: Normalized restore regression
+- Change:
+  - Added `restore from library matches saved track with normalized path`.
+- Result:
+  - Failed before the fix with a 30 second timeout because no playing state was emitted.
+  - Passed after comparing restore candidates with `AudioPathUtils.canonicalize()`.
+
+### E4: Cached installer regression
+- Change:
+  - Added `reuses a fully downloaded installer for the same update` with a fake HTTP client that throws on network access.
+- Result:
+  - Failed before the fix because `UpdateDownloadService.download()` called `getUrl()` before considering the cached file.
+  - Passed after resolving the target installer file first and returning it when non-empty.
+
+### E5: New version cleanup regression
+- Change:
+  - Added `clears older cached installers after a new update downloads`.
+- Result:
+  - Passed after moving cleanup to after a successful download while keeping the new installer.
+
+### E6: Partial download regression
+- Change:
+  - Added `does not cache incomplete downloads as installers`.
+- Result:
+  - Passed after downloading to a `.download` temporary file, checking byte count, and renaming only after success.
+
+## Root Cause - 2026-06-18 Follow-up
+
+- Playback restore could silently skip a valid saved track because restore compared raw file paths instead of canonicalized paths.
+- The update flow made install retry unreliable because it deleted cached installers during update checks and after installer handoff, while the downloader ignored an already cached installer until after opening a network connection.
+
+## Fix - 2026-06-18 Follow-up
+
+- Use `AudioPathUtils.canonicalize()` when matching saved playback state to scanned library files.
+- Reuse an existing cached installer before network access when the same version and asset are already downloaded.
+- Keep downloaded installers after handing them to Android so permission/install retries do not require a redownload.
+- Remove update-check-time cleanup; old installers are cleared only after a newer installer successfully downloads.
+- Write downloads to `.download` temporary files and promote them to installer cache only after the full content is received.

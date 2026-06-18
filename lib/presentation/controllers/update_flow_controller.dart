@@ -60,7 +60,6 @@ class UpdateFlowController {
         return UpdateCheckOutcome.skipped;
       }
 
-      await sl<UpdateDownloadService>().cleanDownloadedInstallers();
       if (!context.mounted) {
         return UpdateCheckOutcome.skipped;
       }

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -25,6 +24,12 @@ class UpdateDownloadService {
     AppUpdate update, {
     UpdateDownloadProgress? onProgress,
   }) async {
+    final file = await _installerFileFor(update);
+    if (file.existsSync() && file.lengthSync() > 0) {
+      onProgress?.call(file.lengthSync(), file.lengthSync());
+      return file;
+    }
+
     final client = _httpClient ?? HttpClient();
     try {
       final request = await client
@@ -42,32 +47,39 @@ class UpdateDownloadService {
         );
       }
 
-      final directory = await getTemporaryDirectory();
-      final safeVersion = _safeFilePart(update.version);
-      final safeAssetName = _safeFilePart(update.assetName);
-      final fileName = 'pulse-$safeVersion-$safeAssetName';
-      final file = File(p.join(directory.path, fileName));
-      await cleanDownloadedInstallers(keep: file);
-
       final total = response.contentLength > 0 ? response.contentLength : null;
-      if (total != null && file.existsSync() && file.lengthSync() == total) {
-        onProgress?.call(total, total);
-        return file;
-      }
+      final partialFile = File('${file.path}.download');
+      if (partialFile.existsSync()) await partialFile.delete();
 
-      final sink = file.openWrite();
+      final sink = partialFile.openWrite();
       var received = 0;
 
       try {
-        await for (final chunk in response) {
-          received += chunk.length;
-          sink.add(chunk);
-          onProgress?.call(received, total);
+        try {
+          await for (final chunk in response) {
+            received += chunk.length;
+            sink.add(chunk);
+            onProgress?.call(received, total);
+          }
+        } finally {
+          await sink.close();
         }
-      } finally {
-        await sink.close();
+      } on Exception {
+        if (partialFile.existsSync()) await partialFile.delete();
+        rethrow;
       }
 
+      if (total != null && received != total) {
+        if (partialFile.existsSync()) await partialFile.delete();
+        throw HttpException(
+          'Download incomplete: received $received of $total bytes',
+          uri: update.downloadUrl,
+        );
+      }
+
+      if (file.existsSync()) await file.delete();
+      await partialFile.rename(file.path);
+      await cleanDownloadedInstallers(keep: file);
       return file;
     } finally {
       if (_httpClient == null) client.close(force: true);
@@ -84,8 +96,6 @@ class UpdateDownloadService {
     if (result.type != ResultType.done) {
       throw FileSystemException(result.message, file.path);
     }
-
-    unawaited(cleanDownloadedInstallers(delay: const Duration(minutes: 5)));
   }
 
   Future<void> cleanDownloadedInstallers({
@@ -123,6 +133,14 @@ class UpdateDownloadService {
 
   String _safeFilePart(String value) =>
       value.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+
+  Future<File> _installerFileFor(AppUpdate update) async {
+    final directory = await getTemporaryDirectory();
+    final safeVersion = _safeFilePart(update.version);
+    final safeAssetName = _safeFilePart(update.assetName);
+    final fileName = 'pulse-$safeVersion-$safeAssetName';
+    return File(p.join(directory.path, fileName));
+  }
 
   Future<bool> _canRequestPackageInstalls() async {
     try {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/utils/app_logger.dart';
+import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/core/utils/playback_speed_utils.dart';
 import 'package:pulse/core/utils/volume_utils.dart';
 import 'package:pulse/domain/entities/playback_state.dart';
@@ -403,7 +404,11 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
       final audioFile =
           event.libraryFiles
-              .where((file) => file.path == lastState.audioFilePath)
+              .where(
+                (file) =>
+                    AudioPathUtils.canonicalize(file.path) ==
+                    AudioPathUtils.canonicalize(lastState.audioFilePath),
+              )
               .firstOrNull;
       if (audioFile == null) return;
 

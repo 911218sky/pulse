@@ -334,6 +334,49 @@ void main() {
       },
     );
 
+    test(
+      'restore from library matches saved track with normalized path',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-normalized',
+          path: '/music/track-normalized.mp3',
+          title: 'Track Normalized',
+          duration: Duration(minutes: 5),
+          fileSizeBytes: 2048,
+        );
+        const resumePosition = Duration(minutes: 2, seconds: 5);
+        final restoreRepository =
+            _FakePlaybackStateRepository()
+              ..lastPlaybackState = playback.PlaybackState.create(
+                audioFilePath: '/music/./track-normalized.mp3',
+                position: resumePosition,
+              );
+        final restoreBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: restoreRepository,
+          settingsRepository: _FakeSettingsRepository(
+            settings: Settings.defaults.copyWith(autoResume: true),
+          ),
+        );
+        addTearDown(restoreBloc.close);
+
+        restoreBloc.add(const PlayerRestoreFromLibrary([audioFile]));
+        await expectLater(
+          restoreBloc.stream,
+          emitsThrough(
+            isA<PlayerState>()
+                .having((state) => state.status, 'status', PlayerStatus.playing)
+                .having(
+                  (state) => state.currentAudio?.path,
+                  'path',
+                  audioFile.path,
+                )
+                .having((state) => state.position, 'position', resumePosition),
+          ),
+        );
+      },
+    );
+
     test('restore from library applies configured skip durations', () async {
       const audioFile = AudioFile(
         id: 'track-2b',
