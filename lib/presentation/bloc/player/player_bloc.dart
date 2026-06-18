@@ -323,10 +323,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     emit(state.copyWith(duration: () => event.duration));
   }
 
-  void _onPlayingStateUpdated(
+  Future<void> _onPlayingStateUpdated(
     PlayerPlayingStateUpdated event,
     Emitter<PlayerState> emit,
-  ) {
+  ) async {
+    final shouldPersistOnPause =
+        !event.isPlaying && state.status == PlayerStatus.playing;
+
     if (!event.isPlaying &&
         state.status != PlayerStatus.playing &&
         state.status != PlayerStatus.paused) {
@@ -338,6 +341,14 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         status: event.isPlaying ? PlayerStatus.playing : PlayerStatus.paused,
       ),
     );
+
+    if (shouldPersistOnPause) {
+      try {
+        await _saveCurrentPlaybackState();
+      } on Exception {
+        // Silently fail - saving state is not critical
+      }
+    }
   }
 
   Future<void> _onSaveState(

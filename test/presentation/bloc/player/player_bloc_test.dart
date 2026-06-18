@@ -191,6 +191,49 @@ void main() {
     );
 
     test(
+      'external pause event saves the current position immediately',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-external-pause',
+          path: '/music/external-pause.mp3',
+          title: 'External Pause',
+          duration: Duration(minutes: 3),
+          fileSizeBytes: 1024,
+        );
+        final playbackStateRepository = _FakePlaybackStateRepository();
+        final savingBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(),
+        );
+        addTearDown(savingBloc.close);
+
+        savingBloc.add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          savingBloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.status,
+              'status',
+              PlayerStatus.playing,
+            ),
+          ),
+        );
+
+        savingBloc.add(const PlayerPositionUpdated(Duration(seconds: 47)));
+        await Future<void>.delayed(Duration.zero);
+
+        audioRepository.emitPlaying(isPlaying: false);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          playbackStateRepository.savedPositions[audioFile.path],
+          const Duration(seconds: 47),
+        );
+      },
+    );
+
+    test(
       'restore from library resumes the last saved track and position',
       () async {
         const audioFile = AudioFile(
