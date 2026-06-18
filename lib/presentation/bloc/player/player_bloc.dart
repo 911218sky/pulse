@@ -325,7 +325,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     if (resumePositionGuard != null && event.position < resumePositionGuard) {
       return;
     }
-    if (resumePositionGuard != null && event.position >= resumePositionGuard) {
+    if (resumePositionGuard != null &&
+        state.isPlaying &&
+        event.position > resumePositionGuard + const Duration(seconds: 1)) {
       _resumePositionGuard = null;
     }
     emit(state.copyWith(position: event.position));

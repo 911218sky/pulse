@@ -159,6 +159,7 @@ class AppLocalizations {
   String get updateDownloadPreparing => _t.updateDownloadPreparing;
   String get updateDownloadComplete => _t.updateDownloadComplete;
   String get updateDownloadFailed => _t.updateDownloadFailed;
+  String get updateInstallerOpenFailed => _t.updateInstallerOpenFailed;
   String get updateInstallPermissionRequired =>
       _t.updateInstallPermissionRequired;
 
@@ -383,6 +384,7 @@ abstract class Translations {
   String get updateDownloadPreparing;
   String get updateDownloadComplete;
   String get updateDownloadFailed;
+  String get updateInstallerOpenFailed;
   String get updateInstallPermissionRequired;
 
   // ============== Sleep Timer ==============

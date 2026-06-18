@@ -260,6 +260,10 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
           await _waitForPlayingState();
         }
       }
+      if (_resumePositionGuard != null) {
+        await _player.seek(_resumePositionGuard!);
+        _position = _resumePositionGuard!;
+      }
 
       _playing = _player.state.playing;
       _broadcastState();
@@ -435,7 +439,9 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     if (_shouldHoldResumePosition(position)) return;
     _position = position;
     final guard = _resumePositionGuard;
-    if (guard != null && position >= guard) {
+    if (guard != null &&
+        _playing &&
+        position > guard + const Duration(seconds: 1)) {
       _resumePositionGuard = null;
     }
   }

@@ -267,6 +267,20 @@ class UpdateFlowController {
       if (context.mounted) {
         AppToast.warning(context, l10n.updateInstallPermissionRequired);
       }
+    } on UpdateInstallerOpenException catch (error, stackTrace) {
+      AppLogger.e(
+        'UpdateFlowController',
+        'Update installer open failed',
+        error,
+        stackTrace,
+      );
+      if (rootNavigator.mounted && dialogShown) {
+        rootNavigator.pop();
+      }
+      if (context.mounted) {
+        AppToast.error(context, l10n.updateInstallerOpenFailed);
+      }
+      await launchUrl(update.downloadUrl, mode: LaunchMode.externalApplication);
     } on Exception catch (error, stackTrace) {
       AppLogger.e(
         'UpdateFlowController',

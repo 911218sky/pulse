@@ -253,6 +253,8 @@ void main() {
           ),
         );
 
+        savingBloc.add(const PlayerPositionUpdated(resumePosition));
+        await Future<void>.delayed(Duration.zero);
         savingBloc.add(const PlayerPositionUpdated(Duration.zero));
         await Future<void>.delayed(Duration.zero);
 

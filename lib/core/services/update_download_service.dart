@@ -94,7 +94,7 @@ class UpdateDownloadService {
 
     final result = await OpenFilex.open(file.path);
     if (result.type != ResultType.done) {
-      throw FileSystemException(result.message, file.path);
+      throw UpdateInstallerOpenException(result.message, file.path);
     }
   }
 
@@ -168,4 +168,8 @@ class UpdateDownloadService {
 
 class UpdateInstallPermissionException implements Exception {
   const UpdateInstallPermissionException();
+}
+
+class UpdateInstallerOpenException extends FileSystemException {
+  const UpdateInstallerOpenException(super.message, super.path);
 }

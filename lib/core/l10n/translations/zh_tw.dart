@@ -210,6 +210,8 @@ class ZhTwTranslations extends Translations {
   @override
   String get updateDownloadFailed => '更新下載失敗';
   @override
+  String get updateInstallerOpenFailed => '下載完成，但無法開啟安裝包';
+  @override
   String get updateInstallPermissionRequired =>
       '請允許 Pulse 安裝未知來源應用程式，然後再重新執行更新';
 

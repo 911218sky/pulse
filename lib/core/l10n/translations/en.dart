@@ -221,6 +221,9 @@ class EnTranslations extends Translations {
   @override
   String get updateDownloadFailed => 'Update download failed';
   @override
+  String get updateInstallerOpenFailed =>
+      'Download complete, but the installer could not be opened';
+  @override
   String get updateInstallPermissionRequired =>
       'Allow Pulse to install unknown apps, then run the update again';
 
