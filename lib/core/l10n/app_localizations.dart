@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'package:pulse/core/l10n/translations/en.dart';
+import 'package:pulse/core/l10n/translations/zh_cn.dart';
 import 'package:pulse/core/l10n/translations/zh_tw.dart';
 
 /// Supported locales
 enum AppLocale {
   zhTW('zh', 'TW', '繁體中文'),
+  zhCN('zh', 'CN', '简体中文'),
   en('en', '', 'English');
 
   const AppLocale(this.languageCode, this.countryCode, this.displayName);
@@ -18,6 +20,33 @@ enum AppLocale {
       Locale(languageCode, countryCode.isEmpty ? null : countryCode);
 
   static AppLocale fromLocale(Locale locale) {
+    if (locale.languageCode == 'zh') {
+      switch (locale.scriptCode?.toLowerCase()) {
+        case 'hans':
+          return AppLocale.zhCN;
+        case 'hant':
+          return AppLocale.zhTW;
+      }
+
+      switch (locale.countryCode?.toUpperCase()) {
+        case 'CN':
+        case 'SG':
+          return AppLocale.zhCN;
+        case 'TW':
+        case 'HK':
+        case 'MO':
+          return AppLocale.zhTW;
+      }
+
+      return AppLocale.zhCN;
+    }
+
+    for (final appLocale in AppLocale.values) {
+      if (appLocale.languageCode == locale.languageCode &&
+          appLocale.countryCode == (locale.countryCode ?? '')) {
+        return appLocale;
+      }
+    }
     for (final appLocale in AppLocale.values) {
       if (appLocale.languageCode == locale.languageCode) {
         return appLocale;
@@ -41,11 +70,12 @@ class AppLocalizations {
       _AppLocalizationsDelegate();
 
   static Translations _getTranslations(Locale locale) {
-    switch (locale.languageCode) {
-      case 'en':
+    switch (AppLocale.fromLocale(locale)) {
+      case AppLocale.en:
         return const EnTranslations();
-      case 'zh':
-      default:
+      case AppLocale.zhCN:
+        return const ZhCnTranslations();
+      case AppLocale.zhTW:
         return const ZhTwTranslations();
     }
   }
@@ -111,6 +141,8 @@ class AppLocalizations {
   String get defaultSpeed => _t.defaultSpeed;
   String get autoResume => _t.autoResume;
   String get autoResumeDesc => _t.autoResumeDesc;
+  String get resumePlaybackOnTrackTap => _t.resumePlaybackOnTrackTap;
+  String get resumePlaybackOnTrackTapDesc => _t.resumePlaybackOnTrackTapDesc;
   String get navigateToPlayerOnResume => _t.navigateToPlayerOnResume;
   String get navigateToPlayerOnResumeDesc => _t.navigateToPlayerOnResumeDesc;
   String get autoUpdate => _t.autoUpdate;
@@ -160,6 +192,7 @@ class AppLocalizations {
   String get updateDownloadComplete => _t.updateDownloadComplete;
   String get updateDownloadFailed => _t.updateDownloadFailed;
   String get updateInstallerOpenFailed => _t.updateInstallerOpenFailed;
+  String get updateOpenLinkFailed => _t.updateOpenLinkFailed;
   String get updateInstallPermissionRequired =>
       _t.updateInstallPermissionRequired;
 
@@ -242,6 +275,13 @@ class AppLocalizations {
   // ============== Audio Service ==============
   String get musicPlayback => _t.musicPlayback;
 
+  // ============== Resume Prompt ==============
+  String get resumePlaybackPromptTitle => _t.resumePlaybackPromptTitle;
+  String resumePlaybackPromptMessage(String trackTitle, String position) =>
+      _t.resumePlaybackPromptMessage(trackTitle, position);
+  String get resumePlaybackPromptResume => _t.resumePlaybackPromptResume;
+  String get resumePlaybackPromptStartOver => _t.resumePlaybackPromptStartOver;
+
   // ============== Delete Music ==============
   String get deleteMusic => _t.deleteMusic;
   String get deleteFile => _t.deleteFile;
@@ -258,7 +298,15 @@ class _AppLocalizationsDelegate
   const _AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['zh', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      AppLocale.values.any(
+        (appLocale) =>
+            appLocale.languageCode == locale.languageCode &&
+            appLocale.countryCode == (locale.countryCode ?? ''),
+      ) ||
+      AppLocale.values.any(
+        (appLocale) => appLocale.languageCode == locale.languageCode,
+      );
 
   @override
   Future<AppLocalizations> load(Locale locale) async =>
@@ -338,6 +386,8 @@ abstract class Translations {
   String get defaultSpeed;
   String get autoResume;
   String get autoResumeDesc;
+  String get resumePlaybackOnTrackTap;
+  String get resumePlaybackOnTrackTapDesc;
   String get navigateToPlayerOnResume;
   String get navigateToPlayerOnResumeDesc;
   String get autoUpdate;
@@ -385,6 +435,7 @@ abstract class Translations {
   String get updateDownloadComplete;
   String get updateDownloadFailed;
   String get updateInstallerOpenFailed;
+  String get updateOpenLinkFailed;
   String get updateInstallPermissionRequired;
 
   // ============== Sleep Timer ==============
@@ -464,6 +515,12 @@ abstract class Translations {
 
   // ============== Audio Service ==============
   String get musicPlayback;
+
+  // ============== Resume Prompt ==============
+  String get resumePlaybackPromptTitle;
+  String resumePlaybackPromptMessage(String trackTitle, String position);
+  String get resumePlaybackPromptResume;
+  String get resumePlaybackPromptStartOver;
 
   // ============== Delete Music ==============
   String get deleteMusic;

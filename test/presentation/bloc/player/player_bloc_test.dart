@@ -223,6 +223,185 @@ void main() {
     });
 
     test(
+      'loading a track can start from the beginning and keep a jump-back prompt',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-start-over',
+          path: '/music/start-over.mp3',
+          title: 'Start Over',
+          duration: Duration(minutes: 4),
+          fileSizeBytes: 1024,
+        );
+        const resumePosition = Duration(minutes: 2, seconds: 35);
+        final playbackStateRepository =
+            _FakePlaybackStateRepository()
+              ..savedPositions[audioFile.path] = resumePosition;
+        final savingBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(
+            settings: Settings.defaults.copyWith(
+              resumePlaybackOnTrackTap: false,
+            ),
+          ),
+        );
+        addTearDown(savingBloc.close);
+
+        savingBloc.add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          savingBloc.stream,
+          emitsThrough(
+            isA<PlayerState>()
+                .having((state) => state.status, 'status', PlayerStatus.playing)
+                .having((state) => state.position, 'position', Duration.zero)
+                .having(
+                  (state) => state.pendingResumePosition,
+                  'pendingResumePosition',
+                  resumePosition,
+                ),
+          ),
+        );
+
+        expect(audioRepository.lastInitialPosition, Duration.zero);
+      },
+    );
+
+    test(
+      'resume-from-saved-position seeks and clears the pending prompt',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-resume-action',
+          path: '/music/resume-action.mp3',
+          title: 'Resume Action',
+          duration: Duration(minutes: 4),
+          fileSizeBytes: 1024,
+        );
+        const resumePosition = Duration(minutes: 1, seconds: 10);
+        final playbackStateRepository =
+            _FakePlaybackStateRepository()
+              ..savedPositions[audioFile.path] = resumePosition;
+        final savingBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(
+            settings: Settings.defaults.copyWith(
+              resumePlaybackOnTrackTap: false,
+            ),
+          ),
+        );
+        addTearDown(savingBloc.close);
+
+        savingBloc.add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          savingBloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.pendingResumePosition,
+              'pendingResumePosition',
+              resumePosition,
+            ),
+          ),
+        );
+
+        savingBloc.add(const PlayerResumeFromSavedPosition());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(audioRepository.seekCalls, contains(resumePosition));
+        expect(savingBloc.state.position, resumePosition);
+        expect(savingBloc.state.pendingResumePosition, isNull);
+      },
+    );
+
+    test(
+      'dismissed resume prompt clears only the pending prompt state',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-dismiss-prompt',
+          path: '/music/dismiss-prompt.mp3',
+          title: 'Dismiss Prompt',
+          duration: Duration(minutes: 4),
+          fileSizeBytes: 1024,
+        );
+        const resumePosition = Duration(minutes: 1, seconds: 10);
+        final playbackStateRepository =
+            _FakePlaybackStateRepository()
+              ..savedPositions[audioFile.path] = resumePosition;
+        final savingBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(
+            settings: Settings.defaults.copyWith(
+              resumePlaybackOnTrackTap: false,
+            ),
+          ),
+        );
+        addTearDown(savingBloc.close);
+
+        savingBloc.add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          savingBloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.pendingResumePosition,
+              'pendingResumePosition',
+              resumePosition,
+            ),
+          ),
+        );
+
+        savingBloc.add(const PlayerDismissResumePrompt());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(savingBloc.state.position, Duration.zero);
+        expect(savingBloc.state.pendingResumePosition, isNull);
+        expect(
+          playbackStateRepository.savedPositions[audioFile.path],
+          resumePosition,
+        );
+      },
+    );
+
+    test(
+      'hard reset clears in-memory playback so close does not rewrite state',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-reset-runtime',
+          path: '/music/reset-runtime.mp3',
+          title: 'Reset Runtime',
+          duration: Duration(minutes: 4),
+          fileSizeBytes: 1024,
+        );
+        final playbackStateRepository = _FakePlaybackStateRepository();
+        final resetBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(),
+        )..add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          resetBloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.status,
+              'status',
+              PlayerStatus.playing,
+            ),
+          ),
+        );
+
+        resetBloc.add(const PlayerPositionUpdated(Duration(seconds: 47)));
+        await Future<void>.delayed(Duration.zero);
+        resetBloc.add(const PlayerHardReset());
+        await Future<void>.delayed(Duration.zero);
+        await resetBloc.close();
+
+        expect(resetBloc.state.currentAudio, isNull);
+        expect(resetBloc.state.position, Duration.zero);
+        expect(playbackStateRepository.lastPlaybackState, isNull);
+        expect(playbackStateRepository.savedPositions, isEmpty);
+      },
+    );
+
+    test(
       'delayed zero position after resume does not reset playback',
       () async {
         const audioFile = AudioFile(
@@ -756,6 +935,7 @@ class _FakeAudioRepository implements AudioRepository {
   Duration _currentPosition = Duration.zero;
   Duration? _currentDuration;
   bool _isPlaying = false;
+  int clearSessionCount = 0;
 
   void emitPlaying({required bool isPlaying}) =>
       _playingController.add(isPlaying);
@@ -814,6 +994,16 @@ class _FakeAudioRepository implements AudioRepository {
   Future<void> stop() async {
     _isPlaying = false;
     emitPlaying(isPlaying: false);
+  }
+
+  @override
+  Future<void> clearSession() async {
+    clearSessionCount++;
+    _isPlaying = false;
+    lastLoadedAudio = null;
+    lastInitialPosition = Duration.zero;
+    _currentPosition = Duration.zero;
+    _currentDuration = null;
   }
 
   @override

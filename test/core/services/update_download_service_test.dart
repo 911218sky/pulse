@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:pulse/core/services/update_download_service.dart';
 import 'package:pulse/domain/entities/app_update.dart';
 
@@ -29,7 +30,7 @@ void main() {
 
   test('reuses a fully downloaded installer for the same update', () async {
     final cachedFile = File(
-      '${tempDir.path}/pulse-0.1.25-pulse-android-universal.apk',
+      p.join(tempDir.path, 'pulse-0.1.25-pulse-android-universal.apk'),
     );
     await cachedFile.writeAsBytes([1, 2, 3]);
     final httpClient = _FailingHttpClient();
@@ -44,7 +45,7 @@ void main() {
 
   test('clears older cached installers after a new update downloads', () async {
     final oldFile = File(
-      '${tempDir.path}/pulse-0.1.24-pulse-android-universal.apk',
+      p.join(tempDir.path, 'pulse-0.1.24-pulse-android-universal.apk'),
     );
     await oldFile.writeAsBytes([0]);
     final httpClient = _SuccessfulHttpClient([4, 5, 6]);
@@ -59,7 +60,7 @@ void main() {
 
   test('does not cache incomplete downloads as installers', () async {
     final file = File(
-      '${tempDir.path}/pulse-0.1.25-pulse-android-universal.apk',
+      p.join(tempDir.path, 'pulse-0.1.25-pulse-android-universal.apk'),
     );
     final httpClient = _SuccessfulHttpClient([7, 8], contentLength: 3);
     final service = UpdateDownloadService(httpClient: httpClient);

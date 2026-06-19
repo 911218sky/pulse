@@ -113,7 +113,11 @@ class PulseApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
           themeMode: state.settings.darkMode ? ThemeMode.dark : ThemeMode.light,
           locale: locale,
-          supportedLocales: const [Locale('zh', 'TW'), Locale('en')],
+          supportedLocales: const [
+            Locale('zh', 'TW'),
+            Locale('zh', 'CN'),
+            Locale('en'),
+          ],
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,

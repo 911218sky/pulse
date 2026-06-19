@@ -11,6 +11,7 @@ class PlayerState extends Equatable {
     this.currentAudio,
     this.position = Duration.zero,
     this.duration,
+    this.pendingResumePosition,
     this.volume = 1.0,
     this.speed = 1.0,
     this.isMuted = false,
@@ -22,6 +23,7 @@ class PlayerState extends Equatable {
   final AudioFile? currentAudio;
   final Duration position;
   final Duration? duration;
+  final Duration? pendingResumePosition;
   final double volume;
   final double speed;
   final bool isMuted;
@@ -58,6 +60,7 @@ class PlayerState extends Equatable {
     AudioFile? currentAudio,
     Duration? position,
     Duration? Function()? duration,
+    Duration? Function()? pendingResumePosition,
     double? volume,
     double? speed,
     bool? isMuted,
@@ -68,6 +71,10 @@ class PlayerState extends Equatable {
     currentAudio: currentAudio ?? this.currentAudio,
     position: position ?? this.position,
     duration: duration != null ? duration() : this.duration,
+    pendingResumePosition:
+        pendingResumePosition != null
+            ? pendingResumePosition()
+            : this.pendingResumePosition,
     volume: volume ?? this.volume,
     speed: speed ?? this.speed,
     isMuted: isMuted ?? this.isMuted,
@@ -81,6 +88,7 @@ class PlayerState extends Equatable {
     currentAudio,
     position,
     duration,
+    pendingResumePosition,
     volume,
     speed,
     isMuted,

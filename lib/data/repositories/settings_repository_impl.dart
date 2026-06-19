@@ -4,12 +4,17 @@ import 'package:pulse/data/datasources/local_storage_datasource.dart';
 import 'package:pulse/data/models/settings_model.dart';
 import 'package:pulse/domain/entities/settings.dart';
 import 'package:pulse/domain/repositories/settings_repository.dart';
+import 'package:pulse/presentation/controllers/update_flow_controller.dart';
 
 /// Implementation of SettingsRepository using local storage
 class SettingsRepositoryImpl implements SettingsRepository {
-  SettingsRepositoryImpl(this._dataSource);
+  SettingsRepositoryImpl(
+    this._dataSource, {
+    UpdateFlowController updateFlowController = const UpdateFlowController(),
+  }) : _updateFlowController = updateFlowController;
 
   final LocalStorageDataSource _dataSource;
+  final UpdateFlowController _updateFlowController;
   final _settingsController = StreamController<Settings>.broadcast();
 
   @override
@@ -34,6 +39,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   @override
   Future<void> resetAllData() async {
     await _dataSource.clearAllData();
+    await _updateFlowController.clearSkippedVersion();
     _settingsController.add(Settings.defaults);
   }
 
@@ -57,6 +63,8 @@ class SettingsRepositoryImpl implements SettingsRepository {
         return settings.copyWith(defaultPlaybackSpeed: value as double);
       case 'autoResume':
         return settings.copyWith(autoResume: value as bool);
+      case 'resumePlaybackOnTrackTap':
+        return settings.copyWith(resumePlaybackOnTrackTap: value as bool);
       case 'autoUpdateEnabled':
         return settings.copyWith(autoUpdateEnabled: value as bool);
       case 'skipForwardSeconds':

@@ -75,6 +75,16 @@ class AudioRepositoryImpl implements AudioRepository {
   }
 
   @override
+  Future<void> clearSession() async {
+    try {
+      await _handler.clearSession();
+    } on Exception catch (e) {
+      AppLogger.e('AudioRepository', 'Error clearing media session', e);
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> seekTo(Duration position) async {
     try {
       await _handler.seek(position);

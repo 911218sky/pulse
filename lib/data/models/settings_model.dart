@@ -12,6 +12,7 @@ class SettingsModel {
     required this.defaultVolume,
     required this.defaultPlaybackSpeed,
     required this.autoResume,
+    required this.resumePlaybackOnTrackTap,
     required this.skipForwardSeconds,
     required this.skipBackwardSeconds,
     required this.monitoredFolders,
@@ -27,6 +28,7 @@ class SettingsModel {
     defaultVolume: entity.defaultVolume,
     defaultPlaybackSpeed: entity.defaultPlaybackSpeed,
     autoResume: entity.autoResume,
+    resumePlaybackOnTrackTap: entity.resumePlaybackOnTrackTap,
     skipForwardSeconds: entity.skipForwardSeconds,
     skipBackwardSeconds: entity.skipBackwardSeconds,
     monitoredFolders: entity.monitoredFolders,
@@ -42,6 +44,7 @@ class SettingsModel {
     defaultVolume: row.defaultVolume,
     defaultPlaybackSpeed: row.defaultPlaybackSpeed,
     autoResume: row.autoResume,
+    resumePlaybackOnTrackTap: row.resumePlaybackOnTrackTap,
     skipForwardSeconds: row.skipForwardSeconds,
     skipBackwardSeconds: row.skipBackwardSeconds,
     monitoredFolders: _parseMonitoredFolders(row.monitoredFolders),
@@ -58,6 +61,7 @@ class SettingsModel {
     defaultPlaybackSpeed:
         (json['defaultPlaybackSpeed'] as num?)?.toDouble() ?? 1,
     autoResume: json['autoResume'] as bool? ?? true,
+    resumePlaybackOnTrackTap: json['resumePlaybackOnTrackTap'] as bool? ?? true,
     skipForwardSeconds: json['skipForwardSeconds'] as int? ?? 10,
     skipBackwardSeconds: json['skipBackwardSeconds'] as int? ?? 10,
     monitoredFolders:
@@ -78,6 +82,7 @@ class SettingsModel {
     defaultVolume: 1,
     defaultPlaybackSpeed: 1,
     autoResume: true,
+    resumePlaybackOnTrackTap: true,
     skipForwardSeconds: 10,
     skipBackwardSeconds: 10,
     monitoredFolders: [],
@@ -92,6 +97,7 @@ class SettingsModel {
   final double defaultVolume;
   final double defaultPlaybackSpeed;
   final bool autoResume;
+  final bool resumePlaybackOnTrackTap;
   final int skipForwardSeconds;
   final int skipBackwardSeconds;
   final List<String> monitoredFolders;
@@ -106,6 +112,7 @@ class SettingsModel {
     defaultVolume: defaultVolume,
     defaultPlaybackSpeed: defaultPlaybackSpeed,
     autoResume: autoResume,
+    resumePlaybackOnTrackTap: resumePlaybackOnTrackTap,
     skipForwardSeconds: skipForwardSeconds,
     skipBackwardSeconds: skipBackwardSeconds,
     monitoredFolders: monitoredFolders,
@@ -121,6 +128,7 @@ class SettingsModel {
     defaultVolume: Value(defaultVolume),
     defaultPlaybackSpeed: Value(defaultPlaybackSpeed),
     autoResume: Value(autoResume),
+    resumePlaybackOnTrackTap: Value(resumePlaybackOnTrackTap),
     skipForwardSeconds: Value(skipForwardSeconds),
     skipBackwardSeconds: Value(skipBackwardSeconds),
     monitoredFolders: Value(jsonEncode(monitoredFolders)),
@@ -136,6 +144,7 @@ class SettingsModel {
     'defaultVolume': defaultVolume,
     'defaultPlaybackSpeed': defaultPlaybackSpeed,
     'autoResume': autoResume,
+    'resumePlaybackOnTrackTap': resumePlaybackOnTrackTap,
     'skipForwardSeconds': skipForwardSeconds,
     'skipBackwardSeconds': skipBackwardSeconds,
     'monitoredFolders': monitoredFolders,

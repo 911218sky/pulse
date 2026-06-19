@@ -656,6 +656,21 @@ class $SettingsTableTable extends SettingsTable
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _resumePlaybackOnTrackTapMeta =
+      const VerificationMeta('resumePlaybackOnTrackTap');
+  @override
+  late final GeneratedColumn<bool> resumePlaybackOnTrackTap =
+      GeneratedColumn<bool>(
+        'resume_playback_on_track_tap',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("resume_playback_on_track_tap" IN (0, 1))',
+        ),
+        defaultValue: const Constant(true),
+      );
   static const VerificationMeta _skipForwardSecondsMeta =
       const VerificationMeta('skipForwardSeconds');
   @override
@@ -755,6 +770,7 @@ class $SettingsTableTable extends SettingsTable
     defaultVolume,
     defaultPlaybackSpeed,
     autoResume,
+    resumePlaybackOnTrackTap,
     skipForwardSeconds,
     skipBackwardSeconds,
     monitoredFolders,
@@ -812,6 +828,15 @@ class $SettingsTableTable extends SettingsTable
       context.handle(
         _autoResumeMeta,
         autoResume.isAcceptableOrUnknown(data['auto_resume']!, _autoResumeMeta),
+      );
+    }
+    if (data.containsKey('resume_playback_on_track_tap')) {
+      context.handle(
+        _resumePlaybackOnTrackTapMeta,
+        resumePlaybackOnTrackTap.isAcceptableOrUnknown(
+          data['resume_playback_on_track_tap']!,
+          _resumePlaybackOnTrackTapMeta,
+        ),
       );
     }
     if (data.containsKey('skip_forward_seconds')) {
@@ -916,6 +941,11 @@ class $SettingsTableTable extends SettingsTable
             DriftSqlType.bool,
             data['${effectivePrefix}auto_resume'],
           )!,
+      resumePlaybackOnTrackTap:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.bool,
+            data['${effectivePrefix}resume_playback_on_track_tap'],
+          )!,
       skipForwardSeconds:
           attachedDatabase.typeMapping.read(
             DriftSqlType.int,
@@ -968,6 +998,7 @@ class SettingsTableData extends DataClass
   final double defaultVolume;
   final double defaultPlaybackSpeed;
   final bool autoResume;
+  final bool resumePlaybackOnTrackTap;
   final int skipForwardSeconds;
   final int skipBackwardSeconds;
   final String monitoredFolders;
@@ -982,6 +1013,7 @@ class SettingsTableData extends DataClass
     required this.defaultVolume,
     required this.defaultPlaybackSpeed,
     required this.autoResume,
+    required this.resumePlaybackOnTrackTap,
     required this.skipForwardSeconds,
     required this.skipBackwardSeconds,
     required this.monitoredFolders,
@@ -999,6 +1031,9 @@ class SettingsTableData extends DataClass
     map['default_volume'] = Variable<double>(defaultVolume);
     map['default_playback_speed'] = Variable<double>(defaultPlaybackSpeed);
     map['auto_resume'] = Variable<bool>(autoResume);
+    map['resume_playback_on_track_tap'] = Variable<bool>(
+      resumePlaybackOnTrackTap,
+    );
     map['skip_forward_seconds'] = Variable<int>(skipForwardSeconds);
     map['skip_backward_seconds'] = Variable<int>(skipBackwardSeconds);
     map['monitored_folders'] = Variable<String>(monitoredFolders);
@@ -1023,6 +1058,7 @@ class SettingsTableData extends DataClass
       defaultVolume: Value(defaultVolume),
       defaultPlaybackSpeed: Value(defaultPlaybackSpeed),
       autoResume: Value(autoResume),
+      resumePlaybackOnTrackTap: Value(resumePlaybackOnTrackTap),
       skipForwardSeconds: Value(skipForwardSeconds),
       skipBackwardSeconds: Value(skipBackwardSeconds),
       monitoredFolders: Value(monitoredFolders),
@@ -1047,6 +1083,9 @@ class SettingsTableData extends DataClass
         json['defaultPlaybackSpeed'],
       ),
       autoResume: serializer.fromJson<bool>(json['autoResume']),
+      resumePlaybackOnTrackTap: serializer.fromJson<bool>(
+        json['resumePlaybackOnTrackTap'],
+      ),
       skipForwardSeconds: serializer.fromJson<int>(json['skipForwardSeconds']),
       skipBackwardSeconds: serializer.fromJson<int>(
         json['skipBackwardSeconds'],
@@ -1074,6 +1113,9 @@ class SettingsTableData extends DataClass
       'defaultVolume': serializer.toJson<double>(defaultVolume),
       'defaultPlaybackSpeed': serializer.toJson<double>(defaultPlaybackSpeed),
       'autoResume': serializer.toJson<bool>(autoResume),
+      'resumePlaybackOnTrackTap': serializer.toJson<bool>(
+        resumePlaybackOnTrackTap,
+      ),
       'skipForwardSeconds': serializer.toJson<int>(skipForwardSeconds),
       'skipBackwardSeconds': serializer.toJson<int>(skipBackwardSeconds),
       'monitoredFolders': serializer.toJson<String>(monitoredFolders),
@@ -1097,6 +1139,7 @@ class SettingsTableData extends DataClass
     double? defaultVolume,
     double? defaultPlaybackSpeed,
     bool? autoResume,
+    bool? resumePlaybackOnTrackTap,
     int? skipForwardSeconds,
     int? skipBackwardSeconds,
     String? monitoredFolders,
@@ -1111,6 +1154,8 @@ class SettingsTableData extends DataClass
     defaultVolume: defaultVolume ?? this.defaultVolume,
     defaultPlaybackSpeed: defaultPlaybackSpeed ?? this.defaultPlaybackSpeed,
     autoResume: autoResume ?? this.autoResume,
+    resumePlaybackOnTrackTap:
+        resumePlaybackOnTrackTap ?? this.resumePlaybackOnTrackTap,
     skipForwardSeconds: skipForwardSeconds ?? this.skipForwardSeconds,
     skipBackwardSeconds: skipBackwardSeconds ?? this.skipBackwardSeconds,
     monitoredFolders: monitoredFolders ?? this.monitoredFolders,
@@ -1137,6 +1182,10 @@ class SettingsTableData extends DataClass
               : this.defaultPlaybackSpeed,
       autoResume:
           data.autoResume.present ? data.autoResume.value : this.autoResume,
+      resumePlaybackOnTrackTap:
+          data.resumePlaybackOnTrackTap.present
+              ? data.resumePlaybackOnTrackTap.value
+              : this.resumePlaybackOnTrackTap,
       skipForwardSeconds:
           data.skipForwardSeconds.present
               ? data.skipForwardSeconds.value
@@ -1177,6 +1226,7 @@ class SettingsTableData extends DataClass
           ..write('defaultVolume: $defaultVolume, ')
           ..write('defaultPlaybackSpeed: $defaultPlaybackSpeed, ')
           ..write('autoResume: $autoResume, ')
+          ..write('resumePlaybackOnTrackTap: $resumePlaybackOnTrackTap, ')
           ..write('skipForwardSeconds: $skipForwardSeconds, ')
           ..write('skipBackwardSeconds: $skipBackwardSeconds, ')
           ..write('monitoredFolders: $monitoredFolders, ')
@@ -1196,6 +1246,7 @@ class SettingsTableData extends DataClass
     defaultVolume,
     defaultPlaybackSpeed,
     autoResume,
+    resumePlaybackOnTrackTap,
     skipForwardSeconds,
     skipBackwardSeconds,
     monitoredFolders,
@@ -1214,6 +1265,7 @@ class SettingsTableData extends DataClass
           other.defaultVolume == this.defaultVolume &&
           other.defaultPlaybackSpeed == this.defaultPlaybackSpeed &&
           other.autoResume == this.autoResume &&
+          other.resumePlaybackOnTrackTap == this.resumePlaybackOnTrackTap &&
           other.skipForwardSeconds == this.skipForwardSeconds &&
           other.skipBackwardSeconds == this.skipBackwardSeconds &&
           other.monitoredFolders == this.monitoredFolders &&
@@ -1230,6 +1282,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
   final Value<double> defaultVolume;
   final Value<double> defaultPlaybackSpeed;
   final Value<bool> autoResume;
+  final Value<bool> resumePlaybackOnTrackTap;
   final Value<int> skipForwardSeconds;
   final Value<int> skipBackwardSeconds;
   final Value<String> monitoredFolders;
@@ -1244,6 +1297,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     this.defaultVolume = const Value.absent(),
     this.defaultPlaybackSpeed = const Value.absent(),
     this.autoResume = const Value.absent(),
+    this.resumePlaybackOnTrackTap = const Value.absent(),
     this.skipForwardSeconds = const Value.absent(),
     this.skipBackwardSeconds = const Value.absent(),
     this.monitoredFolders = const Value.absent(),
@@ -1259,6 +1313,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     this.defaultVolume = const Value.absent(),
     this.defaultPlaybackSpeed = const Value.absent(),
     this.autoResume = const Value.absent(),
+    this.resumePlaybackOnTrackTap = const Value.absent(),
     this.skipForwardSeconds = const Value.absent(),
     this.skipBackwardSeconds = const Value.absent(),
     this.monitoredFolders = const Value.absent(),
@@ -1274,6 +1329,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     Expression<double>? defaultVolume,
     Expression<double>? defaultPlaybackSpeed,
     Expression<bool>? autoResume,
+    Expression<bool>? resumePlaybackOnTrackTap,
     Expression<int>? skipForwardSeconds,
     Expression<int>? skipBackwardSeconds,
     Expression<String>? monitoredFolders,
@@ -1290,6 +1346,8 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
       if (defaultPlaybackSpeed != null)
         'default_playback_speed': defaultPlaybackSpeed,
       if (autoResume != null) 'auto_resume': autoResume,
+      if (resumePlaybackOnTrackTap != null)
+        'resume_playback_on_track_tap': resumePlaybackOnTrackTap,
       if (skipForwardSeconds != null)
         'skip_forward_seconds': skipForwardSeconds,
       if (skipBackwardSeconds != null)
@@ -1312,6 +1370,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     Value<double>? defaultVolume,
     Value<double>? defaultPlaybackSpeed,
     Value<bool>? autoResume,
+    Value<bool>? resumePlaybackOnTrackTap,
     Value<int>? skipForwardSeconds,
     Value<int>? skipBackwardSeconds,
     Value<String>? monitoredFolders,
@@ -1327,6 +1386,8 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
       defaultVolume: defaultVolume ?? this.defaultVolume,
       defaultPlaybackSpeed: defaultPlaybackSpeed ?? this.defaultPlaybackSpeed,
       autoResume: autoResume ?? this.autoResume,
+      resumePlaybackOnTrackTap:
+          resumePlaybackOnTrackTap ?? this.resumePlaybackOnTrackTap,
       skipForwardSeconds: skipForwardSeconds ?? this.skipForwardSeconds,
       skipBackwardSeconds: skipBackwardSeconds ?? this.skipBackwardSeconds,
       monitoredFolders: monitoredFolders ?? this.monitoredFolders,
@@ -1362,6 +1423,11 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
     }
     if (autoResume.present) {
       map['auto_resume'] = Variable<bool>(autoResume.value);
+    }
+    if (resumePlaybackOnTrackTap.present) {
+      map['resume_playback_on_track_tap'] = Variable<bool>(
+        resumePlaybackOnTrackTap.value,
+      );
     }
     if (skipForwardSeconds.present) {
       map['skip_forward_seconds'] = Variable<int>(skipForwardSeconds.value);
@@ -1402,6 +1468,7 @@ class SettingsTableCompanion extends UpdateCompanion<SettingsTableData> {
           ..write('defaultVolume: $defaultVolume, ')
           ..write('defaultPlaybackSpeed: $defaultPlaybackSpeed, ')
           ..write('autoResume: $autoResume, ')
+          ..write('resumePlaybackOnTrackTap: $resumePlaybackOnTrackTap, ')
           ..write('skipForwardSeconds: $skipForwardSeconds, ')
           ..write('skipBackwardSeconds: $skipBackwardSeconds, ')
           ..write('monitoredFolders: $monitoredFolders, ')
@@ -3133,6 +3200,7 @@ typedef $$SettingsTableTableCreateCompanionBuilder =
       Value<double> defaultVolume,
       Value<double> defaultPlaybackSpeed,
       Value<bool> autoResume,
+      Value<bool> resumePlaybackOnTrackTap,
       Value<int> skipForwardSeconds,
       Value<int> skipBackwardSeconds,
       Value<String> monitoredFolders,
@@ -3149,6 +3217,7 @@ typedef $$SettingsTableTableUpdateCompanionBuilder =
       Value<double> defaultVolume,
       Value<double> defaultPlaybackSpeed,
       Value<bool> autoResume,
+      Value<bool> resumePlaybackOnTrackTap,
       Value<int> skipForwardSeconds,
       Value<int> skipBackwardSeconds,
       Value<String> monitoredFolders,
@@ -3194,6 +3263,11 @@ class $$SettingsTableTableFilterComposer
 
   ColumnFilters<bool> get autoResume => $composableBuilder(
     column: $table.autoResume,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get resumePlaybackOnTrackTap => $composableBuilder(
+    column: $table.resumePlaybackOnTrackTap,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3272,6 +3346,11 @@ class $$SettingsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get resumePlaybackOnTrackTap => $composableBuilder(
+    column: $table.resumePlaybackOnTrackTap,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get skipForwardSeconds => $composableBuilder(
     column: $table.skipForwardSeconds,
     builder: (column) => ColumnOrderings(column),
@@ -3338,6 +3417,11 @@ class $$SettingsTableTableAnnotationComposer
 
   GeneratedColumn<bool> get autoResume => $composableBuilder(
     column: $table.autoResume,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get resumePlaybackOnTrackTap => $composableBuilder(
+    column: $table.resumePlaybackOnTrackTap,
     builder: (column) => column,
   );
 
@@ -3422,6 +3506,7 @@ class $$SettingsTableTableTableManager
                 Value<double> defaultVolume = const Value.absent(),
                 Value<double> defaultPlaybackSpeed = const Value.absent(),
                 Value<bool> autoResume = const Value.absent(),
+                Value<bool> resumePlaybackOnTrackTap = const Value.absent(),
                 Value<int> skipForwardSeconds = const Value.absent(),
                 Value<int> skipBackwardSeconds = const Value.absent(),
                 Value<String> monitoredFolders = const Value.absent(),
@@ -3436,6 +3521,7 @@ class $$SettingsTableTableTableManager
                 defaultVolume: defaultVolume,
                 defaultPlaybackSpeed: defaultPlaybackSpeed,
                 autoResume: autoResume,
+                resumePlaybackOnTrackTap: resumePlaybackOnTrackTap,
                 skipForwardSeconds: skipForwardSeconds,
                 skipBackwardSeconds: skipBackwardSeconds,
                 monitoredFolders: monitoredFolders,
@@ -3452,6 +3538,7 @@ class $$SettingsTableTableTableManager
                 Value<double> defaultVolume = const Value.absent(),
                 Value<double> defaultPlaybackSpeed = const Value.absent(),
                 Value<bool> autoResume = const Value.absent(),
+                Value<bool> resumePlaybackOnTrackTap = const Value.absent(),
                 Value<int> skipForwardSeconds = const Value.absent(),
                 Value<int> skipBackwardSeconds = const Value.absent(),
                 Value<String> monitoredFolders = const Value.absent(),
@@ -3466,6 +3553,7 @@ class $$SettingsTableTableTableManager
                 defaultVolume: defaultVolume,
                 defaultPlaybackSpeed: defaultPlaybackSpeed,
                 autoResume: autoResume,
+                resumePlaybackOnTrackTap: resumePlaybackOnTrackTap,
                 skipForwardSeconds: skipForwardSeconds,
                 skipBackwardSeconds: skipBackwardSeconds,
                 monitoredFolders: monitoredFolders,

@@ -4,6 +4,14 @@ import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/core/utils/version_utils.dart';
+import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
+import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
+import 'package:pulse/presentation/bloc/player/player_bloc.dart';
+import 'package:pulse/presentation/bloc/player/player_event.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
+import 'package:pulse/presentation/bloc/search/search_bloc.dart';
+import 'package:pulse/presentation/bloc/search/search_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
 import 'package:pulse/presentation/bloc/settings/settings_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
@@ -136,6 +144,17 @@ class _SettingsContent extends StatelessWidget {
         },
       ),
       _SwitchTile(
+        title: l10n.resumePlaybackOnTrackTap,
+        subtitle: l10n.resumePlaybackOnTrackTapDesc,
+        value: state.settings.resumePlaybackOnTrackTap,
+        isDark: isDark,
+        onChanged: (value) {
+          context.read<SettingsBloc>().add(
+            SettingsUpdateResumePlaybackOnTrackTap(enabled: value),
+          );
+        },
+      ),
+      _SwitchTile(
         title: l10n.navigateToPlayerOnResume,
         subtitle: l10n.navigateToPlayerOnResumeDesc,
         value: state.settings.navigateToPlayerOnResume,
@@ -252,7 +271,28 @@ class _SettingsContent extends StatelessWidget {
     );
 
     if (confirmed && context.mounted) {
-      context.read<SettingsBloc>().add(const SettingsResetAll());
+      context.read<PlayerBloc>().add(const PlayerPrepareForHardReset());
+      final settingsBloc =
+          context.read<SettingsBloc>()..add(const SettingsResetAll());
+
+      final result = await settingsBloc.stream.firstWhere(
+        (state) =>
+            state.status == SettingsStatus.loaded ||
+            state.status == SettingsStatus.error,
+      );
+      if (!context.mounted) return;
+
+      if (result.status == SettingsStatus.error) {
+        context.read<PlayerBloc>().add(const PlayerCancelPreparedHardReset());
+        AppToast.error(context, result.errorMessage ?? l10n.unknownError);
+        return;
+      }
+
+      context.read<PlayerBloc>().add(const PlayerHardReset());
+      context.read<PlaylistBloc>().add(const PlaylistClearRuntimeState());
+      context.read<FileScannerBloc>().add(const FileScannerClearLibrary());
+      context.read<SearchBloc>().add(const SearchSourceUpdated([]));
+      context.read<SearchBloc>().add(const SearchCleared());
       AppToast.warning(context, l10n.allDataCleared);
     }
   }
@@ -420,7 +460,6 @@ class _LanguageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isZh = currentLocale.startsWith('zh');
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -458,7 +497,7 @@ class _LanguageTile extends StatelessWidget {
               Expanded(
                 child: _LanguageOption(
                   label: '繁體中文',
-                  isSelected: isZh,
+                  isSelected: currentLocale == 'zh_TW',
                   isDark: isDark,
                   colorScheme: colorScheme,
                   onTap: () => onChanged('zh_TW'),
@@ -467,8 +506,18 @@ class _LanguageTile extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _LanguageOption(
+                  label: '简体中文',
+                  isSelected: currentLocale == 'zh_CN',
+                  isDark: isDark,
+                  colorScheme: colorScheme,
+                  onTap: () => onChanged('zh_CN'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _LanguageOption(
                   label: 'English',
-                  isSelected: !isZh,
+                  isSelected: currentLocale == 'en',
                   isDark: isDark,
                   colorScheme: colorScheme,
                   onTap: () => onChanged('en'),

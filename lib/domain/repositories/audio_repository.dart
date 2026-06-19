@@ -20,6 +20,9 @@ abstract class AudioRepository {
   /// Stops playback and releases resources
   Future<void> stop();
 
+  /// Clears any background media session state after destructive resets.
+  Future<void> clearSession();
+
   /// Seeks to the specified position
   Future<void> seekTo(Duration position);
 

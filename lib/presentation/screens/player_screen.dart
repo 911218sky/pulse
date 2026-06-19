@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/utils/time_parser.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/player/player_state.dart';
@@ -23,29 +26,198 @@ import 'package:pulse/presentation/widgets/sleep_timer/sleep_timer_dialog.dart';
 import 'package:pulse/presentation/widgets/sleep_timer/sleep_timer_indicator.dart';
 
 /// Full-screen player screen with enhanced visuals
-class PlayerScreen extends StatelessWidget {
+class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key, this.onBack});
 
   final VoidCallback? onBack;
+
+  @override
+  State<PlayerScreen> createState() => _PlayerScreenState();
+}
+
+class _PlayerScreenState extends State<PlayerScreen> {
+  String? _lastResumePromptKey;
+  Timer? _resumePromptTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _showResumePromptIfNeeded(context.read<PlayerBloc>().state);
+    });
+  }
+
+  @override
+  void dispose() {
+    _resumePromptTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: BlocBuilder<PlayerBloc, PlayerState>(
-          builder:
-              (context, state) => Column(
-                children: [
-                  _Header(onBack: onBack, isDark: isDark),
-                  Expanded(child: _TrackInfo(state: state, isDark: isDark)),
-                  _PlayerControls(state: state, isDark: isDark),
-                  const SizedBox(height: AppSpacing.xl),
-                ],
+    return BlocListener<PlayerBloc, PlayerState>(
+      listenWhen:
+          (prev, curr) =>
+              prev.pendingResumePosition != curr.pendingResumePosition ||
+              prev.currentAudio?.path != curr.currentAudio?.path,
+      listener: (context, state) => _showResumePromptIfNeeded(state),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SafeArea(
+          child: BlocBuilder<PlayerBloc, PlayerState>(
+            builder:
+                (context, state) => Stack(
+                  children: [
+                    Column(
+                      children: [
+                        _Header(onBack: widget.onBack, isDark: isDark),
+                        Expanded(
+                          child: _TrackInfo(state: state, isDark: isDark),
+                        ),
+                        _PlayerControls(state: state, isDark: isDark),
+                        const SizedBox(height: AppSpacing.xl),
+                      ],
+                    ),
+                    if (state.pendingResumePosition != null &&
+                        state.currentAudio != null)
+                      Positioned(
+                        left: AppSpacing.md,
+                        right: AppSpacing.md,
+                        bottom: AppSpacing.xl,
+                        child: _ResumePromptCard(
+                          trackTitle:
+                              state.currentAudio?.displayTitle ??
+                              AppLocalizations.of(context).noTrackSelected,
+                          position: state.pendingResumePosition!,
+                          isDark: isDark,
+                          onResume: () {
+                            context.read<PlayerBloc>().add(
+                              const PlayerResumeFromSavedPosition(),
+                            );
+                          },
+                          onStartOver: () {
+                            context.read<PlayerBloc>().add(
+                              const PlayerDismissResumePrompt(),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showResumePromptIfNeeded(PlayerState state) {
+    final promptKey = _resumePromptKey(state);
+    if (promptKey == null) {
+      _resumePromptTimer?.cancel();
+      _resumePromptTimer = null;
+      _lastResumePromptKey = null;
+      return;
+    }
+    if (_lastResumePromptKey == promptKey || !mounted) return;
+    _lastResumePromptKey = promptKey;
+    _resumePromptTimer?.cancel();
+    _resumePromptTimer = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      if (_resumePromptKey(context.read<PlayerBloc>().state) == promptKey) {
+        context.read<PlayerBloc>().add(const PlayerDismissResumePrompt());
+      }
+    });
+  }
+
+  String? _resumePromptKey(PlayerState state) {
+    final pendingResumePosition = state.pendingResumePosition;
+    final audioPath = state.currentAudio?.path;
+    if (pendingResumePosition == null || audioPath == null) return null;
+    return '$audioPath:${pendingResumePosition.inMilliseconds}';
+  }
+}
+
+class _ResumePromptCard extends StatelessWidget {
+  const _ResumePromptCard({
+    required this.trackTitle,
+    required this.position,
+    required this.isDark,
+    required this.onResume,
+    required this.onStartOver,
+  });
+
+  final String trackTitle;
+  final Duration position;
+  final bool isDark;
+  final VoidCallback onResume;
+  final VoidCallback onStartOver;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.gray900 : AppColors.white,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          border: Border.all(
+            color: isDark ? AppColors.gray800 : AppColors.gray200,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.resumePlaybackPromptTitle,
+              style: TextStyle(
+                color: isDark ? AppColors.white : AppColors.gray900,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
               ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              l10n.resumePlaybackPromptMessage(
+                trackTitle,
+                TimeParser.formatDuration(position),
+              ),
+              style: TextStyle(
+                color: isDark ? AppColors.gray300 : AppColors.gray700,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: onStartOver,
+                  child: Text(l10n.resumePlaybackPromptStartOver),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                FilledButton(
+                  onPressed: onResume,
+                  child: Text(l10n.resumePlaybackPromptResume),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -406,8 +578,8 @@ class _PlayerControls extends StatelessWidget {
                             const PlayerSkipForward(),
                           );
                         },
-                        hasPrevious: playlistState.previousTrackIndex != null,
-                        hasNext: playlistState.nextTrackIndex != null,
+                        hasPrevious: playlistState.hasPrevious,
+                        hasNext: playlistState.hasNext,
                         skipBackwardSeconds:
                             settingsState.settings.skipBackwardSeconds,
                         skipForwardSeconds:

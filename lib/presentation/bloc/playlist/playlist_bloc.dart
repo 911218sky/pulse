@@ -27,6 +27,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
     on<PlaylistPlayPrevious>(_onPlayPrevious);
     on<PlaylistJumpToTrack>(_onJumpToTrack);
     on<PlaylistSetTemporaryQueue>(_onSetTemporaryQueue);
+    on<PlaylistClearRuntimeState>(_onClearRuntimeState);
 
     _subscribeToPlaylists();
   }
@@ -393,6 +394,21 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
       state.copyWith(
         currentPlaylist: () => tempPlaylist,
         currentTrackIndex: event.startIndex,
+        shuffledIndices: const <int>[],
+      ),
+    );
+  }
+
+  void _onClearRuntimeState(
+    PlaylistClearRuntimeState event,
+    Emitter<PlaylistState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        currentPlaylist: () => null,
+        currentTrackIndex: 0,
+        shuffleEnabled: false,
+        repeatMode: RepeatMode.off,
         shuffledIndices: const <int>[],
       ),
     );

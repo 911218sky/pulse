@@ -124,6 +124,11 @@ class EnTranslations extends Translations {
   @override
   String get autoResumeDesc => 'Resume playback when app opens';
   @override
+  String get resumePlaybackOnTrackTap => 'Resume Track on Tap';
+  @override
+  String get resumePlaybackOnTrackTapDesc =>
+      'When opening a track manually, continue from the saved position instead of starting from the beginning';
+  @override
   String get navigateToPlayerOnResume => 'Navigate to Player on Resume';
   @override
   String get navigateToPlayerOnResumeDesc =>
@@ -223,6 +228,8 @@ class EnTranslations extends Translations {
   @override
   String get updateInstallerOpenFailed =>
       'Download complete, but the installer could not be opened';
+  @override
+  String get updateOpenLinkFailed => 'Pulse could not open the update link';
   @override
   String get updateInstallPermissionRequired =>
       'Allow Pulse to install unknown apps, then run the update again';
@@ -378,6 +385,17 @@ class EnTranslations extends Translations {
   // ============== Audio Service ==============
   @override
   String get musicPlayback => 'Music Playback';
+
+  // ============== Resume Prompt ==============
+  @override
+  String get resumePlaybackPromptTitle => 'Resume playback?';
+  @override
+  String resumePlaybackPromptMessage(String trackTitle, String position) =>
+      'Resume "$trackTitle" from $position, or start from the beginning?';
+  @override
+  String get resumePlaybackPromptResume => 'Resume';
+  @override
+  String get resumePlaybackPromptStartOver => 'Start from beginning';
 
   // ============== Delete Music ==============
   @override

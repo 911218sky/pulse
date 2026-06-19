@@ -88,6 +88,7 @@ class _ReorderablePlaylistView extends StatelessWidget {
   Widget build(BuildContext context) => ReorderableListView.builder(
     itemCount: playlist.fileCount,
     padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+    onReorder: onReorder,
     proxyDecorator:
         (child, index, animation) => Material(
           color: Colors.transparent,
@@ -106,7 +107,6 @@ class _ReorderablePlaylistView extends StatelessWidget {
             child: child,
           ),
         ),
-    onReorderItem: onReorder,
     itemBuilder:
         (context, index) => PlaylistItem(
           key: ValueKey(playlist.files[index].id),

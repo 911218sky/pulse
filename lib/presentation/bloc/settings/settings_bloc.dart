@@ -18,6 +18,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     on<SettingsUpdateDefaultVolume>(_onUpdateDefaultVolume);
     on<SettingsUpdateDefaultSpeed>(_onUpdateDefaultSpeed);
     on<SettingsUpdateAutoResume>(_onUpdateAutoResume);
+    on<SettingsUpdateResumePlaybackOnTrackTap>(
+      _onUpdateResumePlaybackOnTrackTap,
+    );
     on<SettingsUpdateAutoUpdate>(_onUpdateAutoUpdate);
     on<SettingsUpdateSkipForward>(_onUpdateSkipForward);
     on<SettingsUpdateSkipBackward>(_onUpdateSkipBackward);
@@ -87,6 +90,14 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emit,
   ) async =>
       _updateSettings(emit, state.settings.copyWith(autoResume: event.enabled));
+
+  Future<void> _onUpdateResumePlaybackOnTrackTap(
+    SettingsUpdateResumePlaybackOnTrackTap event,
+    Emitter<SettingsState> emit,
+  ) async => _updateSettings(
+    emit,
+    state.settings.copyWith(resumePlaybackOnTrackTap: event.enabled),
+  );
 
   Future<void> _onUpdateAutoUpdate(
     SettingsUpdateAutoUpdate event,

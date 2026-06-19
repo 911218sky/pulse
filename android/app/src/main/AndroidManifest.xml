@@ -13,6 +13,9 @@
         android:label="pulse"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/no_backup_rules"
         android:requestLegacyExternalStorage="true">
         
         <activity

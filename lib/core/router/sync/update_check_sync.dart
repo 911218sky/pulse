@@ -7,9 +7,18 @@ import 'package:pulse/presentation/controllers/update_flow_controller.dart';
 
 /// Runs one silent startup update check when the user enables it.
 class UpdateCheckSync extends StatefulWidget {
-  const UpdateCheckSync({required this.child, super.key});
+  const UpdateCheckSync({
+    required this.child,
+    this.updateFlow = const UpdateFlowController(),
+    this.retryDelay = const Duration(seconds: 15),
+    this.updateContextProvider,
+    super.key,
+  });
 
   final Widget child;
+  final UpdateFlowController updateFlow;
+  final Duration retryDelay;
+  final BuildContext? Function()? updateContextProvider;
 
   @override
   State<UpdateCheckSync> createState() => _UpdateCheckSyncState();
@@ -18,7 +27,6 @@ class UpdateCheckSync extends StatefulWidget {
 class _UpdateCheckSyncState extends State<UpdateCheckSync> {
   bool _hasChecked = false;
   bool _hasRetried = false;
-  final _updateFlow = const UpdateFlowController();
 
   @override
   void didChangeDependencies() {
@@ -53,31 +61,37 @@ class _UpdateCheckSyncState extends State<UpdateCheckSync> {
 
   Future<void> _checkForUpdate() async {
     final settingsBloc = context.read<SettingsBloc>();
-    final updateContext = AppRouter.rootNavigatorKey.currentContext;
+    final updateContext =
+        widget.updateContextProvider?.call() ??
+        AppRouter.rootNavigatorKey.currentContext;
     if (updateContext == null) {
       _hasChecked = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _maybeCheckForUpdate(settingsBloc.state);
+      });
       return;
     }
 
-    final outcome = await _updateFlow.checkForUpdate(
+    final outcome = await widget.updateFlow.checkForUpdate(
       updateContext,
       trigger: UpdateCheckTrigger.automatic,
     );
 
     if (!mounted ||
         _hasRetried ||
-        outcome == UpdateCheckOutcome.updateAvailable ||
-        outcome == UpdateCheckOutcome.skipped ||
+        outcome != UpdateCheckOutcome.failed ||
         !settingsBloc.state.settings.autoUpdateEnabled) {
       return;
     }
 
     _hasRetried = true;
-    await Future<void>.delayed(const Duration(seconds: 15));
+    await Future<void>.delayed(widget.retryDelay);
     if (mounted && settingsBloc.state.settings.autoUpdateEnabled) {
-      final retryContext = AppRouter.rootNavigatorKey.currentContext;
+      final retryContext =
+          widget.updateContextProvider?.call() ??
+          AppRouter.rootNavigatorKey.currentContext;
       if (retryContext == null || !retryContext.mounted) return;
-      await _updateFlow.checkForUpdate(
+      await widget.updateFlow.checkForUpdate(
         retryContext,
         trigger: UpdateCheckTrigger.automatic,
       );

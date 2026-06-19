@@ -9,8 +9,11 @@ import 'package:pulse/core/utils/app_logger.dart';
 /// Uses media_kit for stable playback on Windows (replaces just_audio)
 class MusicPlayerAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
-  MusicPlayerAudioHandler({this.onSkipToNext, this.onSkipToPrevious}) {
-    _player = Player();
+  MusicPlayerAudioHandler({
+    this.onSkipToNext,
+    this.onSkipToPrevious,
+    Player? player,
+  }) : _player = player ?? Player() {
     _initPlaybackState();
     _init();
   }
@@ -34,9 +37,9 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     playbackState.add(
       PlaybackState(
         controls: [
-          MediaControl.skipToPrevious,
+          MediaControl.rewind,
           MediaControl.play,
-          MediaControl.skipToNext,
+          MediaControl.fastForward,
         ],
         systemActions: const {
           MediaAction.seek,
@@ -44,13 +47,16 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
           MediaAction.seekBackward,
           MediaAction.play,
           MediaAction.pause,
+          MediaAction.stop,
+          MediaAction.rewind,
+          MediaAction.fastForward,
         },
-        androidCompactActionIndices: const [0, 1, 2],
+        androidCompactActionIndices: const [1],
       ),
     );
   }
 
-  late final Player _player;
+  final Player _player;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration>? _durationSub;
   StreamSubscription<bool>? _playingSub;
@@ -60,6 +66,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   Duration _position = Duration.zero;
   Duration? _duration;
   Duration? _resumePositionGuard;
+  bool _resumeRecoveryPending = false;
   bool _playing = false;
   bool _hasLoadedMedia = false;
   String? _currentMediaPath;
@@ -113,6 +120,11 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   }
 
   void _broadcastState() {
+    if (mediaItem.value == null) {
+      playbackState.add(PlaybackState());
+      return;
+    }
+
     final controls = <MediaControl>[
       MediaControl.rewind, // 倒轉
       if (onSkipToPrevious != null) MediaControl.skipToPrevious, // 上一首
@@ -169,7 +181,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       return AudioProcessingState.completed;
     }
     if (!_hasLoadedMedia && _player.state.playlist.medias.isEmpty) {
-      return AudioProcessingState.loading;
+      return AudioProcessingState.idle;
     }
     return AudioProcessingState.ready;
   }
@@ -330,6 +342,21 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     }
   });
 
+  Future<void> clearSession() => _runPlayerOperation('clearSession', () async {
+    _playing = false;
+    _position = Duration.zero;
+    _duration = null;
+    _resumePositionGuard = null;
+    _resumeRecoveryPending = false;
+    _hasLoadedMedia = false;
+    _currentMediaPath = null;
+    onSkipToNext = null;
+    onSkipToPrevious = null;
+    mediaItem.add(null);
+    queue.add(const <MediaItem>[]);
+    _broadcastState();
+  });
+
   @override
   Future<void> seek(Duration position) => _runPlayerOperation('seek', () async {
     try {
@@ -435,10 +462,33 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     return guard != null && position < guard;
   }
 
+  void _recoverResumePosition(Duration guard) {
+    if (_resumeRecoveryPending) return;
+    _resumeRecoveryPending = true;
+    unawaited(
+      _runPlayerOperation('recoverResumePosition', () async {
+        try {
+          if (!_playing || _resumePositionGuard != guard) return;
+          if (_player.state.position >= guard) return;
+          await _player.seek(guard);
+          _position = guard;
+          _broadcastState();
+        } finally {
+          _resumeRecoveryPending = false;
+        }
+      }),
+    );
+  }
+
   void _recordPlayerPosition(Duration position) {
-    if (_shouldHoldResumePosition(position)) return;
-    _position = position;
     final guard = _resumePositionGuard;
+    if (guard != null && position < guard) {
+      if (_playing) {
+        _recoverResumePosition(guard);
+      }
+      return;
+    }
+    _position = position;
     if (guard != null &&
         _playing &&
         position > guard + const Duration(seconds: 1)) {

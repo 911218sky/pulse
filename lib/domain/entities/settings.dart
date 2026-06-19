@@ -4,10 +4,11 @@ import 'package:equatable/equatable.dart';
 class Settings extends Equatable {
   const Settings({
     this.darkMode = true,
-    this.locale = 'en',
+    this.locale = 'zh_TW',
     this.defaultVolume = 1.0,
     this.defaultPlaybackSpeed = 1.0,
     this.autoResume = true,
+    this.resumePlaybackOnTrackTap = true,
     this.skipForwardSeconds = 10,
     this.skipBackwardSeconds = 10,
     this.monitoredFolders = const [],
@@ -22,6 +23,7 @@ class Settings extends Equatable {
   final double defaultVolume;
   final double defaultPlaybackSpeed;
   final bool autoResume;
+  final bool resumePlaybackOnTrackTap;
   final int skipForwardSeconds;
   final int skipBackwardSeconds;
   final List<String> monitoredFolders;
@@ -38,6 +40,7 @@ class Settings extends Equatable {
     double? defaultVolume,
     double? defaultPlaybackSpeed,
     bool? autoResume,
+    bool? resumePlaybackOnTrackTap,
     int? skipForwardSeconds,
     int? skipBackwardSeconds,
     List<String>? monitoredFolders,
@@ -51,6 +54,8 @@ class Settings extends Equatable {
     defaultVolume: defaultVolume ?? this.defaultVolume,
     defaultPlaybackSpeed: defaultPlaybackSpeed ?? this.defaultPlaybackSpeed,
     autoResume: autoResume ?? this.autoResume,
+    resumePlaybackOnTrackTap:
+        resumePlaybackOnTrackTap ?? this.resumePlaybackOnTrackTap,
     skipForwardSeconds: skipForwardSeconds ?? this.skipForwardSeconds,
     skipBackwardSeconds: skipBackwardSeconds ?? this.skipBackwardSeconds,
     monitoredFolders: monitoredFolders ?? this.monitoredFolders,
@@ -70,6 +75,7 @@ class Settings extends Equatable {
     defaultVolume,
     defaultPlaybackSpeed,
     autoResume,
+    resumePlaybackOnTrackTap,
     skipForwardSeconds,
     skipBackwardSeconds,
     monitoredFolders,

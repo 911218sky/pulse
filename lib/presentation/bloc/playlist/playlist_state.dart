@@ -41,14 +41,18 @@ class PlaylistState extends Equatable {
   /// Whether there is a next track
   bool get hasNext {
     if (currentPlaylist == null || currentPlaylist!.isEmpty) return false;
-    if (repeatMode == RepeatMode.all) return true;
+    if (repeatMode == RepeatMode.all || repeatMode == RepeatMode.one) {
+      return true;
+    }
     return currentTrackIndex < currentPlaylist!.fileCount - 1;
   }
 
   /// Whether there is a previous track
   bool get hasPrevious {
     if (currentPlaylist == null || currentPlaylist!.isEmpty) return false;
-    if (repeatMode == RepeatMode.all) return true;
+    if (repeatMode == RepeatMode.all || repeatMode == RepeatMode.one) {
+      return true;
+    }
     return currentTrackIndex > 0;
   }
 
@@ -63,13 +67,9 @@ class PlaylistState extends Equatable {
   int? get nextTrackIndex {
     if (currentPlaylist == null || currentPlaylist!.isEmpty) return null;
 
-    if (repeatMode == RepeatMode.one) {
-      return currentTrackIndex;
-    }
-
     final nextIndex = currentTrackIndex + 1;
     if (nextIndex >= currentPlaylist!.fileCount) {
-      if (repeatMode == RepeatMode.all) {
+      if (repeatMode == RepeatMode.all || repeatMode == RepeatMode.one) {
         return 0;
       }
       return null;
@@ -81,13 +81,9 @@ class PlaylistState extends Equatable {
   int? get previousTrackIndex {
     if (currentPlaylist == null || currentPlaylist!.isEmpty) return null;
 
-    if (repeatMode == RepeatMode.one) {
-      return currentTrackIndex;
-    }
-
     final prevIndex = currentTrackIndex - 1;
     if (prevIndex < 0) {
-      if (repeatMode == RepeatMode.all) {
+      if (repeatMode == RepeatMode.all || repeatMode == RepeatMode.one) {
         return currentPlaylist!.fileCount - 1;
       }
       return null;

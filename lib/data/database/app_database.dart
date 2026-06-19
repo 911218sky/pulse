@@ -41,6 +41,8 @@ class SettingsTable extends Table {
   RealColumn get defaultPlaybackSpeed =>
       real().withDefault(const Constant(1))();
   BoolColumn get autoResume => boolean().withDefault(const Constant(true))();
+  BoolColumn get resumePlaybackOnTrackTap =>
+      boolean().withDefault(const Constant(true))();
   IntColumn get skipForwardSeconds =>
       integer().withDefault(const Constant(10))();
   IntColumn get skipBackwardSeconds =>
@@ -129,13 +131,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (m, from, to) async {
       if (from < 4) await repairCanonicalPathsForUpgrade();
       if (from < 5) await _ensureAutoUpdateColumnForUpgrade();
+      if (from < 6) await _ensureResumePlaybackOnTrackTapColumnForUpgrade();
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -455,12 +458,20 @@ class AppDatabase extends _$AppDatabase {
       'navigate_to_player_on_resume INTEGER NOT NULL DEFAULT 0',
     );
     await _ensureAutoUpdateColumnForUpgrade();
+    await _ensureResumePlaybackOnTrackTapColumnForUpgrade();
   }
 
   Future<void> _ensureAutoUpdateColumnForUpgrade() async {
     await _tryAddColumn(
       'ALTER TABLE settings ADD COLUMN '
       'auto_update_enabled INTEGER NOT NULL DEFAULT 1',
+    );
+  }
+
+  Future<void> _ensureResumePlaybackOnTrackTapColumnForUpgrade() async {
+    await _tryAddColumn(
+      'ALTER TABLE settings ADD COLUMN '
+      'resume_playback_on_track_tap INTEGER NOT NULL DEFAULT 1',
     );
   }
 

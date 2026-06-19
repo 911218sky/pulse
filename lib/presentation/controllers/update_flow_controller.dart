@@ -16,6 +16,9 @@ enum UpdateCheckTrigger { automatic, manual }
 
 enum UpdateCheckOutcome { updateAvailable, upToDate, failed, skipped }
 
+typedef ExternalUrlLauncher =
+    Future<bool> Function(Uri url, {required LaunchMode mode});
+
 enum _UpdatePromptAction { installNow, later, skipVersion }
 
 class _UpdatePromptResult {
@@ -27,10 +30,15 @@ class _UpdatePromptResult {
 
 /// Coordinates update checks, downloads, progress UI, and installer handoff.
 class UpdateFlowController {
-  const UpdateFlowController();
+  const UpdateFlowController({
+    this.launchExternalUrl = launchUrl,
+    this.preferencesFactory = SharedPreferences.getInstance,
+  });
 
   static const _skippedVersionKey = 'skipped_update_version';
   static bool _isRunning = false;
+  final ExternalUrlLauncher launchExternalUrl;
+  final Future<SharedPreferences> Function() preferencesFactory;
 
   Future<UpdateCheckOutcome> checkForUpdate(
     BuildContext context, {
@@ -209,20 +217,29 @@ class UpdateFlowController {
   }
 
   Future<bool> _isSkippedVersion(String version) async {
-    final preferences = await SharedPreferences.getInstance();
+    final preferences = await preferencesFactory();
     return preferences.getString(_skippedVersionKey) == version;
   }
 
   Future<void> _skipVersion(String version) async {
-    final preferences = await SharedPreferences.getInstance();
+    final preferences = await preferencesFactory();
     await preferences.setString(_skippedVersionKey, version);
+  }
+
+  Future<void> clearSkippedVersion() async {
+    final preferences = await preferencesFactory();
+    await preferences.remove(_skippedVersionKey);
   }
 
   Future<void> downloadAndOpen(BuildContext context, AppUpdate update) async {
     final l10n = AppLocalizations.of(context);
 
     if (!update.canDownloadDirectly) {
-      await launchUrl(update.releaseUrl, mode: LaunchMode.externalApplication);
+      await _launchExternalWithFeedback(
+        context,
+        update.releaseUrl,
+        l10n.updateOpenLinkFailed,
+      );
       return;
     }
 
@@ -280,7 +297,12 @@ class UpdateFlowController {
       if (context.mounted) {
         AppToast.error(context, l10n.updateInstallerOpenFailed);
       }
-      await launchUrl(update.downloadUrl, mode: LaunchMode.externalApplication);
+      if (!context.mounted) return;
+      await _launchExternalWithFeedback(
+        context,
+        update.releaseUrl,
+        l10n.updateOpenLinkFailed,
+      );
     } on Exception catch (error, stackTrace) {
       AppLogger.e(
         'UpdateFlowController',
@@ -292,9 +314,44 @@ class UpdateFlowController {
         rootNavigator.pop();
       }
       if (context.mounted) AppToast.error(context, l10n.updateDownloadFailed);
-      await launchUrl(update.downloadUrl, mode: LaunchMode.externalApplication);
+      if (!context.mounted) return;
+      await _launchExternalWithFeedback(
+        context,
+        update.releaseUrl,
+        l10n.updateOpenLinkFailed,
+      );
     } finally {
       progress.dispose();
+    }
+  }
+
+  Future<void> _launchExternalWithFeedback(
+    BuildContext context,
+    Uri url,
+    String errorMessage,
+  ) async {
+    try {
+      await _launchExternalOrThrow(url);
+    } on UpdateLaunchException catch (error, stackTrace) {
+      AppLogger.e(
+        'UpdateFlowController',
+        'Unable to open external update link',
+        error,
+        stackTrace,
+      );
+      if (context.mounted) {
+        AppToast.error(context, errorMessage);
+      }
+    }
+  }
+
+  Future<void> _launchExternalOrThrow(Uri url) async {
+    final launched = await launchExternalUrl(
+      url,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched) {
+      throw UpdateLaunchException(url);
     }
   }
 
@@ -333,4 +390,10 @@ class UpdateFlowController {
           ),
     );
   }
+}
+
+class UpdateLaunchException implements Exception {
+  const UpdateLaunchException(this.url);
+
+  final Uri url;
 }

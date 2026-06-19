@@ -148,3 +148,8 @@ class PlaylistSetTemporaryQueue extends PlaylistEvent {
   @override
   List<Object?> get props => [files, startIndex];
 }
+
+/// Clear the in-memory playback queue after destructive resets.
+class PlaylistClearRuntimeState extends PlaylistEvent {
+  const PlaylistClearRuntimeState();
+}

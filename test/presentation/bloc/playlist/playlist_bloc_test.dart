@@ -1,6 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pulse/domain/entities/audio_file.dart';
+import 'package:pulse/domain/entities/playlist.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 
 import '../../../helpers/property_test_helper.dart';
 
@@ -176,6 +179,104 @@ void main() {
       const result = nextIndex >= fileCount && !repeatAll ? null : nextIndex;
 
       expect(result, isNull);
+    });
+
+    test(
+      'Repeat one still advances to the next track for manual navigation',
+      () {
+        final playlist = Playlist.create(id: 'p1', name: 'Test').copyWith(
+          files: const [
+            AudioFile(
+              id: '1',
+              path: '/music/1.mp3',
+              title: '1',
+              duration: Duration(minutes: 1),
+              fileSizeBytes: 1,
+            ),
+            AudioFile(
+              id: '2',
+              path: '/music/2.mp3',
+              title: '2',
+              duration: Duration(minutes: 1),
+              fileSizeBytes: 1,
+            ),
+            AudioFile(
+              id: '3',
+              path: '/music/3.mp3',
+              title: '3',
+              duration: Duration(minutes: 1),
+              fileSizeBytes: 1,
+            ),
+          ],
+        );
+        final state = PlaylistState(
+          currentPlaylist: playlist,
+          currentTrackIndex: 1,
+          repeatMode: RepeatMode.one,
+        );
+
+        expect(state.previousTrackIndex, 0);
+        expect(state.nextTrackIndex, 2);
+        expect(state.hasPrevious, isTrue);
+        expect(state.hasNext, isTrue);
+      },
+    );
+
+    test('Repeat one wraps previous from the first track', () {
+      final playlist = Playlist.create(id: 'p1', name: 'Test').copyWith(
+        files: const [
+          AudioFile(
+            id: '1',
+            path: '/music/1.mp3',
+            title: '1',
+            duration: Duration(minutes: 1),
+            fileSizeBytes: 1,
+          ),
+          AudioFile(
+            id: '2',
+            path: '/music/2.mp3',
+            title: '2',
+            duration: Duration(minutes: 1),
+            fileSizeBytes: 1,
+          ),
+        ],
+      );
+      final state = PlaylistState(
+        currentPlaylist: playlist,
+        repeatMode: RepeatMode.one,
+      );
+
+      expect(state.hasPrevious, isTrue);
+      expect(state.previousTrackIndex, 1);
+    });
+
+    test('Repeat one wraps next from the last track', () {
+      final playlist = Playlist.create(id: 'p1', name: 'Test').copyWith(
+        files: const [
+          AudioFile(
+            id: '1',
+            path: '/music/1.mp3',
+            title: '1',
+            duration: Duration(minutes: 1),
+            fileSizeBytes: 1,
+          ),
+          AudioFile(
+            id: '2',
+            path: '/music/2.mp3',
+            title: '2',
+            duration: Duration(minutes: 1),
+            fileSizeBytes: 1,
+          ),
+        ],
+      );
+      final state = PlaylistState(
+        currentPlaylist: playlist,
+        currentTrackIndex: 1,
+        repeatMode: RepeatMode.one,
+      );
+
+      expect(state.hasNext, isTrue);
+      expect(state.nextTrackIndex, 0);
     });
   });
 }

@@ -1,17 +1,64 @@
 import 'dart:async';
 
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter/material.dart' hide RepeatMode;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/router/app_router.dart';
+import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/core/utils/app_logger.dart';
+import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/main.dart';
+import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
+import 'package:pulse/presentation/bloc/player/player_state.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
+
+class TemporaryQueueResolution {
+  const TemporaryQueueResolution({
+    required this.files,
+    required this.startIndex,
+  });
+
+  final List<AudioFile> files;
+  final int startIndex;
+}
+
+int? findAudioFileIndexByCanonicalPath({
+  required AudioFile currentAudio,
+  required List<AudioFile> candidateFiles,
+}) {
+  final currentPath = AudioPathUtils.canonicalize(currentAudio.path);
+
+  for (var i = 0; i < candidateFiles.length; i++) {
+    if (AudioPathUtils.canonicalize(candidateFiles[i].path) == currentPath) {
+      return i;
+    }
+  }
+
+  return null;
+}
+
+TemporaryQueueResolution? resolveTemporaryQueueForCurrentAudio({
+  required AudioFile currentAudio,
+  required List<AudioFile> candidateFiles,
+}) {
+  final startIndex = findAudioFileIndexByCanonicalPath(
+    currentAudio: currentAudio,
+    candidateFiles: candidateFiles,
+  );
+  if (startIndex == null) {
+    return null;
+  }
+
+  return TemporaryQueueResolution(
+    files: candidateFiles,
+    startIndex: startIndex,
+  );
+}
 
 /// Syncs PlaylistBloc with AudioHandler and handles app lifecycle navigation
 class PlaylistAudioSync extends StatefulWidget {
@@ -149,45 +196,104 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
   void _setupAudioHandlerCallbacks() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-
-      final handler = audioHandler;
-      if (handler == null) {
-        AppLogger.w('PlaylistAudioSync', 'AudioHandler not available');
-        return;
-      }
-
-      handler.setSkipCallbacks(
-        onNext: () {
-          if (!mounted) return;
-          AppLogger.d('PlaylistAudioSync', 'Skip to next from notification');
-          context.read<PlaylistBloc>().add(const PlaylistPlayNext());
-        },
-        onPrevious: () {
-          if (!mounted) return;
-          AppLogger.d(
-            'PlaylistAudioSync',
-            'Skip to previous from notification',
-          );
-          context.read<PlaylistBloc>().add(const PlaylistPlayPrevious());
-        },
-      );
+      _syncAudioHandlerSkipCallbacks(context.read<PlaylistBloc>().state);
     });
+  }
+
+  void _syncAudioHandlerSkipCallbacks(PlaylistState playlistState) {
+    final handler = audioHandler;
+    if (handler == null) {
+      AppLogger.w('PlaylistAudioSync', 'AudioHandler not available');
+      return;
+    }
+
+    handler.setSkipCallbacks(
+      onNext:
+          playlistState.hasNext
+              ? () {
+                if (!mounted) return;
+                AppLogger.d(
+                  'PlaylistAudioSync',
+                  'Skip to next from notification',
+                );
+                context.read<PlaylistBloc>().add(const PlaylistPlayNext());
+              }
+              : null,
+      onPrevious:
+          playlistState.hasPrevious
+              ? () {
+                if (!mounted) return;
+                AppLogger.d(
+                  'PlaylistAudioSync',
+                  'Skip to previous from notification',
+                );
+                context.read<PlaylistBloc>().add(const PlaylistPlayPrevious());
+              }
+              : null,
+    );
   }
 
   /// Load track into PlayerBloc when playlist track changes
   @override
-  Widget build(BuildContext context) =>
+  Widget build(BuildContext context) => MultiBlocListener(
+    listeners: [
       BlocListener<PlaylistBloc, PlaylistState>(
         listenWhen:
             (prev, curr) =>
                 prev.currentTrackIndex != curr.currentTrackIndex ||
-                prev.currentPlaylist?.id != curr.currentPlaylist?.id,
+                prev.currentPlaylist?.id != curr.currentPlaylist?.id ||
+                prev.repeatMode != curr.repeatMode,
         listener: (context, state) {
+          _syncAudioHandlerSkipCallbacks(state);
           final currentTrack = state.currentTrack;
           if (currentTrack != null) {
             context.read<PlayerBloc>().add(PlayerLoadAudio(currentTrack));
           }
         },
-        child: widget.child,
-      );
+      ),
+      BlocListener<PlayerBloc, PlayerState>(
+        listenWhen:
+            (prev, curr) =>
+                prev.currentAudio?.path != curr.currentAudio?.path &&
+                curr.currentAudio != null,
+        listener: (context, state) {
+          final currentAudio = state.currentAudio;
+          if (currentAudio == null) return;
+
+          final playlistBloc = context.read<PlaylistBloc>();
+          final playlistState = playlistBloc.state;
+          final playlistFiles =
+              playlistState.currentPlaylist?.files ?? const [];
+          final existingIndex = findAudioFileIndexByCanonicalPath(
+            currentAudio: currentAudio,
+            candidateFiles: playlistFiles,
+          );
+
+          if (existingIndex != null) {
+            if (playlistState.currentTrackIndex != existingIndex) {
+              playlistBloc.add(PlaylistJumpToTrack(existingIndex));
+            }
+            return;
+          }
+
+          final fileScannerState = context.read<FileScannerBloc>().state;
+          final queue = resolveTemporaryQueueForCurrentAudio(
+            currentAudio: currentAudio,
+            candidateFiles: fileScannerState.allFiles,
+          );
+          if (queue == null) {
+            return;
+          }
+
+          playlistBloc.add(
+            PlaylistSetTemporaryQueue(
+              files: queue.files,
+              startIndex: queue.startIndex,
+            ),
+          );
+        },
+      ),
+    ],
+    child: widget.child,
+  );
 }

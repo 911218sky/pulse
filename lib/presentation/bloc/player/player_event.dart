@@ -45,6 +45,31 @@ class PlayerSeekTo extends PlayerEvent {
   List<Object?> get props => [position];
 }
 
+/// Resume playback from the saved position offered in the prompt.
+class PlayerResumeFromSavedPosition extends PlayerEvent {
+  const PlayerResumeFromSavedPosition();
+}
+
+/// Hide the saved-position prompt for the current playback session.
+class PlayerDismissResumePrompt extends PlayerEvent {
+  const PlayerDismissResumePrompt();
+}
+
+/// Suspend persistence ahead of a destructive reset flow.
+class PlayerPrepareForHardReset extends PlayerEvent {
+  const PlayerPrepareForHardReset();
+}
+
+/// Resume normal persistence if a destructive reset flow is cancelled or fails.
+class PlayerCancelPreparedHardReset extends PlayerEvent {
+  const PlayerCancelPreparedHardReset();
+}
+
+/// Clear all in-memory playback state after a destructive data reset.
+class PlayerHardReset extends PlayerEvent {
+  const PlayerHardReset();
+}
+
 /// Skip forward by configured seconds
 class PlayerSkipForward extends PlayerEvent {
   const PlayerSkipForward();

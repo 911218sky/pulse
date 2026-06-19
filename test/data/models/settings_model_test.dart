@@ -15,6 +15,7 @@ Settings generateRandomSettings() => Settings(
   defaultVolume: PropertyTest.randomDouble(),
   defaultPlaybackSpeed: PropertyTest.randomDouble(min: 0.5, max: 2),
   autoResume: PropertyTest.randomBool(),
+  resumePlaybackOnTrackTap: PropertyTest.randomBool(),
   skipForwardSeconds: PropertyTest.randomInt(min: 5, max: 60),
   skipBackwardSeconds: PropertyTest.randomInt(min: 5, max: 60),
   autoUpdateEnabled: PropertyTest.randomBool(),
@@ -46,6 +47,10 @@ void main() {
               equals(settings.defaultPlaybackSpeed),
             );
             expect(restored.autoResume, equals(settings.autoResume));
+            expect(
+              restored.resumePlaybackOnTrackTap,
+              equals(settings.resumePlaybackOnTrackTap),
+            );
             expect(
               restored.autoUpdateEnabled,
               equals(settings.autoUpdateEnabled),
@@ -90,6 +95,10 @@ void main() {
             );
             expect(restored.autoResume, equals(settings.autoResume));
             expect(
+              restored.resumePlaybackOnTrackTap,
+              equals(settings.resumePlaybackOnTrackTap),
+            );
+            expect(
               restored.autoUpdateEnabled,
               equals(settings.autoUpdateEnabled),
             );
@@ -118,6 +127,7 @@ void main() {
       expect(entity.defaultVolume, equals(1));
       expect(entity.defaultPlaybackSpeed, equals(1));
       expect(entity.autoResume, isTrue);
+      expect(entity.resumePlaybackOnTrackTap, isTrue);
       expect(entity.autoUpdateEnabled, isTrue);
       expect(entity.skipForwardSeconds, equals(10));
       expect(entity.skipBackwardSeconds, equals(10));

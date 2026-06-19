@@ -53,6 +53,16 @@ class SettingsUpdateAutoResume extends SettingsEvent {
   List<Object?> get props => [enabled];
 }
 
+/// Update whether tapping a track resumes from its saved position.
+class SettingsUpdateResumePlaybackOnTrackTap extends SettingsEvent {
+  const SettingsUpdateResumePlaybackOnTrackTap({required this.enabled});
+
+  final bool enabled;
+
+  @override
+  List<Object?> get props => [enabled];
+}
+
 /// Update automatic update checking setting
 class SettingsUpdateAutoUpdate extends SettingsEvent {
   const SettingsUpdateAutoUpdate({required this.enabled});

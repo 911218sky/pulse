@@ -121,6 +121,10 @@ class ZhTwTranslations extends Translations {
   @override
   String get autoResumeDesc => '開啟應用程式時自動繼續上次的播放';
   @override
+  String get resumePlaybackOnTrackTap => '點擊歌曲時繼續播放';
+  @override
+  String get resumePlaybackOnTrackTapDesc => '手動開啟歌曲時，直接從上次儲存的位置繼續播放，而不是從頭開始';
+  @override
   String get navigateToPlayerOnResume => '恢復時跳轉到播放器';
   @override
   String get navigateToPlayerOnResumeDesc => '當應用程式從背景恢復且有音樂播放時，自動跳轉到播放器畫面';
@@ -214,6 +218,9 @@ class ZhTwTranslations extends Translations {
   @override
   String get updateInstallPermissionRequired =>
       '請允許 Pulse 安裝未知來源應用程式，然後再重新執行更新';
+
+  @override
+  String get updateOpenLinkFailed => 'Pulse 無法開啟更新連結';
 
   // ============== Sleep Timer ==============
   @override
@@ -360,6 +367,17 @@ class ZhTwTranslations extends Translations {
   // ============== Audio Service ==============
   @override
   String get musicPlayback => '音樂播放';
+
+  // ============== Resume Prompt ==============
+  @override
+  String get resumePlaybackPromptTitle => '要繼續播放嗎？';
+  @override
+  String resumePlaybackPromptMessage(String trackTitle, String position) =>
+      '要從 $position 繼續播放「$trackTitle」，還是從頭開始？';
+  @override
+  String get resumePlaybackPromptResume => '繼續播放';
+  @override
+  String get resumePlaybackPromptStartOver => '從頭開始';
 
   // ============== Delete Music ==============
   @override

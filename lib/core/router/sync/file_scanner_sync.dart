@@ -73,9 +73,9 @@ class _FileScannerSyncState extends State<FileScannerSync> {
         // On initial load, just sync existing playlists with library files.
         _syncExistingPlaylists(context, state);
       }
-      if (state.libraryFiles.isNotEmpty) {
+      if (state.allFiles.isNotEmpty) {
         context.read<PlayerBloc>().add(
-          PlayerRestoreFromLibrary(state.libraryFiles),
+          PlayerRestoreFromLibrary(state.allFiles),
         );
       }
       return;

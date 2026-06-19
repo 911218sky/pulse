@@ -24,6 +24,11 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
        _settingsRepository = settingsRepository,
        super(const PlayerState()) {
     on<PlayerLoadAudio>(_onLoadAudio);
+    on<PlayerResumeFromSavedPosition>(_onResumeFromSavedPosition);
+    on<PlayerDismissResumePrompt>(_onDismissResumePrompt);
+    on<PlayerPrepareForHardReset>(_onPrepareForHardReset);
+    on<PlayerCancelPreparedHardReset>(_onCancelPreparedHardReset);
+    on<PlayerHardReset>(_onHardReset);
     on<PlayerPlay>(_onPlay);
     on<PlayerPause>(_onPause);
     on<PlayerStop>(_onStop);
@@ -65,6 +70,8 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   // Throttle position updates to reduce UI rebuilds
   Duration? _pendingPosition;
   Duration? _resumePositionGuard;
+  bool _skipSaveOnClose = false;
+  bool _isHardResetInProgress = false;
   static const _positionUpdateInterval = Duration(milliseconds: 250);
 
   void _subscribeToStreams() {
@@ -92,6 +99,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerLoadAudio event,
     Emitter<PlayerState> emit,
   ) async {
+    _skipSaveOnClose = false;
+    _isHardResetInProgress = false;
+
     // Skip reloading if it's the same audio file and already playing/ready
     if (!event.forceRestart &&
         _lastLoadedAudioPath == event.audioFile.path &&
@@ -108,6 +118,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         currentAudio: event.audioFile,
         position: Duration.zero,
         duration: () => null,
+        pendingResumePosition: () => null,
       ),
     );
 
@@ -121,12 +132,17 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       final savedPosition = await _playbackStateRepository.getPositionForFile(
         event.audioFile.path,
       );
-      _resumePositionGuard = savedPosition;
+      final shouldResumeOnTrackTap =
+          settings.resumePlaybackOnTrackTap || savedPosition == null;
+      final initialPosition =
+          shouldResumeOnTrackTap
+              ? savedPosition ?? Duration.zero
+              : Duration.zero;
+      _resumePositionGuard = shouldResumeOnTrackTap ? savedPosition : null;
 
-      // Load audio file at its saved position before play starts.
       await _audioRepository.loadAudio(
         event.audioFile,
-        initialPosition: savedPosition ?? Duration.zero,
+        initialPosition: initialPosition,
       );
 
       // Track the loaded audio path
@@ -140,8 +156,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
         state.copyWith(
           status: PlayerStatus.ready,
           currentAudio: event.audioFile,
-          position: savedPosition ?? Duration.zero,
+          position: initialPosition,
           duration: () => event.audioFile.duration,
+          pendingResumePosition:
+              () => shouldResumeOnTrackTap ? null : savedPosition,
           volume: settings.defaultVolume,
           speed: settings.defaultPlaybackSpeed,
         ),
@@ -153,6 +171,30 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       // Auto-play the loaded audio
       await _audioRepository.play();
       emit(state.copyWith(status: PlayerStatus.playing));
+    } on Exception catch (e) {
+      emit(
+        state.copyWith(status: PlayerStatus.error, errorMessage: e.toString()),
+      );
+    }
+  }
+
+  Future<void> _onResumeFromSavedPosition(
+    PlayerResumeFromSavedPosition event,
+    Emitter<PlayerState> emit,
+  ) async {
+    final resumePosition = state.pendingResumePosition;
+    if (resumePosition == null || !state.isReady) return;
+
+    try {
+      _resumePositionGuard = resumePosition;
+      await _audioRepository.seekTo(resumePosition);
+      emit(
+        state.copyWith(
+          position: resumePosition,
+          pendingResumePosition: () => null,
+        ),
+      );
+      await _saveCurrentPlaybackState();
     } on Exception catch (e) {
       emit(
         state.copyWith(status: PlayerStatus.error, errorMessage: e.toString()),
@@ -177,6 +219,62 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     }
   }
 
+  Future<void> _onDismissResumePrompt(
+    PlayerDismissResumePrompt event,
+    Emitter<PlayerState> emit,
+  ) async {
+    if (state.pendingResumePosition == null) return;
+    emit(state.copyWith(pendingResumePosition: () => null));
+  }
+
+  Future<void> _onPrepareForHardReset(
+    PlayerPrepareForHardReset event,
+    Emitter<PlayerState> emit,
+  ) async {
+    _skipSaveOnClose = true;
+    _autoSaveTimer?.cancel();
+    _positionThrottleTimer?.cancel();
+    _positionThrottleTimer = null;
+    _pendingPosition = null;
+  }
+
+  Future<void> _onCancelPreparedHardReset(
+    PlayerCancelPreparedHardReset event,
+    Emitter<PlayerState> emit,
+  ) async {
+    _skipSaveOnClose = false;
+    if (state.isPlaying) {
+      _startAutoSaveTimer();
+    }
+  }
+
+  Future<void> _onHardReset(
+    PlayerHardReset event,
+    Emitter<PlayerState> emit,
+  ) async {
+    _isHardResetInProgress = true;
+    _skipSaveOnClose = true;
+    _autoSaveTimer?.cancel();
+    _positionThrottleTimer?.cancel();
+    _positionThrottleTimer = null;
+    _pendingPosition = null;
+    _resumePositionGuard = null;
+    _lastLoadedAudioPath = null;
+    emit(const PlayerState());
+
+    try {
+      await _audioRepository.stop();
+    } on Exception {
+      // Continue clearing in-memory state even if the audio backend fails.
+    }
+    try {
+      await _audioRepository.clearSession();
+    } on Exception {
+      // Continue clearing in-memory state even if the media session cleanup fails.
+    }
+    _isHardResetInProgress = false;
+  }
+
   Future<void> _onPause(PlayerPause event, Emitter<PlayerState> emit) async {
     if (!state.isPlaying) return;
 
@@ -197,7 +295,11 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       await _audioRepository.stop();
       _resumePositionGuard = null;
       emit(
-        state.copyWith(status: PlayerStatus.stopped, position: Duration.zero),
+        state.copyWith(
+          status: PlayerStatus.stopped,
+          position: Duration.zero,
+          pendingResumePosition: () => null,
+        ),
       );
     } on Exception catch (e) {
       emit(
@@ -225,7 +327,12 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       }
 
       await _audioRepository.seekTo(targetPosition);
-      emit(state.copyWith(position: targetPosition));
+      emit(
+        state.copyWith(
+          position: targetPosition,
+          pendingResumePosition: () => null,
+        ),
+      );
       await _saveCurrentPlaybackState();
 
       // Resume playback if we were playing before seek
@@ -321,6 +428,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerPositionUpdated event,
     Emitter<PlayerState> emit,
   ) {
+    if (_isHardResetInProgress || state.currentAudio == null) return;
     final resumePositionGuard = _resumePositionGuard;
     if (resumePositionGuard != null && event.position < resumePositionGuard) {
       return;
@@ -337,6 +445,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerDurationUpdated event,
     Emitter<PlayerState> emit,
   ) {
+    if (_isHardResetInProgress || state.currentAudio == null) return;
     emit(state.copyWith(duration: () => event.duration));
   }
 
@@ -344,6 +453,8 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerPlayingStateUpdated event,
     Emitter<PlayerState> emit,
   ) async {
+    if (_isHardResetInProgress || _skipSaveOnClose) return;
+
     final shouldPersistOnPause =
         !event.isPlaying && state.status == PlayerStatus.playing;
 
@@ -372,6 +483,8 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerSaveState event,
     Emitter<PlayerState> emit,
   ) async {
+    if (_isHardResetInProgress || _skipSaveOnClose) return;
+
     try {
       await _saveCurrentPlaybackState();
     } on Exception {
@@ -410,6 +523,8 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       _skipBackwardSeconds = settings.skipBackwardSeconds;
 
       if (!settings.autoResume) return;
+      _skipSaveOnClose = false;
+      _isHardResetInProgress = false;
 
       final lastState = await _playbackStateRepository.getLastPlaybackState();
       if (lastState == null) return;
@@ -430,6 +545,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           currentAudio: audioFile,
           position: Duration.zero,
           duration: () => null,
+          pendingResumePosition: () => null,
         ),
       );
 
@@ -449,6 +565,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
           currentAudio: audioFile,
           position: lastState.position,
           duration: () => audioFile.duration,
+          pendingResumePosition: () => null,
           volume: lastState.volume,
           speed: lastState.playbackSpeed,
         ),
@@ -512,6 +629,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   }
 
   void _startAutoSaveTimer() {
+    if (_skipSaveOnClose || _isHardResetInProgress) return;
     _autoSaveTimer?.cancel();
     _autoSaveTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (state.isPlaying) {
@@ -521,31 +639,32 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   }
 
   Future<void> _saveCurrentPlaybackState() async {
-    if (state.currentAudio == null) return;
-    final duration = state.duration;
+    if (_isHardResetInProgress || _skipSaveOnClose) return;
 
-    if (duration != null &&
-        duration > Duration.zero &&
-        state.position >= duration) {
+    final currentAudio = state.currentAudio;
+    if (currentAudio == null) return;
+
+    final duration = state.duration;
+    final position = state.position;
+    final volume = state.volume;
+    final speed = state.speed;
+    final filePath = currentAudio.path;
+
+    if (duration != null && duration > Duration.zero && position >= duration) {
       await _playbackStateRepository.clearPlaybackState();
-      await _playbackStateRepository.clearPositionForFile(
-        state.currentAudio!.path,
-      );
+      await _playbackStateRepository.clearPositionForFile(filePath);
       return;
     }
 
     final playbackState = PlaybackState.create(
-      audioFilePath: state.currentAudio!.path,
-      position: state.position,
-      volume: state.volume,
-      playbackSpeed: state.speed,
+      audioFilePath: filePath,
+      position: position,
+      volume: volume,
+      playbackSpeed: speed,
     );
 
     await _playbackStateRepository.savePlaybackState(playbackState);
-    await _playbackStateRepository.savePositionForFile(
-      state.currentAudio!.path,
-      state.position,
-    );
+    await _playbackStateRepository.savePositionForFile(filePath, position);
   }
 
   @override
@@ -556,11 +675,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _autoSaveTimer?.cancel();
     _positionThrottleTimer?.cancel();
 
-    // Save state before closing
-    try {
-      await _saveCurrentPlaybackState();
-    } on Exception {
-      // Silently fail - saving state is not critical during shutdown
+    if (!_skipSaveOnClose) {
+      // Save state before closing
+      try {
+        await _saveCurrentPlaybackState();
+      } on Exception {
+        // Silently fail - saving state is not critical during shutdown
+      }
     }
 
     await _audioRepository.dispose();
