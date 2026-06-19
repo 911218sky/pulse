@@ -88,6 +88,9 @@ class _ReorderablePlaylistView extends StatelessWidget {
   Widget build(BuildContext context) => ReorderableListView.builder(
     itemCount: playlist.fileCount,
     padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+    // Keep the legacy callback until the project baseline moves to a Flutter
+    // SDK that exposes onReorderItem on all supported dev machines.
+    // ignore: deprecated_member_use
     onReorder: onReorder,
     proxyDecorator:
         (child, index, animation) => Material(
