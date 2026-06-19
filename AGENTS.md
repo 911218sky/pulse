@@ -20,6 +20,8 @@ Core responsibilities:
 - Use `apply_patch` for manual file edits.
 - Prefer `rg`/`rg --files` for searches; use `find`/`grep` only when `rg` is unavailable.
 - If `/home/sbplab/sky/.tools/bin/rtk` is available, prefix shell commands with it to reduce noisy output. Use `rtk proxy <cmd>` when the command must run without RTK filtering.
+- In user-facing replies, avoid full local absolute paths unless the user explicitly asks for them or a clickable file link is necessary. Prefer repo-relative paths, filenames, or neutral labels such as `project root`.
+- Treat `DEBUG.md` as local-only. Never stage, commit, push, or upload it.
 - Keep `.codegraph/` local-only. Never commit it.
 - Do not commit generated build/cache folders such as `.dart_tool/`, `build/`, platform `ephemeral/`, or `android/local.properties`.
 - Keep commits focused. Do not mix documentation-only cleanup with release-critical code fixes unless they are part of the same requested task.
