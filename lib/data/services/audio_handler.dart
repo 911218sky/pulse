@@ -262,14 +262,14 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       }
 
       await _player.play();
-      if (!await _waitForPlayingState()) {
+      if (!await _waitForStablePlayingState()) {
         AppLogger.w(
           'AudioHandler',
           'play() did not resume immediately; reopening current media',
         );
         if (path != null) {
           await _reopenCurrentMedia(path, resumePosition, play: true);
-          await _waitForPlayingState();
+          await _waitForStablePlayingState();
         }
       }
       if (_resumePositionGuard != null) {
@@ -304,7 +304,19 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     }
   }
 
-  Future<bool> _waitForPlayingState() async {
+  Future<bool> _waitForStablePlayingState() async {
+    final startedPlaying =
+        _player.state.playing ? true : await _waitForPlayingStateChangeToTrue();
+
+    if (!startedPlaying) return false;
+
+    // Some backends briefly flip to playing and then immediately stall after a
+    // seek/resume on long files. Treat playback as resumed only if it stays on.
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    return _player.state.playing;
+  }
+
+  Future<bool> _waitForPlayingStateChangeToTrue() async {
     if (_player.state.playing) return true;
 
     try {

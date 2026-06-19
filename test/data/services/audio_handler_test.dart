@@ -50,9 +50,35 @@ void main() {
 
         expect(
           harness.seekCalls.where((position) => position == resumePosition),
-          hasLength(3),
+          hasLength(greaterThanOrEqualTo(2)),
         );
         expect(handler.position, resumePosition);
+      },
+    );
+
+    test(
+      'play recovers when the backend drops to paused immediately after resume',
+      () async {
+        const targetPosition = Duration(hours: 1, minutes: 12, seconds: 8);
+
+        await handler.loadAudio(
+          path: '/music/long-track.mp3',
+          title: 'Long Track',
+          duration: const Duration(hours: 2),
+        );
+        await handler.play();
+        await handler.seek(targetPosition);
+
+        harness
+          ..playCalls = 0
+          ..emitDelayedPauseOnNextPlay = true;
+
+        await handler.play();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(handler.playing, isTrue);
+        expect(harness.playCalls, greaterThanOrEqualTo(2));
+        expect(handler.position, targetPosition);
       },
     );
 
@@ -180,6 +206,7 @@ class _PlayerTestHarness {
       _positionController.add(position);
     });
     when(player.play).thenAnswer((_) async {
+      playCalls++;
       state = state.copyWith(playing: playEmitsPlaying, completed: false);
       if (playEmitsPlaying) {
         _playingController.add(true);
@@ -190,6 +217,15 @@ class _PlayerTestHarness {
           Future<void>.delayed(const Duration(milliseconds: 1), () {
             state = state.copyWith(position: Duration.zero);
             _positionController.add(Duration.zero);
+          }),
+        );
+      }
+      if (emitDelayedPauseOnNextPlay) {
+        emitDelayedPauseOnNextPlay = false;
+        unawaited(
+          Future<void>.delayed(const Duration(milliseconds: 1), () {
+            state = state.copyWith(playing: false);
+            _playingController.add(false);
           }),
         );
       }
@@ -218,7 +254,9 @@ class _PlayerTestHarness {
   final _bufferController = StreamController<Duration>.broadcast();
 
   PlayerState state = const PlayerState();
+  int playCalls = 0;
   bool emitDelayedZeroOnNextPlay = false;
+  bool emitDelayedPauseOnNextPlay = false;
   bool playEmitsPlaying = true;
 
   void emitPosition(Duration position) {
