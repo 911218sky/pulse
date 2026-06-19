@@ -17,11 +17,15 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
 
   final LocalStorageDataSource _dataSource;
   final _uuid = const Uuid();
+  List<ScannedFolder> _lastScannedFolders = const [];
   @override
   Stream<ScanProgress> scanForMusicFiles() async* {
     final directories = await getCommonMusicDirectories();
     var filesFound = 0;
     var foldersScanned = 0;
+    final folderMap = <String, List<AudioFile>>{};
+
+    _lastScannedFolders = const [];
 
     if (directories.isEmpty) {
       yield const ScanProgress(
@@ -46,6 +50,11 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
       try {
         await for (final entity in dir.list(recursive: true)) {
           if (entity is File && isSupportedAudioFile(entity.path)) {
+            final folderPath = AudioPathUtils.dirname(entity.path);
+            final audioFile = await extractMetadata(entity.path);
+            if (audioFile != null) {
+              folderMap.putIfAbsent(folderPath, () => []).add(audioFile);
+            }
             filesFound++;
             if (filesFound % 50 == 0) {
               yield ScanProgress(
@@ -61,6 +70,17 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
       }
       foldersScanned++;
     }
+
+    _lastScannedFolders =
+        folderMap.entries
+            .map(
+              (e) => ScannedFolder(
+                path: e.key,
+                name: path_lib.basename(e.key),
+                files: e.value,
+              ),
+            )
+            .toList();
 
     yield ScanProgress(
       filesFound: filesFound,
@@ -122,39 +142,7 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
   }
 
   @override
-  Future<List<ScannedFolder>> getScannedFolders() async {
-    final directories = await getCommonMusicDirectories();
-    final folderMap = <String, List<AudioFile>>{};
-
-    for (final dirPath in directories) {
-      final dir = Directory(dirPath);
-      if (!dir.existsSync()) continue;
-
-      try {
-        await for (final entity in dir.list(recursive: true)) {
-          if (entity is File && isSupportedAudioFile(entity.path)) {
-            final folderPath = AudioPathUtils.dirname(entity.path);
-            final audioFile = await extractMetadata(entity.path);
-            if (audioFile != null) {
-              folderMap.putIfAbsent(folderPath, () => []).add(audioFile);
-            }
-          }
-        }
-      } on Exception {
-        // Skip inaccessible directories
-      }
-    }
-
-    return folderMap.entries
-        .map(
-          (e) => ScannedFolder(
-            path: e.key,
-            name: path_lib.basename(e.key),
-            files: e.value,
-          ),
-        )
-        .toList();
-  }
+  Future<List<ScannedFolder>> getScannedFolders() async => _lastScannedFolders;
 
   @override
   Future<void> saveSelectedFolders(List<String> folderPaths) async {
