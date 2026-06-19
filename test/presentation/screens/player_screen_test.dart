@@ -12,7 +12,8 @@ import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/player/player_state.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
-import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_state.dart'
+    as playlist_state;
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
 import 'package:pulse/presentation/bloc/settings/settings_event.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
@@ -24,7 +25,8 @@ import 'package:pulse/presentation/screens/player_screen.dart';
 class _MockPlayerBloc extends MockBloc<PlayerEvent, PlayerState>
     implements PlayerBloc {}
 
-class _MockPlaylistBloc extends MockBloc<PlaylistEvent, PlaylistState>
+class _MockPlaylistBloc
+    extends MockBloc<PlaylistEvent, playlist_state.PlaylistState>
     implements PlaylistBloc {}
 
 class _MockSettingsBloc extends MockBloc<SettingsEvent, SettingsState>
@@ -93,11 +95,13 @@ void main() {
       initialState: resumePromptState,
     );
 
-    when(() => playlistBloc.state).thenReturn(const PlaylistState());
+    when(
+      () => playlistBloc.state,
+    ).thenReturn(const playlist_state.PlaylistState());
     whenListen(
       playlistBloc,
-      const Stream<PlaylistState>.empty(),
-      initialState: const PlaylistState(),
+      const Stream<playlist_state.PlaylistState>.empty(),
+      initialState: const playlist_state.PlaylistState(),
     );
 
     when(() => settingsBloc.state).thenReturn(const SettingsState());
@@ -157,11 +161,13 @@ void main() {
       initialState: resumePromptState,
     );
 
-    when(() => playlistBloc.state).thenReturn(const PlaylistState());
+    when(
+      () => playlistBloc.state,
+    ).thenReturn(const playlist_state.PlaylistState());
     whenListen(
       playlistBloc,
-      const Stream<PlaylistState>.empty(),
-      initialState: const PlaylistState(),
+      const Stream<playlist_state.PlaylistState>.empty(),
+      initialState: const playlist_state.PlaylistState(),
     );
 
     when(
@@ -267,19 +273,19 @@ void main() {
       );
 
       when(() => playlistBloc.state).thenReturn(
-        PlaylistState(
+        playlist_state.PlaylistState(
           currentPlaylist: playlist,
           currentTrackIndex: 1,
-          repeatMode: RepeatMode.one,
+          repeatMode: playlist_state.RepeatMode.one,
         ),
       );
       whenListen(
         playlistBloc,
-        const Stream<PlaylistState>.empty(),
-        initialState: PlaylistState(
+        const Stream<playlist_state.PlaylistState>.empty(),
+        initialState: playlist_state.PlaylistState(
           currentPlaylist: playlist,
           currentTrackIndex: 1,
-          repeatMode: RepeatMode.one,
+          repeatMode: playlist_state.RepeatMode.one,
         ),
       );
 
@@ -369,14 +375,17 @@ void main() {
     );
 
     when(() => playlistBloc.state).thenReturn(
-      PlaylistState(currentPlaylist: playlist, repeatMode: RepeatMode.one),
+      playlist_state.PlaylistState(
+        currentPlaylist: playlist,
+        repeatMode: playlist_state.RepeatMode.one,
+      ),
     );
     whenListen(
       playlistBloc,
-      const Stream<PlaylistState>.empty(),
-      initialState: PlaylistState(
+      const Stream<playlist_state.PlaylistState>.empty(),
+      initialState: playlist_state.PlaylistState(
         currentPlaylist: playlist,
-        repeatMode: RepeatMode.one,
+        repeatMode: playlist_state.RepeatMode.one,
       ),
     );
 

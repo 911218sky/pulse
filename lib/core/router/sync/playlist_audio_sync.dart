@@ -14,7 +14,8 @@ import 'package:pulse/presentation/bloc/player/player_state.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
-import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_state.dart'
+    as playlist;
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
 
 class TemporaryQueueResolution {
@@ -176,7 +177,7 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
               final playlistState = context.read<PlaylistBloc>().state;
               final currentTrack = playlistState.currentTrack;
 
-              if (playlistState.repeatMode == RepeatMode.one &&
+              if (playlistState.repeatMode == playlist.RepeatMode.one &&
                   currentTrack != null) {
                 AppLogger.d('PlaylistAudioSync', 'Repeating current track');
                 context.read<PlayerBloc>().add(
@@ -200,7 +201,7 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
     });
   }
 
-  void _syncAudioHandlerSkipCallbacks(PlaylistState playlistState) {
+  void _syncAudioHandlerSkipCallbacks(playlist.PlaylistState playlistState) {
     final handler = audioHandler;
     if (handler == null) {
       AppLogger.w('PlaylistAudioSync', 'AudioHandler not available');
@@ -237,7 +238,7 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
   @override
   Widget build(BuildContext context) => MultiBlocListener(
     listeners: [
-      BlocListener<PlaylistBloc, PlaylistState>(
+      BlocListener<PlaylistBloc, playlist.PlaylistState>(
         listenWhen:
             (prev, curr) =>
                 prev.currentTrackIndex != curr.currentTrackIndex ||
