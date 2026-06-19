@@ -34,7 +34,7 @@ dependencies:
   shared_preferences: ^2.3.3
   sqlite3_flutter_libs: ^0.5.28
   url_launcher: ^6.3.2
-  uuid: ^4.5.1
+  uuid: ^4.5.3
 
 dev_dependencies:
   bloc_test: ^10.0.0
