@@ -1,55 +1,73 @@
 <p align="center">
-  <img src="assets/icons/app_icon_v5.png" alt="Pulse" width="128" height="128">
+  <img src="assets/icons/app_icon_v5.png" alt="Pulse icon" width="128" height="128">
 </p>
 
 <h1 align="center">Pulse</h1>
 
 <p align="center">
-  A minimalist local music player built with Flutter. Works on Windows, macOS, Linux, and Android.
+  A local-first music player built with Flutter for Windows, macOS, Linux, and Android.
 </p>
+
+<p align="center">
+  Pulse keeps your library, playlists, settings, and playback progress on your device. No account, no cloud sync, no streaming service dependency.
+</p>
+
+## Highlights
+
+- Local playback for `MP3`, `FLAC`, `WAV`, `AAC`, `OGG`, and `M4A`
+- Background playback with system media controls
+- Playback position memory with resume support
+- Optional prompt to resume from the last saved position
+- Folder scan and manual import for local music files
+- Playlist creation, editing, and reordering
+- Sleep timer, playback speed, volume, and skip interval controls
+- Built-in update checks from GitHub Releases
+- Interface languages: English, Traditional Chinese, Simplified Chinese
 
 ## Screenshots
 
 <p align="center">
-  <img src="assets/screenshots/player.png" alt="Player" width="180">&nbsp;&nbsp;
-  <img src="assets/screenshots/sleep_timer.png" alt="Sleep Timer" width="180">&nbsp;&nbsp;
-  <img src="assets/screenshots/settings.png" alt="Settings" width="180">
+  <img src="assets/screenshots/player.png" alt="Player screen" width="180">&nbsp;&nbsp;
+  <img src="assets/screenshots/sleep_timer.png" alt="Sleep timer" width="180">&nbsp;&nbsp;
+  <img src="assets/screenshots/settings.png" alt="Settings screen" width="180">
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/scan_music.png" alt="Scan Music" width="180">&nbsp;&nbsp;
-  <img src="assets/screenshots/scan_result.png" alt="Scan Result" width="180">&nbsp;&nbsp;
-  <img src="assets/screenshots/jump_to_time.png" alt="Jump to Time" width="180">
+  <img src="assets/screenshots/scan_music.png" alt="Scan music" width="180">&nbsp;&nbsp;
+  <img src="assets/screenshots/scan_result.png" alt="Scan result" width="180">&nbsp;&nbsp;
+  <img src="assets/screenshots/jump_to_time.png" alt="Jump to time" width="180">
 </p>
 
-## Features
+## Downloads
 
-- Local audio playback (MP3, FLAC, WAV, AAC, OGG)
-- Background playback with system media controls
-- Folder scanning and library management
-- Sleep timer
-- Dark/Light theme (Vercel-inspired design)
-- Multi-language (English, 繁體中文)
+Latest builds are published on [GitHub Releases](https://github.com/911218sky/pulse/releases).
 
-## Download
+For most Android users, install `pulse-android-universal.apk`.
 
-Get the latest release from [Releases](https://github.com/911218sky/pulse/releases).
+| Platform | Asset |
+| --- | --- |
+| Windows | `pulse-windows-x64.zip` |
+| macOS | `pulse-macos-universal.zip` |
+| Linux | `pulse-linux-x64.tar.gz` |
+| Android | `pulse-android-universal.apk` |
+| Android arm64 | `pulse-android-arm64-v8a.apk` |
+| Android armeabi-v7a | `pulse-android-armeabi-v7a.apk` |
+| Android x86_64 | `pulse-android-x86_64.apk` |
+| Android bundle | `pulse-android-release.aab` |
 
-| Platform | File |
-|----------|------|
-| Windows | `Pulse-windows-x64.zip` |
-| macOS | `Pulse-macos.zip` |
-| Linux | `Pulse-linux-x64.tar.gz` |
-| Android (arm64) | `Pulse-android-arm64-v8a.apk` |
-| Android (arm32) | `Pulse-android-armeabi-v7a.apk` |
-| Android (x86_64) | `Pulse-android-x86_64.apk` |
+## Behavior Notes
+
+- Pulse stores app data locally in SQLite.
+- Playback progress is remembered per file.
+- When a track has saved progress, Pulse can either resume immediately or show a short resume prompt, depending on the playback path and settings.
+- `Clear All Data` inside the app removes settings, library records, playlists, playback history, and saved positions.
 
 ## Development
 
 ### Requirements
 
-- Flutter 3.24.0+
-- Dart 3.7.0+
+- Flutter stable
+- Dart `3.7.2` or newer
 
 ### Setup
 
@@ -60,41 +78,44 @@ flutter pub get
 flutter run
 ```
 
-### Build
+### Verification
 
 ```bash
-# Windows
+dart format --set-exit-if-changed .
+flutter analyze
+flutter test
+```
+
+### Release Builds
+
+```bash
 flutter build windows --release
-
-# macOS
 flutter build macos --release
-
-# Linux
 flutter build linux --release
-
-# Android
 flutter build apk --release
+flutter build appbundle --release
 ```
 
-### Project Structure
+## Project Structure
 
-```
+```text
 lib/
-├── core/           # Theme, router, constants, DI
-├── data/           # Models, database, services
-├── domain/         # Entities, repository interfaces
-└── presentation/   # Screens, widgets, BLoC
+|-- core/           Shared theme, routing, localization, utilities, DI
+|-- data/           Database, repositories, services, persistence models
+|-- domain/         Entities and repository interfaces
+`-- presentation/   Screens, widgets, and BLoCs
 ```
 
-## Tech Stack
+## Stack
 
-- **Framework**: Flutter
-- **State**: flutter_bloc
-- **Database**: Drift (SQLite)
-- **Audio**: media_kit + audio_service
-- **Router**: go_router
-- **DI**: get_it
+- Flutter
+- `flutter_bloc`
+- Drift + SQLite
+- `media_kit`
+- `audio_service`
+- `go_router`
+- `get_it`
 
 ## License
 
-[GNU](LICENSE)
+Pulse is licensed under the [GNU GPL v3](LICENSE).
