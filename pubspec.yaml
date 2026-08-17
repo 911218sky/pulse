@@ -7,7 +7,7 @@ environment:
   sdk: ^3.7.2
 
 dependencies:
-  audio_service: ^0.18.15
+  audio_service: ^0.18.19
   cupertino_icons: ^1.0.8
   drift: ^2.22.1
   equatable: ^2.0.5
