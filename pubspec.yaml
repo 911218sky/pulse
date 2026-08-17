@@ -9,7 +9,7 @@ environment:
 dependencies:
   audio_service: ^0.18.15
   cupertino_icons: ^1.0.8
-  drift: ^2.22.1
+  drift: ^2.34.3
   equatable: ^2.0.5
   file_picker: ^10.3.8
   flutter:
