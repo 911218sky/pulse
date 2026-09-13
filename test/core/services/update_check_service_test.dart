@@ -105,21 +105,16 @@ void main() {
 
     test('throws when release payload is malformed', () {
       expect(
-        () => UpdateCheckService.buildUpdateFromReleaseForTesting(
-          {
-            'html_url':
-                'https://github.com/911218sky/pulse/releases/tag/v0.1.18',
-          },
-          '0.1.17',
-        ),
+        () => UpdateCheckService.buildUpdateFromReleaseForTesting({
+          'html_url': 'https://github.com/911218sky/pulse/releases/tag/v0.1.18',
+        }, '0.1.17'),
         throwsFormatException,
       );
 
       expect(
-        () => UpdateCheckService.buildUpdateFromReleaseForTesting(
-          {'tag_name': 'v0.1.18'},
-          '0.1.17',
-        ),
+        () => UpdateCheckService.buildUpdateFromReleaseForTesting({
+          'tag_name': 'v0.1.18',
+        }, '0.1.17'),
         throwsFormatException,
       );
     });
