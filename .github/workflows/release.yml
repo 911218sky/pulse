@@ -4,6 +4,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -143,5 +144,6 @@ jobs:
             artifacts/pulse-android-bundle/pulse-android-release.aab
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
+          body: Android release artifacts for ${{ github.ref_name }}.
           fail_on_unmatched_files: false
