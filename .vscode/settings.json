@@ -1,6 +1,6 @@
 {
-  // Dart & Flutter settings
-  "dart.flutterSdkPath": null,
+  // Editor settings for Dart
+  "dart.flutterSdkPath": "../sdk",
   "dart.lineLength": 80,
   "dart.previewFlutterUiGuides": true,
   "dart.previewFlutterUiGuidesCustomTracking": true,

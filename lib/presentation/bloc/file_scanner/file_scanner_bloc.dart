@@ -85,12 +85,16 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
 
         // Load saved preferences to restore selection state
         final savedPaths =
-            await _fileScannerRepository.getSavedFolderPreferences();
+            (await _fileScannerRepository.getSavedFolderPreferences())
+                .map(AudioPathUtils.canonicalize)
+                .toSet();
         final foldersWithSelection =
             folders
                 .map(
                   (folder) => folder.copyWith(
-                    isSelected: savedPaths.contains(folder.path),
+                    isSelected: savedPaths.contains(
+                      AudioPathUtils.canonicalize(folder.path),
+                    ),
                   ),
                 )
                 .toList();
@@ -171,9 +175,21 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
       final selectedPaths = state.selectedFolders.map((f) => f.path).toList();
       await _fileScannerRepository.saveSelectedFolders(selectedPaths);
 
-      // Save all files from selected folders to the library
-      final allFiles = state.selectedFolders.expand((f) => f.files).toList();
-      await _fileScannerRepository.saveToLibrary(allFiles);
+      final selectedFiles =
+          state.selectedFolders.expand((f) => f.files).toList();
+      final folders = await _persistFoldersWithStableIds(
+        state.folders,
+        filesToPersist: selectedFiles,
+      );
+      final libraryFiles = await _fileScannerRepository.getLibraryFiles();
+
+      emit(
+        state.copyWith(
+          status: FileScannerStatus.completed,
+          folders: folders,
+          libraryFiles: libraryFiles,
+        ),
+      );
     } on Exception catch (e) {
       emit(
         state.copyWith(
@@ -328,13 +344,17 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
   ) async {
     try {
       final savedPaths =
-          await _fileScannerRepository.getSavedFolderPreferences();
+          (await _fileScannerRepository.getSavedFolderPreferences())
+              .map(AudioPathUtils.canonicalize)
+              .toSet();
 
       final updatedFolders =
           state.folders
               .map(
                 (folder) => folder.copyWith(
-                  isSelected: savedPaths.contains(folder.path),
+                  isSelected: savedPaths.contains(
+                    AudioPathUtils.canonicalize(folder.path),
+                  ),
                 ),
               )
               .toList();
@@ -455,15 +475,22 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
       );
       importedFolders.addAll(folderResults.whereType<ScannedFolder>());
 
-      // Merge with existing folders
+      // Persist immediately so rescan/import cannot leave DB out of sync with UI.
+      final importedFiles =
+          importedFolders.expand((folder) => folder.files).toList();
+      final persistedImported = await _persistFoldersWithStableIds(
+        importedFolders,
+        filesToPersist: importedFiles,
+      );
+
+      // Merge with existing folders (by canonical path, stable DB ids preferred)
       final existingFolders = List<ScannedFolder>.from(state.folders);
-      for (final imported in importedFolders) {
+      for (final imported in persistedImported) {
         final importedPath = AudioPathUtils.canonicalize(imported.path);
         final existingIndex = existingFolders.indexWhere(
           (f) => AudioPathUtils.canonicalize(f.path) == importedPath,
         );
         if (existingIndex >= 0) {
-          // Merge files
           final existing = existingFolders[existingIndex];
           final mergedFiles = <AudioFile>[...existing.files];
           final mergedPaths =
@@ -474,6 +501,13 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
             final filePath = AudioPathUtils.canonicalize(file.path);
             if (mergedPaths.add(filePath)) {
               mergedFiles.add(file);
+            } else {
+              final replaceIndex = mergedFiles.indexWhere(
+                (f) => AudioPathUtils.canonicalize(f.path) == filePath,
+              );
+              if (replaceIndex >= 0) {
+                mergedFiles[replaceIndex] = file;
+              }
             }
           }
           existingFolders[existingIndex] = existing.copyWith(
@@ -485,10 +519,13 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
         }
       }
 
+      final libraryFiles = await _fileScannerRepository.getLibraryFiles();
+
       emit(
         state.copyWith(
           status: FileScannerStatus.completed,
           folders: existingFolders,
+          libraryFiles: libraryFiles,
           scanProgress: ScanProgress(
             filesFound: importedFolders.fold(0, (sum, f) => sum + f.fileCount),
             foldersScanned: importedFolders.length,
@@ -527,6 +564,33 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
         ),
       );
     }
+  }
+
+  /// Upserts files then rewrites folder entries to use stable DB ids/paths.
+  Future<List<ScannedFolder>> _persistFoldersWithStableIds(
+    List<ScannedFolder> folders, {
+    required List<AudioFile> filesToPersist,
+  }) async {
+    if (filesToPersist.isNotEmpty) {
+      await _fileScannerRepository.saveToLibrary(filesToPersist);
+    }
+    final libraryFiles = await _fileScannerRepository.getLibraryFiles();
+    final byPath = {
+      for (final file in libraryFiles)
+        AudioPathUtils.canonicalize(file.path): file,
+    };
+
+    return folders
+        .map((folder) {
+          final stableFiles = folder.files
+              .map(
+                (file) =>
+                    byPath[AudioPathUtils.canonicalize(file.path)] ?? file,
+              )
+              .toList(growable: false);
+          return folder.copyWith(files: stableFiles);
+        })
+        .toList(growable: false);
   }
 
   @override

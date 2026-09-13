@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/domain/entities/scanned_folder.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 
 /// A widget showing the progress of folder scanning
@@ -98,7 +99,9 @@ class FolderScanProgress extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
           ],
           Text(
-            currentFolder,
+            currentFolder == ScanProgress.noMusicFoldersSentinel
+                ? l10n.noMusicFolders
+                : currentFolder,
             style: TextStyle(
               color: dark ? AppColors.gray400 : AppColors.gray600,
               fontSize: 13,

@@ -120,16 +120,13 @@ class _InitialState extends StatelessWidget {
 
     final l10n = AppLocalizations.of(context);
 
-    // Android 13+ needs READ_MEDIA_AUDIO
-    // Android 12 and below needs READ_EXTERNAL_STORAGE
+    // Prefer READ_MEDIA_AUDIO / storage. Avoid prompting for all-files access
+    // unless the user explicitly needs it (Play policy + data safety).
     final status = await Permission.audio.request();
     if (status.isGranted) return true;
 
     final storageStatus = await Permission.storage.request();
     if (storageStatus.isGranted) return true;
-
-    final manageStatus = await Permission.manageExternalStorage.request();
-    if (manageStatus.isGranted) return true;
 
     if (context.mounted) {
       AppToast.error(context, l10n.storagePermissionRequired);

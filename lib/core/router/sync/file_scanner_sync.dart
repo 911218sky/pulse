@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart' as path_lib;
+import 'package:pulse/core/utils/audio_path_utils.dart';
+import 'package:pulse/domain/entities/playlist.dart';
+import 'package:pulse/domain/entities/scanned_folder.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_state.dart';
@@ -59,7 +63,8 @@ class _FileScannerSyncState extends State<FileScannerSync> {
         return true;
       }
     }
-    return previous.libraryFiles.length != current.libraryFiles.length;
+    return previous.libraryFiles.length != current.libraryFiles.length ||
+        previous.allFiles.length != current.allFiles.length;
   }
 
   /// Update SearchBloc and sync playlists
@@ -71,7 +76,7 @@ class _FileScannerSyncState extends State<FileScannerSync> {
       if (state.status == FileScannerStatus.completed &&
           state.selectedFolders.isNotEmpty) {
         // On initial load, just sync existing playlists with library files.
-        _syncExistingPlaylists(context, state);
+        _syncExistingPlaylists(context);
       }
       if (state.allFiles.isNotEmpty) {
         context.read<PlayerBloc>().add(
@@ -88,27 +93,32 @@ class _FileScannerSyncState extends State<FileScannerSync> {
   }
 
   /// Sync existing playlists with current library files (update file counts)
-  void _syncExistingPlaylists(BuildContext context, FileScannerState state) {
+  void _syncExistingPlaylists(BuildContext context) {
     // Just reload playlists to get updated file info
     context.read<PlaylistBloc>().add(const PlaylistLoadAll());
   }
 
-  /// Create playlist for each scanned folder (only on manual scan/import)
+  /// Create/update playlist for each scanned folder (only on manual scan/import)
   void _createPlaylistsForFolders(
     BuildContext context,
     FileScannerState state,
   ) {
     final playlistBloc = context.read<PlaylistBloc>();
+    final playlists = playlistBloc.state.playlists;
 
     for (final folder in state.selectedFolders) {
       if (folder.files.isEmpty) continue;
 
-      final existingPlaylist =
-          playlistBloc.state.playlists
-              .where((p) => p.name == folder.name)
-              .firstOrNull;
+      final playlistName = resolveFolderPlaylistName(
+        folder: folder,
+        existingPlaylists: playlists,
+      );
+      final existingPlaylist = findPlaylistForFolder(
+        folder: folder,
+        playlistName: playlistName,
+        existingPlaylists: playlists,
+      );
 
-      // If playlist exists, update its files instead of recreating
       if (existingPlaylist != null) {
         final newFiles =
             folder.files
@@ -120,23 +130,77 @@ class _FileScannerSyncState extends State<FileScannerSync> {
           PlaylistAddFiles(playlistId: existingPlaylist.id, files: newFiles),
         );
       } else {
-        // Create new playlist
-        playlistBloc.add(PlaylistCreate(folder.name));
-
-        Future.delayed(const Duration(milliseconds: 150), () {
-          if (!context.mounted) return;
-          final newPlaylist =
-              playlistBloc.state.playlists
-                  .where((p) => p.name == folder.name)
-                  .firstOrNull;
-
-          if (newPlaylist != null && folder.files.isNotEmpty) {
-            playlistBloc.add(
-              PlaylistAddFiles(playlistId: newPlaylist.id, files: folder.files),
-            );
-          }
-        });
+        playlistBloc.add(
+          PlaylistCreateWithFiles(name: playlistName, files: folder.files),
+        );
       }
     }
   }
+}
+
+/// Prefer basename; disambiguate when another folder already owns that name.
+@visibleForTesting
+String resolveFolderPlaylistName({
+  required ScannedFolder folder,
+  required List<Playlist> existingPlaylists,
+}) {
+  final folderPath = AudioPathUtils.canonicalize(folder.path);
+  final baseName = folder.name;
+
+  final sameName = existingPlaylists.where((p) => p.name == baseName).toList();
+  if (sameName.isEmpty) return baseName;
+
+  for (final playlist in sameName) {
+    if (_playlistBelongsToFolder(playlist, folderPath)) {
+      return baseName;
+    }
+  }
+
+  final parentName = path_lib.basename(path_lib.dirname(folderPath));
+  final disambiguated =
+      parentName.isEmpty || parentName == '.' || parentName == '/'
+          ? folderPath
+          : '$parentName/$baseName';
+
+  final collision = existingPlaylists.any((p) => p.name == disambiguated);
+  if (!collision) return disambiguated;
+
+  return folderPath;
+}
+
+@visibleForTesting
+Playlist? findPlaylistForFolder({
+  required ScannedFolder folder,
+  required String playlistName,
+  required List<Playlist> existingPlaylists,
+}) {
+  final folderPath = AudioPathUtils.canonicalize(folder.path);
+
+  for (final playlist in existingPlaylists) {
+    if (playlist.name == playlistName &&
+        _playlistBelongsToFolder(playlist, folderPath)) {
+      return playlist;
+    }
+  }
+
+  for (final playlist in existingPlaylists) {
+    if (playlist.name == playlistName && playlist.files.isEmpty) {
+      return playlist;
+    }
+  }
+
+  for (final playlist in existingPlaylists) {
+    if (_playlistBelongsToFolder(playlist, folderPath)) {
+      return playlist;
+    }
+  }
+
+  return null;
+}
+
+bool _playlistBelongsToFolder(Playlist playlist, String folderPath) {
+  if (playlist.files.isEmpty) return false;
+  return playlist.files.every(
+    (file) => AudioPathUtils.isUnderFolder(folderPath, file.path),
+  );
 }

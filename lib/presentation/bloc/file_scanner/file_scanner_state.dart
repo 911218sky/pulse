@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/entities/scanned_folder.dart';
 
@@ -42,11 +43,19 @@ class FileScannerState extends Equatable {
   int get selectedFilesCount =>
       selectedFolders.fold(0, (sum, folder) => sum + folder.fileCount);
 
-  /// All files from all folders (for library display)
-  List<AudioFile> get allFiles =>
-      libraryFiles.isNotEmpty
-          ? libraryFiles
-          : folders.expand((f) => f.files).toList();
+  /// Library rows preferred; folder scan/import files fill gaps by path.
+  /// This prevents newly imported files from disappearing while libraryFiles
+  /// is still non-empty from a previous load.
+  List<AudioFile> get allFiles {
+    final byPath = <String, AudioFile>{};
+    for (final file in libraryFiles) {
+      byPath[AudioPathUtils.canonicalize(file.path)] = file;
+    }
+    for (final file in folders.expand((folder) => folder.files)) {
+      byPath.putIfAbsent(AudioPathUtils.canonicalize(file.path), () => file);
+    }
+    return byPath.values.toList(growable: false);
+  }
 
   FileScannerState copyWith({
     FileScannerStatus? status,

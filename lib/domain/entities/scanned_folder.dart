@@ -66,6 +66,18 @@ class ScanProgress extends Equatable {
     currentFolder: '',
   );
 
+  /// Sentinel folder label when no common music directories exist.
+  /// UI should map this to `AppLocalizations.noMusicFolders`.
+  static const String noMusicFoldersSentinel = '__NO_MUSIC_FOLDERS__';
+
+  /// Completed progress used when auto-scan finds no music directories.
+  static const ScanProgress noMusicFolders = ScanProgress(
+    filesFound: 0,
+    foldersScanned: 0,
+    currentFolder: noMusicFoldersSentinel,
+    isComplete: true,
+  );
+
   /// Creates a copy with updated fields
   ScanProgress copyWith({
     int? filesFound,

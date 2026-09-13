@@ -166,7 +166,7 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
         processingState: _mapProcessingState(),
         playing: _playing,
         updatePosition: _position,
-        bufferedPosition: _duration ?? Duration.zero,
+        bufferedPosition: _player.state.buffer,
         speed: _player.state.rate,
         updateTime: DateTime.now(),
       ),
@@ -201,14 +201,14 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
       final item = MediaItem(
         id: path,
         title: title,
-        artist: artist ?? 'Unknown Artist',
-        album: album ?? 'Unknown Album',
+        artist: artist,
+        album: album,
         duration: duration,
         // Artwork will show in notification if provided
         artUri: artworkUri != null ? Uri.file(artworkUri) : null,
         // Extra display info
         displayTitle: title,
-        displaySubtitle: artist ?? 'Unknown Artist',
+        displaySubtitle: artist,
         displayDescription: album,
       );
       mediaItem.add(item);

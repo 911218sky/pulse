@@ -7,22 +7,36 @@ These instructions apply to all work inside this repository.
 Pulse is a cross-platform local music player built with Flutter. It targets Windows, macOS, Linux, and Android.
 
 Core responsibilities:
-- Local audio playback for MP3, FLAC, WAV, AAC, and OGG files
+- Local audio playback for MP3, FLAC, WAV, AAC, OGG, and M4A files
 - Background playback with Android/system media controls
 - Folder scanning, library import, and playlist management
 - Persistent playback position, settings, playlists, and library data
 - Minimal Vercel-inspired UI with black/white surfaces and blue accent color
 
+## Multi-Agent Collaboration
+
+When multiple agents or subagents review or change this repo in one session:
+
+- Append progress to `docs/AGENT_TEAM_NOTES.md` (shared scratchpad). Do not rely on chat history alone.
+- Each finding must include: severity (`P0`–`P3`), title, evidence (repo-relative path + symbol), recommendation, and status.
+- If a subagent may be interrupted, write a `partial` status and flush findings before continuing.
+- Parent agent owns the final priority table and any `AGENTS.md` updates after teams finish.
+- Prefer `inherit`/AUTO models unless the user names a specific model.
+
+Latest review findings and priority table live in `docs/AGENT_TEAM_NOTES.md`.
+
 ## Required Workflow
 
 - Check `git status --short` before editing.
 - Do not revert unrelated user changes.
-- Use `apply_patch` for manual file edits.
-- Prefer `rg`/`rg --files` for searches; use `find`/`grep` only when `rg` is unavailable.
-- If `/home/sbplab/sky/.tools/bin/rtk` is available, prefix shell commands with it to reduce noisy output. Use `rtk proxy <cmd>` when the command must run without RTK filtering.
+- Prefer surgical edits; do not rewrite unrelated files.
+- Prefer ripgrep-style search; avoid broad recursive dumps.
+- If `/home/sbplab/sky/.tools/bin/rtk` is available (Linux lab), prefix shell commands with it to reduce noisy output. Use `rtk proxy <cmd>` when the command must run without RTK filtering.
+- On Windows workstations, locate Flutter via user-installed SDK paths or IDE settings; do not assume Linux lab paths exist.
 - In user-facing replies, avoid full local absolute paths unless the user explicitly asks for them or a clickable file link is necessary. Prefer repo-relative paths, filenames, or neutral labels such as `project root`.
 - Treat `DEBUG.md` as local-only. Never stage, commit, push, or upload it.
 - Keep `.codegraph/` local-only. Never commit it.
+- Keep `docs/AGENT_TEAM_NOTES.md` as working notes; commit it only when the user asks to persist a review session.
 - Do not commit generated build/cache folders such as `.dart_tool/`, `build/`, platform `ephemeral/`, or `android/local.properties`.
 - Keep commits focused. Do not mix documentation-only cleanup with release-critical code fixes unless they are part of the same requested task.
 
@@ -39,9 +53,13 @@ Rules:
 - Never stage, commit, push, or upload `.codegraph/`.
 - Do not treat CodeGraph as a substitute for reading the changed source files and tests before committing.
 
-If Flutter/Dart are not on `PATH` in this workspace, use:
+If Flutter/Dart are not on `PATH` in this workspace, prefer a local checkout such as:
+
+- `../sdk/bin/flutter` / `../sdk/bin/dart` (Windows sibling of this repo)
 - `/home/sbplab/sky/.tools/flutter/flutter/bin/dart`
 - `/home/sbplab/sky/.tools/flutter/flutter/bin/flutter`
+
+On Windows, also set `dart.flutterSdkPath` in `.vscode/settings.json` when using the IDE.
 
 ## Verification
 

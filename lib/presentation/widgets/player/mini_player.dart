@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/constants/typography.dart';
+import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
@@ -18,6 +19,7 @@ class MiniPlayer extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.appPalette;
     final isDark = context.isDarkMode;
+    final l10n = AppLocalizations.of(context);
 
     return BlocBuilder<PlayerBloc, PlayerState>(
       buildWhen:
@@ -97,7 +99,8 @@ class MiniPlayer extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                state.currentAudio!.artist ?? 'Unknown Artist',
+                                state.currentAudio!.artist ??
+                                    l10n.unknownArtist,
                                 style: AppTypography.bodySmall(
                                   palette.secondaryText,
                                 ).copyWith(decoration: TextDecoration.none),

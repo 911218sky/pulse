@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pulse/core/di/service_locator.dart';
 import 'package:pulse/core/router/app_router.dart';
 import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/core/utils/app_logger.dart';
+import 'package:pulse/data/services/audio_handler.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
-import 'package:pulse/main.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_state.dart';
@@ -118,8 +119,8 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
 
   /// Handle app resume from background
   void _handleAppResumed() {
-    final handler = audioHandler;
-    if (handler == null) return;
+    if (!sl.isRegistered<MusicPlayerAudioHandler>()) return;
+    final handler = sl<MusicPlayerAudioHandler>();
 
     final settings = context.read<SettingsBloc>().state.settings;
     final hasMusic = handler.mediaItem.value != null;
@@ -151,9 +152,9 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
   void _setupCompletionListener() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (!sl.isRegistered<MusicPlayerAudioHandler>()) return;
 
-      final handler = audioHandler;
-      if (handler == null) return;
+      final handler = sl<MusicPlayerAudioHandler>();
 
       _completedSubscription = handler.playbackState
           .map((s) => s.processingState == AudioProcessingState.completed)
@@ -202,13 +203,12 @@ class _PlaylistAudioSyncState extends State<PlaylistAudioSync>
   }
 
   void _syncAudioHandlerSkipCallbacks(playlist.PlaylistState playlistState) {
-    final handler = audioHandler;
-    if (handler == null) {
+    if (!sl.isRegistered<MusicPlayerAudioHandler>()) {
       AppLogger.w('PlaylistAudioSync', 'AudioHandler not available');
       return;
     }
 
-    handler.setSkipCallbacks(
+    sl<MusicPlayerAudioHandler>().setSkipCallbacks(
       onNext:
           playlistState.hasNext
               ? () {

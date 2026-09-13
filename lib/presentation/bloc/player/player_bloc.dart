@@ -455,27 +455,20 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   ) async {
     if (_isHardResetInProgress || _skipSaveOnClose) return;
 
-    final shouldPersistOnPause =
-        !event.isPlaying && state.status == PlayerStatus.playing;
-
-    if (!event.isPlaying &&
-        state.status != PlayerStatus.playing &&
-        state.status != PlayerStatus.paused) {
+    // Do not map every playing=false into paused (stopped/loading/error/ready).
+    if (event.isPlaying) {
+      if (state.status == PlayerStatus.playing) return;
+      emit(state.copyWith(status: PlayerStatus.playing));
       return;
     }
 
-    emit(
-      state.copyWith(
-        status: event.isPlaying ? PlayerStatus.playing : PlayerStatus.paused,
-      ),
-    );
+    if (state.status != PlayerStatus.playing) return;
 
-    if (shouldPersistOnPause) {
-      try {
-        await _saveCurrentPlaybackState();
-      } on Exception {
-        // Silently fail - saving state is not critical
-      }
+    emit(state.copyWith(status: PlayerStatus.paused));
+    try {
+      await _saveCurrentPlaybackState();
+    } on Exception {
+      // Silently fail - saving state is not critical
     }
   }
 

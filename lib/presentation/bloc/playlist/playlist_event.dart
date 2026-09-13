@@ -24,6 +24,17 @@ class PlaylistCreate extends PlaylistEvent {
   List<Object?> get props => [name];
 }
 
+/// Create a playlist and add files atomically (avoids create→delayed-add races)
+class PlaylistCreateWithFiles extends PlaylistEvent {
+  const PlaylistCreateWithFiles({required this.name, required this.files});
+
+  final String name;
+  final List<AudioFile> files;
+
+  @override
+  List<Object?> get props => [name, files];
+}
+
 /// Delete a playlist
 class PlaylistDelete extends PlaylistEvent {
   const PlaylistDelete(this.playlistId);

@@ -23,4 +23,14 @@ class AudioPathUtils {
 
   static String basenameWithoutExtension(String filePath) =>
       p.basenameWithoutExtension(canonicalize(filePath));
+
+  /// True when [filePath] is directly in [folderPath] or any subdirectory.
+  static bool isUnderFolder(String folderPath, String filePath) {
+    final folder = canonicalize(folderPath);
+    final file = canonicalize(filePath);
+    if (file == folder) return false;
+    final parent = dirname(file);
+    if (parent == folder) return true;
+    return p.isWithin(folder, file);
+  }
 }

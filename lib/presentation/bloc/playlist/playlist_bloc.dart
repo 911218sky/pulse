@@ -14,6 +14,7 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
       super(const PlaylistState()) {
     on<PlaylistLoadAll>(_onLoadAll);
     on<PlaylistCreate>(_onCreate);
+    on<PlaylistCreateWithFiles>(_onCreateWithFiles);
     on<PlaylistDelete>(_onDelete);
     on<PlaylistRename>(_onRename);
     on<PlaylistAddFile>(_onAddFile);
@@ -70,6 +71,31 @@ class PlaylistBloc extends Bloc<PlaylistEvent, PlaylistState> {
     try {
       await _playlistRepository.createPlaylist(event.name);
       // Stream subscription will trigger reload automatically
+    } on Exception catch (e) {
+      emit(
+        state.copyWith(
+          status: PlaylistStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onCreateWithFiles(
+    PlaylistCreateWithFiles event,
+    Emitter<PlaylistState> emit,
+  ) async {
+    try {
+      final playlist = await _playlistRepository.createPlaylist(event.name);
+      if (event.files.isEmpty) return;
+      final updated = await _playlistRepository.addFilesToPlaylist(
+        playlist.id,
+        event.files,
+      );
+      if (state.currentPlaylist?.id == playlist.id) {
+        emit(state.copyWith(currentPlaylist: () => updated));
+        _regenerateShuffleIfNeeded(emit);
+      }
     } on Exception catch (e) {
       emit(
         state.copyWith(

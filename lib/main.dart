@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/di/service_locator.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/core/router/app_bloc_providers.dart';
@@ -18,12 +19,6 @@ import 'package:pulse/data/database/app_database.dart';
 import 'package:pulse/data/services/audio_handler.dart';
 import 'package:pulse/presentation/bloc/settings/settings_bloc.dart';
 import 'package:pulse/presentation/bloc/settings/settings_state.dart';
-
-/// Global audio handler for background playback
-MusicPlayerAudioHandler? audioHandler;
-
-/// Global database instance
-late AppDatabase database;
 
 Future<void> main() async {
   await runZonedGuarded(
@@ -45,46 +40,36 @@ Future<void> main() async {
         await Permission.notification.request();
       }
 
-      if (!Platform.isAndroid && !Platform.isIOS) {
-        await audioHandler?.dispose();
-      }
-
-      // Initialize audio service for background playback
+      late final MusicPlayerAudioHandler handler;
       try {
         AppLogger.i(
           'Main',
           'Initializing AudioService on ${Platform.operatingSystem}',
         );
 
-        audioHandler = await AudioService.init(
+        // Channel name is fixed at first creation on Android; keep English stable.
+        handler = await AudioService.init(
           builder: MusicPlayerAudioHandler.new,
           config: const AudioServiceConfig(
             androidNotificationChannelId: 'dev.pulse.app.audio',
-            androidNotificationChannelName: '音樂播放',
+            androidNotificationChannelName: 'Music playback',
             androidStopForegroundOnPause: false,
             androidShowNotificationBadge: true,
-            notificationColor: Color(0xFF000000),
+            notificationColor: AppColors.black,
           ),
         );
         AppLogger.i('Main', 'AudioService initialized successfully');
       } on Exception catch (e, stackTrace) {
         AppLogger.e('Main', 'AudioService init FAILED', e, stackTrace);
-        // Create handler directly without AudioService wrapper
-        audioHandler = MusicPlayerAudioHandler();
+        handler = MusicPlayerAudioHandler();
         AppLogger.w(
           'Main',
           'Fallback audio handler created (no background playback)',
         );
       }
 
-      if (audioHandler == null) {
-        AppLogger.w('Main', 'audioHandler is still null, creating fallback');
-        audioHandler = MusicPlayerAudioHandler();
-      }
-
-      database = AppDatabase();
-
-      await initServiceLocator();
+      final database = AppDatabase();
+      await initServiceLocator(database: database, audioHandler: handler);
 
       runApp(const PulseApp());
     },

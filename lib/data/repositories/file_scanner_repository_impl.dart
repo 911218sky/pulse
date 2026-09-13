@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path_lib;
 import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/data/datasources/local_storage_datasource.dart';
 import 'package:pulse/data/models/audio_file_model.dart';
+import 'package:pulse/data/models/settings_model.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/entities/scanned_folder.dart';
 import 'package:pulse/domain/repositories/file_scanner_repository.dart';
@@ -28,12 +29,7 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
     _lastScannedFolders = const [];
 
     if (directories.isEmpty) {
-      yield const ScanProgress(
-        filesFound: 0,
-        foldersScanned: 0,
-        currentFolder: '找不到音樂資料夾，請使用手動匯入',
-        isComplete: true,
-      );
+      yield ScanProgress.noMusicFolders;
       return;
     }
 
@@ -128,7 +124,8 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
     if (!dir.existsSync()) return files;
 
     try {
-      await for (final entity in dir.list()) {
+      // Recursive so "select folder" matches auto-scan and nested albums.
+      await for (final entity in dir.list(recursive: true)) {
         if (entity is File && isSupportedAudioFile(entity.path)) {
           final audioFile = await extractMetadata(entity.path);
           if (audioFile != null) files.add(audioFile);
@@ -146,11 +143,39 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
 
   @override
   Future<void> saveSelectedFolders(List<String> folderPaths) async {
-    // Placeholder
+    final canonicalPaths = folderPaths
+        .map(AudioPathUtils.canonicalize)
+        .where((path) => path.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+
+    final current = await _dataSource.getSettings();
+    final updated = SettingsModel(
+      darkMode: current.darkMode,
+      locale: current.locale,
+      defaultVolume: current.defaultVolume,
+      defaultPlaybackSpeed: current.defaultPlaybackSpeed,
+      autoResume: current.autoResume,
+      resumePlaybackOnTrackTap: current.resumePlaybackOnTrackTap,
+      skipForwardSeconds: current.skipForwardSeconds,
+      skipBackwardSeconds: current.skipBackwardSeconds,
+      monitoredFolders: canonicalPaths,
+      sleepTimerFadeOutEnabled: current.sleepTimerFadeOutEnabled,
+      sleepTimerFadeOutSeconds: current.sleepTimerFadeOutSeconds,
+      navigateToPlayerOnResume: current.navigateToPlayerOnResume,
+      autoUpdateEnabled: current.autoUpdateEnabled,
+    );
+    await _dataSource.saveSettings(updated);
   }
 
   @override
-  Future<List<String>> getSavedFolderPreferences() async => [];
+  Future<List<String>> getSavedFolderPreferences() async {
+    final settings = await _dataSource.getSettings();
+    return settings.monitoredFolders
+        .map(AudioPathUtils.canonicalize)
+        .where((path) => path.isNotEmpty)
+        .toList(growable: false);
+  }
 
   @override
   bool isSupportedAudioFile(String filePath) {
@@ -184,18 +209,15 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
 
   @override
   Future<void> saveToLibrary(List<AudioFile> files) async {
-    final existingPaths =
-        (await _dataSource.getAllAudioFilePaths())
-            .map(AudioPathUtils.canonicalize)
-            .toSet();
-    final models =
-        files
-            .where(
-              (file) =>
-                  existingPaths.add(AudioPathUtils.canonicalize(file.path)),
-            )
-            .map(AudioFileModel.fromEntity)
-            .toList();
+    // Upsert by canonical path so rescan/import never create duplicate rows.
+    // Existing IDs are preserved inside LocalStorageDataSource/AppDatabase.
+    final seenPaths = <String>{};
+    final models = <AudioFileModel>[];
+    for (final file in files) {
+      final path = AudioPathUtils.canonicalize(file.path);
+      if (!seenPaths.add(path)) continue;
+      models.add(AudioFileModel.fromEntity(file.copyWith(path: path)));
+    }
     if (models.isEmpty) return;
     await _dataSource.saveAudioFiles(models);
   }
@@ -232,6 +254,11 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
 
   @override
   Future<void> clearLibrary() async {
+    final paths = await _dataSource.getAllAudioFilePaths();
+    if (paths.isNotEmpty) {
+      await _dataSource.clearFilePositions(paths);
+    }
+    await _dataSource.clearPlaybackState();
     await _dataSource.clearAllAudioFiles();
   }
 

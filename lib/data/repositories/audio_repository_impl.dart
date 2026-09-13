@@ -4,25 +4,12 @@ import 'package:pulse/core/utils/app_logger.dart';
 import 'package:pulse/data/services/audio_handler.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/repositories/audio_repository.dart';
-import 'package:pulse/main.dart';
 
 /// Implementation of AudioRepository using audio_service for background playback
 class AudioRepositoryImpl implements AudioRepository {
-  AudioRepositoryImpl();
+  AudioRepositoryImpl(this._handler);
 
-  MusicPlayerAudioHandler get _handler {
-    final handler = audioHandler;
-    if (handler == null) {
-      AppLogger.e(
-        'AudioRepository',
-        'AudioHandler not initialized, creating new one',
-      );
-      // Create a fallback handler if not initialized
-      audioHandler = MusicPlayerAudioHandler();
-      return audioHandler!;
-    }
-    return handler;
-  }
+  final MusicPlayerAudioHandler _handler;
 
   @override
   Future<void> loadAudio(
@@ -166,6 +153,7 @@ class AudioRepositoryImpl implements AudioRepository {
   @override
   double get currentPlaybackSpeed => _handler.speed;
 
+  /// Shared app-lifetime handler must not be disposed from BLoC close.
   @override
   Future<void> dispose() async {}
 }
