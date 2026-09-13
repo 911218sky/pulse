@@ -130,24 +130,39 @@ jobs:
         with:
           path: artifacts
 
-      - name: Delete existing release if exists
-        continue-on-error: true
+      - name: Publish Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete ${{ github.ref_name }} --yes || true
+          set -euo pipefail
+          TAG="${{ github.ref_name }}"
+          NOTES="Android release artifacts for ${TAG}."
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v3
-        with:
-          files: |
-            artifacts/pulse-android-universal/pulse-android-universal.apk
-            artifacts/pulse-android-arm64-v8a/pulse-android-arm64-v8a.apk
-            artifacts/pulse-android-armeabi-v7a/pulse-android-armeabi-v7a.apk
-            artifacts/pulse-android-x86_64/pulse-android-x86_64.apk
-            artifacts/pulse-android-bundle/pulse-android-release.aab
-          draft: false
-          prerelease: false
-          generate_release_notes: false
-          body: Android release artifacts for ${{ github.ref_name }}.
-          fail_on_unmatched_files: false
+          # Remove stale draft/published releases so publish retries stay idempotent.
+          gh release delete "$TAG" --yes 2>/dev/null || true
+
+          publish_release() {
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "$NOTES" \
+              --latest \
+              "artifacts/pulse-android-universal/pulse-android-universal.apk" \
+              "artifacts/pulse-android-arm64-v8a/pulse-android-arm64-v8a.apk" \
+              "artifacts/pulse-android-armeabi-v7a/pulse-android-armeabi-v7a.apk" \
+              "artifacts/pulse-android-x86_64/pulse-android-x86_64.apk" \
+              "artifacts/pulse-android-bundle/pulse-android-release.aab"
+          }
+
+          for attempt in 1 2 3 4 5; do
+            if publish_release; then
+              echo "Release ${TAG} published successfully."
+              exit 0
+            fi
+
+            echo "Release publish attempt ${attempt} failed; retrying in 15s..."
+            sleep 15
+            gh release delete "$TAG" --yes 2>/dev/null || true
+          done
+
+          echo "Failed to publish ${TAG} after 5 attempts."
+          exit 1
