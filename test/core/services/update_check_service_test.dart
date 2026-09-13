@@ -44,10 +44,6 @@ void main() {
           ],
         ),
         '0.1.17',
-        isAndroid: true,
-        isWindows: false,
-        isLinux: false,
-        isMacOS: false,
       );
 
       expect(update, isNotNull);
@@ -67,10 +63,6 @@ void main() {
           ],
         ),
         '0.1.17',
-        isAndroid: true,
-        isWindows: false,
-        isLinux: false,
-        isMacOS: false,
         supportedAbis: const ['arm64-v8a', 'armeabi-v7a'],
       );
 
@@ -87,33 +79,10 @@ void main() {
       );
     });
 
-    test('uses release page on Android when APK assets are missing', () {
+    test('uses release page when APK assets are missing', () {
       final update = UpdateCheckService.buildUpdateFromReleaseForTesting(
         _releaseJson(assets: []),
         '0.1.17',
-        isAndroid: true,
-        isWindows: false,
-        isLinux: false,
-        isMacOS: false,
-      );
-
-      expect(update, isNotNull);
-      expect(update!.assetName, equals('GitHub Releases'));
-      expect(update.canDownloadDirectly, isFalse);
-      expect(
-        update.downloadUrl.toString(),
-        equals('https://github.com/911218sky/pulse/releases/tag/v0.1.18'),
-      );
-    });
-
-    test('uses release page when no direct desktop asset matches', () {
-      final update = UpdateCheckService.buildUpdateFromReleaseForTesting(
-        _releaseJson(assets: []),
-        '0.1.17',
-        isAndroid: false,
-        isWindows: true,
-        isLinux: false,
-        isMacOS: false,
       );
 
       expect(update, isNotNull);
@@ -129,10 +98,6 @@ void main() {
       final update = UpdateCheckService.buildUpdateFromReleaseForTesting(
         _releaseJson(),
         '0.1.18',
-        isAndroid: true,
-        isWindows: false,
-        isLinux: false,
-        isMacOS: false,
       );
 
       expect(update, isNull);
@@ -146,10 +111,6 @@ void main() {
                 'https://github.com/911218sky/pulse/releases/tag/v0.1.18',
           },
           '0.1.17',
-          isAndroid: true,
-          isWindows: false,
-          isLinux: false,
-          isMacOS: false,
         ),
         throwsFormatException,
       );
@@ -158,10 +119,6 @@ void main() {
         () => UpdateCheckService.buildUpdateFromReleaseForTesting(
           {'tag_name': 'v0.1.18'},
           '0.1.17',
-          isAndroid: true,
-          isWindows: false,
-          isLinux: false,
-          isMacOS: false,
         ),
         throwsFormatException,
       );

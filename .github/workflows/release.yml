@@ -9,115 +9,6 @@ on:
       - 'v*'
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: subosito/flutter-action@v2.23.0
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Cache pub dependencies
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.pub-cache
-            ~\AppData\Local\Pub\Cache
-          key: pub-windows-${{ hashFiles('pubspec.lock') }}
-          restore-keys: pub-windows-
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build Windows
-        run: flutter build windows --release
-
-      - name: Create Windows archive
-        run: |
-          cd build/windows/x64/runner/Release
-          Compress-Archive -Path * -DestinationPath ../../../../../pulse-windows-x64.zip
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: pulse-windows-x64
-          path: pulse-windows-x64.zip
-
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: subosito/flutter-action@v2.23.0
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Cache pub dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.pub-cache
-          key: pub-linux-${{ hashFiles('pubspec.lock') }}
-          restore-keys: pub-linux-
-
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build Linux
-        run: flutter build linux --release
-
-      - name: Create Linux archive
-        run: |
-          cd build/linux/x64/release/bundle
-          tar -czf ../../../../../pulse-linux-x64.tar.gz *
-
-      - name: Upload Linux artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: pulse-linux-x64
-          path: pulse-linux-x64.tar.gz
-
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: subosito/flutter-action@v2.23.0
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Cache pub dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.pub-cache
-          key: pub-macos-${{ hashFiles('pubspec.lock') }}
-          restore-keys: pub-macos-
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build macOS
-        run: flutter build macos --release
-
-      - name: Create macOS archive
-        run: |
-          cd build/macos/Build/Products/Release
-          zip -r ../../../../../pulse-macos-universal.zip Pulse.app
-
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: pulse-macos-universal
-          path: pulse-macos-universal.zip
-
   build-android:
     runs-on: ubuntu-latest
     env:
@@ -222,7 +113,7 @@ jobs:
           path: build/release-artifacts/android/pulse-android-release.aab
 
   create-release:
-    needs: [build-windows, build-linux, build-macos, build-android]
+    needs: [build-android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -245,9 +136,6 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            artifacts/pulse-windows-x64/pulse-windows-x64.zip
-            artifacts/pulse-linux-x64/pulse-linux-x64.tar.gz
-            artifacts/pulse-macos-universal/pulse-macos-universal.zip
             artifacts/pulse-android-universal/pulse-android-universal.apk
             artifacts/pulse-android-arm64-v8a/pulse-android-arm64-v8a.apk
             artifacts/pulse-android-armeabi-v7a/pulse-android-armeabi-v7a.apk

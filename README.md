@@ -5,7 +5,7 @@
 <h1 align="center">Pulse</h1>
 
 <p align="center">
-  A local-first music player built with Flutter for Windows, macOS, Linux, and Android.
+  A local-first music player built with Flutter for Android.
 </p>
 
 <p align="center">
@@ -46,9 +46,6 @@ For most Android users, install `pulse-android-universal.apk`.
 
 | Platform | Asset |
 | --- | --- |
-| Windows | `pulse-windows-x64.zip` |
-| macOS | `pulse-macos-universal.zip` |
-| Linux | `pulse-linux-x64.tar.gz` |
 | Android | `pulse-android-universal.apk` |
 | Android arm64 | `pulse-android-arm64-v8a.apk` |
 | Android armeabi-v7a | `pulse-android-armeabi-v7a.apk` |
@@ -89,9 +86,6 @@ flutter test
 ### Release Builds
 
 ```bash
-flutter build windows --release
-flutter build macos --release
-flutter build linux --release
 flutter build apk --release
 flutter build appbundle --release
 ```

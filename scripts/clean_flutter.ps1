@@ -48,27 +48,6 @@ if (Test-Path "android") {
     if (Test-Path "android/build") { Remove-Item -Recurse -Force "android/build" }
 }
 
-# Clean iOS
-if (Test-Path "ios") {
-    Write-Host "Cleaning iOS..." -ForegroundColor Yellow
-    if (Test-Path "ios/Pods") { Remove-Item -Recurse -Force "ios/Pods" }
-    if (Test-Path "ios/Podfile.lock") { Remove-Item -Force "ios/Podfile.lock" }
-    if (Test-Path "ios/.symlinks") { Remove-Item -Recurse -Force "ios/.symlinks" }
-}
-
-# Clean Windows
-if (Test-Path "windows") {
-    Write-Host "Cleaning Windows..." -ForegroundColor Yellow
-    if (Test-Path "windows/flutter/ephemeral") { Remove-Item -Recurse -Force "windows/flutter/ephemeral" }
-}
-
-# Clean macOS
-if (Test-Path "macos") {
-    Write-Host "Cleaning macOS..." -ForegroundColor Yellow
-    if (Test-Path "macos/Pods") { Remove-Item -Recurse -Force "macos/Pods" }
-    if (Test-Path "macos/Podfile.lock") { Remove-Item -Force "macos/Podfile.lock" }
-}
-
 # Get dependencies
 Write-Host "`nGetting dependencies (flutter pub get)..." -ForegroundColor Yellow
 flutter pub get

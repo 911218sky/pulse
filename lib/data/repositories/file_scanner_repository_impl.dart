@@ -91,25 +91,10 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
     final paths = <String>[];
 
     if (Platform.isAndroid) {
-      // Android 常見音樂路徑
       paths.addAll([
         '/storage/emulated/0/Music',
         '/storage/emulated/0/Download',
         '/storage/emulated/0/Audiobooks',
-      ]);
-    } else if (Platform.isWindows) {
-      final home = Platform.environment['USERPROFILE'] ?? '';
-      paths.addAll([
-        path_lib.join(home, 'Music'),
-        path_lib.join(home, 'Downloads'),
-        r'D:\Music',
-        r'E:\Music',
-      ]);
-    } else if (Platform.isMacOS || Platform.isLinux) {
-      final home = Platform.environment['HOME'] ?? '';
-      paths.addAll([
-        path_lib.join(home, 'Music'),
-        path_lib.join(home, 'Downloads'),
       ]);
     }
 

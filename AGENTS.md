@@ -4,7 +4,7 @@ These instructions apply to all work inside this repository.
 
 ## Project Overview
 
-Pulse is a cross-platform local music player built with Flutter. It targets Windows, macOS, Linux, and Android.
+Pulse is an Android local music player built with Flutter.
 
 Core responsibilities:
 - Local audio playback for MP3, FLAC, WAV, AAC, OGG, and M4A files
@@ -198,7 +198,7 @@ The visual style should remain minimal, high-contrast, and consistent with the e
 When changing UI:
 - Reuse shared components first, then extend them if the pattern repeats.
 - Keep loading, empty, error, and destructive-confirmation states visually consistent.
-- Check both narrow mobile layouts and desktop layouts before release when the changed screen is responsive.
+- Check narrow mobile layouts before release when the changed screen is responsive.
 
 ## Localization
 

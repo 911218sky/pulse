@@ -17,41 +17,28 @@ on:
       - '**.md'
 
 jobs:
-  analyze:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: subosito/flutter-action@v2.23.0
         with:
           channel: 'stable'
           cache: true
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
       - name: Analyze code
         run: flutter analyze
-      
+
       - name: Check formatting
         run: dart format --set-exit-if-changed .
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      
-      - uses: subosito/flutter-action@v2.23.0
-        with:
-          channel: 'stable'
-          cache: true
-      
-      - name: Install dependencies
-        run: flutter pub get
-      
       - name: Run tests
         run: flutter test --coverage
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v7
         with:

@@ -6,7 +6,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:pulse/core/utils/app_logger.dart';
 
 /// Audio handler for background playback with notification controls
-/// Uses media_kit for stable playback on Windows (replaces just_audio)
+/// Uses media_kit for stable Android playback.
 class MusicPlayerAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
   MusicPlayerAudioHandler({

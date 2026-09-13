@@ -21,6 +21,8 @@ class UpdateCheckService {
   final HttpClient? _httpClient;
 
   Future<AppUpdate?> checkForUpdate() async {
+    if (!Platform.isAndroid) return null;
+
     final packageInfo = await PackageInfo.fromPlatform();
     final currentVersion = packageInfo.version;
     final client = _httpClient ?? HttpClient();
@@ -57,10 +59,6 @@ class UpdateCheckService {
       final update = buildUpdateFromRelease(
         json,
         currentVersion,
-        isAndroid: Platform.isAndroid,
-        isWindows: Platform.isWindows,
-        isLinux: Platform.isLinux,
-        isMacOS: Platform.isMacOS,
         supportedAbis: supportedAbis,
       );
       if (update == null) return null;
@@ -78,10 +76,6 @@ class UpdateCheckService {
   static AppUpdate? buildUpdateFromRelease(
     Map<String, dynamic> json,
     String currentVersion, {
-    required bool isAndroid,
-    required bool isWindows,
-    required bool isLinux,
-    required bool isMacOS,
     List<String> supportedAbis = const [],
   }) {
     final tagName = json['tag_name'] as String?;
@@ -111,13 +105,7 @@ class UpdateCheckService {
       throw const FormatException('Missing html_url in latest release');
     }
 
-    final preferredNames = _preferredAssetNames(
-      isAndroid: isAndroid,
-      isWindows: isWindows,
-      isLinux: isLinux,
-      isMacOS: isMacOS,
-      supportedAbis: supportedAbis,
-    );
+    final preferredNames = _preferredAssetNames(supportedAbis: supportedAbis);
     final releaseAssets = _releaseAssetsFromJson(json);
     final selectedAsset = _findReleaseAsset(
       releaseAssets,
@@ -127,10 +115,6 @@ class UpdateCheckService {
     final availableAssets = _availableAssetsForPlatform(
       releaseAssets,
       selectedAsset,
-      isAndroid: isAndroid,
-      isWindows: isWindows,
-      isLinux: isLinux,
-      isMacOS: isMacOS,
     );
 
     return AppUpdate(
@@ -166,19 +150,9 @@ class UpdateCheckService {
 
   static List<UpdateAsset> _availableAssetsForPlatform(
     List<UpdateAsset> releaseAssets,
-    UpdateAsset selectedAsset, {
-    required bool isAndroid,
-    required bool isWindows,
-    required bool isLinux,
-    required bool isMacOS,
-  }) {
-    final preferredNames =
-        _preferredAssetNames(
-          isAndroid: isAndroid,
-          isWindows: isWindows,
-          isLinux: isLinux,
-          isMacOS: isMacOS,
-        ).toSet();
+    UpdateAsset selectedAsset,
+  ) {
+    final preferredNames = _preferredAssetNames().toSet();
     final assets =
         releaseAssets
             .where((asset) => preferredNames.contains(asset.name.toLowerCase()))
@@ -220,17 +194,8 @@ class UpdateCheckService {
   }
 
   static List<String> _preferredAssetNames({
-    required bool isAndroid,
-    required bool isWindows,
-    required bool isLinux,
-    required bool isMacOS,
     List<String> supportedAbis = const [],
   }) {
-    if (isWindows) return const ['pulse-windows-x64.zip'];
-    if (isLinux) return const ['pulse-linux-x64.tar.gz'];
-    if (isMacOS) return const ['pulse-macos-universal.zip'];
-    if (!isAndroid) return const [];
-
     final names = <String>[];
     for (final abi in supportedAbis.map((abi) => abi.toLowerCase())) {
       switch (abi) {
@@ -279,18 +244,10 @@ class UpdateCheckService {
   static AppUpdate? buildUpdateFromReleaseForTesting(
     Map<String, dynamic> json,
     String currentVersion, {
-    required bool isAndroid,
-    required bool isWindows,
-    required bool isLinux,
-    required bool isMacOS,
     List<String> supportedAbis = const [],
   }) => buildUpdateFromRelease(
     json,
     currentVersion,
-    isAndroid: isAndroid,
-    isWindows: isWindows,
-    isLinux: isLinux,
-    isMacOS: isMacOS,
     supportedAbis: supportedAbis,
   );
 

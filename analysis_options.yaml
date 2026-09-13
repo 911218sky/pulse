@@ -25,11 +25,6 @@ analyzer:
     - "lib/generated/**"
     - "build/**"
     - "android/**"
-    - "ios/**"
-    - "linux/**"
-    - "macos/**"
-    - "windows/**"
-    - "web/**"
     - ".dart_tool/**"
 
 linter:
