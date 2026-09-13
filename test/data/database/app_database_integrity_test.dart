@@ -60,7 +60,7 @@ void main() {
                 title: 'Keep',
                 durationMs: 1,
                 fileSize: 1,
-                addedAt: Value(DateTime(2026, 1, 1)),
+                addedAt: Value(DateTime(2026)),
               ),
             );
         await db
@@ -72,7 +72,7 @@ void main() {
                 title: 'Drop',
                 durationMs: 1,
                 fileSize: 1,
-                addedAt: Value(DateTime(2026, 2, 1)),
+                addedAt: Value(DateTime(2026, 2)),
               ),
             );
         await db
