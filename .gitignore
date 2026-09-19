@@ -29,6 +29,7 @@ migrate_working_dir/
 .dart_tool/
 .codegraph/
 DEBUG.md
+DEBUG*.png
 docs/AGENT_TEAM_NOTES.md
 .flutter-plugins-dependencies
 .pub-cache/
