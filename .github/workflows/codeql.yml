@@ -2,6 +2,9 @@ name: CodeQL
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Kotlin requires a traced build (manual/autobuild). Overlay only works with
+  # build-mode: none, so disable it explicitly to avoid the fallback warning.
+  CODEQL_OVERLAY_DATABASE_MODE: none
 
 on:
   push:
@@ -26,15 +29,16 @@ permissions:
 jobs:
   analyze:
     name: Analyze Java/Kotlin
-    runs-on: ubuntu-latest
+    # Pin until we validate ubuntu-26.04 (ubuntu-latest migrates Oct 19, 2026).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: "17"
@@ -51,6 +55,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: java-kotlin
+          # Flutter/Android includes Kotlin; none would skip Kotlin analysis.
           build-mode: manual
 
       - name: Install dependencies
