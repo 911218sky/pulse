@@ -6,6 +6,7 @@ import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/core/utils/playback_speed_utils.dart';
 import 'package:pulse/core/utils/volume_utils.dart';
 import 'package:pulse/domain/entities/playback_state.dart';
+import 'package:pulse/domain/entities/settings.dart';
 import 'package:pulse/domain/repositories/audio_repository.dart';
 import 'package:pulse/domain/repositories/playback_state_repository.dart';
 import 'package:pulse/domain/repositories/settings_repository.dart';
@@ -49,6 +50,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     on<PlayerClearCompletedTrackPosition>(_onClearCompletedTrackPosition);
 
     _subscribeToStreams();
+    _loadSkipSettings();
   }
 
   final AudioRepository _audioRepository;
@@ -58,6 +60,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<Duration?>? _durationSubscription;
   StreamSubscription<bool>? _playingSubscription;
+  StreamSubscription<Settings>? _settingsSubscription;
   Timer? _autoSaveTimer;
   Timer? _positionThrottleTimer;
 
@@ -72,7 +75,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   Duration? _resumePositionGuard;
   bool _skipSaveOnClose = false;
   bool _isHardResetInProgress = false;
+  bool _suppressPlaybackSave = false;
   static const _positionUpdateInterval = Duration(milliseconds: 250);
+  static const _nearEndGrace = Duration(seconds: 1);
 
   void _subscribeToStreams() {
     // Throttle position updates for smoother UI with large files
@@ -93,6 +98,34 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _playingSubscription = _audioRepository.playingStream.listen(
       (isPlaying) => add(PlayerPlayingStateUpdated(isPlaying: isPlaying)),
     );
+
+    _settingsSubscription = _settingsRepository.settingsStream.listen(
+      _applySkipSettings,
+    );
+  }
+
+  void _loadSkipSettings() {
+    unawaited(
+      _settingsRepository.loadSettings().then((settings) {
+        if (isClosed) return;
+        _applySkipSettings(settings);
+      }),
+    );
+  }
+
+  void _applySkipSettings(Settings settings) {
+    _skipForwardSeconds = settings.skipForwardSeconds;
+    _skipBackwardSeconds = settings.skipBackwardSeconds;
+    _audioRepository.setSkipDurations(
+      forwardSeconds: _skipForwardSeconds,
+      backwardSeconds: _skipBackwardSeconds,
+    );
+  }
+
+  bool _isNearEnd(Duration position, Duration? duration) {
+    if (duration == null || duration <= Duration.zero) return false;
+    if (position >= duration) return true;
+    return duration - position <= _nearEndGrace;
   }
 
   Future<void> _onLoadAudio(
@@ -101,6 +134,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   ) async {
     _skipSaveOnClose = false;
     _isHardResetInProgress = false;
+    _suppressPlaybackSave = false;
 
     // Skip reloading if it's the same audio file and already playing/ready
     if (!event.forceRestart &&
@@ -123,10 +157,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     );
 
     try {
-      // Load settings for skip durations
+      // Load settings for skip durations / defaults
       final settings = await _settingsRepository.loadSettings();
-      _skipForwardSeconds = settings.skipForwardSeconds;
-      _skipBackwardSeconds = settings.skipBackwardSeconds;
+      _applySkipSettings(settings);
 
       // Check for saved position
       final savedPosition = await _playbackStateRepository.getPositionForFile(
@@ -206,11 +239,20 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     if (!state.isReady && state.status != PlayerStatus.paused) return;
 
     try {
-      if (state.status == PlayerStatus.paused &&
-          state.position > Duration.zero) {
-        await _audioRepository.seekTo(state.position);
+      if (state.status == PlayerStatus.paused) {
+        // Near EOF / completed: restart from zero instead of resuming the tail.
+        if (_isNearEnd(state.position, state.duration) ||
+            state.position == Duration.zero) {
+          await _audioRepository.seekTo(Duration.zero);
+          if (state.position != Duration.zero) {
+            emit(state.copyWith(position: Duration.zero));
+          }
+        } else if (state.position > Duration.zero) {
+          await _audioRepository.seekTo(state.position);
+        }
       }
       await _audioRepository.play();
+      _suppressPlaybackSave = false;
       emit(state.copyWith(status: PlayerStatus.playing));
     } on Exception catch (e) {
       emit(
@@ -464,6 +506,28 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
     if (state.status != PlayerStatus.playing) return;
 
+    // Treat natural completion as paused-at-zero so Play restarts cleanly and
+    // we never persist a near-EOF resume position.
+    if (_isNearEnd(state.position, state.duration)) {
+      _suppressPlaybackSave = true;
+      emit(
+        state.copyWith(
+          status: PlayerStatus.paused,
+          position: Duration.zero,
+        ),
+      );
+      try {
+        await _playbackStateRepository.clearPlaybackState();
+        final path = state.currentAudio?.path;
+        if (path != null) {
+          await _playbackStateRepository.clearPositionForFile(path);
+        }
+      } on Exception {
+        // Silently fail - clearing state is not critical
+      }
+      return;
+    }
+
     emit(state.copyWith(status: PlayerStatus.paused));
     try {
       await _saveCurrentPlaybackState();
@@ -512,8 +576,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
     try {
       final settings = await _settingsRepository.loadSettings();
-      _skipForwardSeconds = settings.skipForwardSeconds;
-      _skipBackwardSeconds = settings.skipBackwardSeconds;
+      _applySkipSettings(settings);
 
       if (!settings.autoResume) return;
       _skipSaveOnClose = false;
@@ -606,9 +669,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     PlayerClearCompletedTrackPosition event,
     Emitter<PlayerState> emit,
   ) async {
+    _suppressPlaybackSave = true;
     try {
+      final completedPath = AudioPathUtils.canonicalize(event.filePath);
       final lastState = await _playbackStateRepository.getLastPlaybackState();
-      if (lastState?.audioFilePath == event.filePath) {
+      final lastPath = lastState?.audioFilePath;
+      if (lastPath != null &&
+          AudioPathUtils.canonicalize(lastPath) == completedPath) {
         await _playbackStateRepository.clearPlaybackState();
       }
       await _playbackStateRepository.clearPositionForFile(event.filePath);
@@ -632,7 +699,11 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   }
 
   Future<void> _saveCurrentPlaybackState() async {
-    if (_isHardResetInProgress || _skipSaveOnClose) return;
+    if (_isHardResetInProgress ||
+        _skipSaveOnClose ||
+        _suppressPlaybackSave) {
+      return;
+    }
 
     final currentAudio = state.currentAudio;
     if (currentAudio == null) return;
@@ -643,7 +714,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     final speed = state.speed;
     final filePath = currentAudio.path;
 
-    if (duration != null && duration > Duration.zero && position >= duration) {
+    if (_isNearEnd(position, duration)) {
       await _playbackStateRepository.clearPlaybackState();
       await _playbackStateRepository.clearPositionForFile(filePath);
       return;
@@ -665,6 +736,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     await _positionSubscription?.cancel();
     await _durationSubscription?.cancel();
     await _playingSubscription?.cancel();
+    await _settingsSubscription?.cancel();
     _autoSaveTimer?.cancel();
     _positionThrottleTimer?.cancel();
 

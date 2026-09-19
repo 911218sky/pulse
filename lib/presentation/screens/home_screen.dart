@@ -381,6 +381,10 @@ class _SliverMusicList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocBuilder<PlayerBloc, PlayerState>(
+    buildWhen:
+        (previous, current) =>
+            previous.currentAudio?.path != current.currentAudio?.path ||
+            previous.isPlaying != current.isPlaying,
     builder:
         (context, playerState) => BlocBuilder<SearchBloc, SearchState>(
           builder: (context, state) {
@@ -652,6 +656,9 @@ class _TrackArt extends StatelessWidget {
       return SizedBox(width: size, height: size, child: fallback);
     }
 
+    final cacheSize =
+        (size * MediaQuery.devicePixelRatioOf(context)).round();
+
     return SizedBox(
       width: size,
       height: size,
@@ -663,6 +670,8 @@ class _TrackArt extends StatelessWidget {
             child: Image.file(
               File(artworkPath!),
               fit: BoxFit.cover,
+              cacheWidth: cacheSize,
+              cacheHeight: cacheSize,
               errorBuilder: (_, _, _) => fallback,
             ),
           ),

@@ -35,6 +35,12 @@ abstract class AudioRepository {
   /// Sets the loop mode
   Future<void> setLoopMode(LoopMode mode);
 
+  /// Syncs notification rewind/fast-forward durations with app settings.
+  void setSkipDurations({
+    required int forwardSeconds,
+    required int backwardSeconds,
+  });
+
   /// Stream of current playback position
   Stream<Duration> get positionStream;
 

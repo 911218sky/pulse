@@ -109,6 +109,10 @@ class _TrackList extends StatelessWidget {
     final isCompact = screenWidth < 600;
 
     return BlocBuilder<PlayerBloc, PlayerState>(
+      buildWhen:
+          (previous, current) =>
+              previous.currentAudio?.path != current.currentAudio?.path ||
+              previous.isPlaying != current.isPlaying,
       builder: (context, playerState) {
         final currentTrackPath = playerState.currentAudio?.path;
 

@@ -109,6 +109,17 @@ class AudioRepositoryImpl implements AudioRepository {
   }
 
   @override
+  void setSkipDurations({
+    required int forwardSeconds,
+    required int backwardSeconds,
+  }) {
+    _handler.setSkipDurations(
+      forwardSeconds: forwardSeconds,
+      backwardSeconds: backwardSeconds,
+    );
+  }
+
+  @override
   Stream<Duration> get positionStream => _handler.positionStream.handleError(
     (Object error) =>
         AppLogger.e('AudioRepository', 'Position stream error', error),

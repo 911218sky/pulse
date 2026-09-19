@@ -92,6 +92,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
           child: SafeArea(
             child: BlocBuilder<PlayerBloc, PlayerState>(
+              buildWhen:
+                  (previous, current) =>
+                      previous.currentAudio != current.currentAudio ||
+                      previous.status != current.status ||
+                      previous.isPlaying != current.isPlaying ||
+                      previous.duration != current.duration ||
+                      previous.volume != current.volume ||
+                      previous.speed != current.speed ||
+                      previous.pendingResumePosition !=
+                          current.pendingResumePosition ||
+                      previous.errorMessage != current.errorMessage,
               builder:
                   (context, state) => Stack(
                     children: [
@@ -272,6 +283,9 @@ class _Header extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 BlocBuilder<PlayerBloc, PlayerState>(
+                  buildWhen:
+                      (previous, current) =>
+                          previous.isPlaying != current.isPlaying,
                   builder:
                       (context, state) =>
                           AnimatedEqualizer(isPlaying: state.isPlaying),
@@ -407,6 +421,18 @@ class _TrackInfo extends StatelessWidget {
                           ? Image.file(
                             File(state.currentAudio!.artworkPath!),
                             fit: BoxFit.cover,
+                            cacheWidth:
+                                (maxArtSize *
+                                        MediaQuery.devicePixelRatioOf(
+                                          context,
+                                        ))
+                                    .round(),
+                            cacheHeight:
+                                (maxArtSize *
+                                        MediaQuery.devicePixelRatioOf(
+                                          context,
+                                        ))
+                                    .round(),
                             errorBuilder:
                                 (_, _, _) => Icon(
                                   Icons.music_note_rounded,
@@ -464,12 +490,19 @@ class _PlayerControls extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: ProgressBar(
-                position: state.position,
-                duration: state.duration ?? Duration.zero,
-                onSeek: (position) {
-                  context.read<PlayerBloc>().add(PlayerSeekTo(position));
-                },
+              child: BlocBuilder<PlayerBloc, PlayerState>(
+                buildWhen:
+                    (previous, current) =>
+                        previous.position != current.position ||
+                        previous.duration != current.duration,
+                builder:
+                    (context, progressState) => ProgressBar(
+                      position: progressState.position,
+                      duration: progressState.duration ?? Duration.zero,
+                      onSeek: (position) {
+                        context.read<PlayerBloc>().add(PlayerSeekTo(position));
+                      },
+                    ),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -553,10 +586,11 @@ class _PlayerControls extends StatelessWidget {
   );
 
   Future<void> _showTimeInputDialog(BuildContext context) async {
+    final playerState = context.read<PlayerBloc>().state;
     final result = await TimeInputDialog.show(
       context,
-      duration: state.duration ?? Duration.zero,
-      currentPosition: state.position,
+      duration: playerState.duration ?? Duration.zero,
+      currentPosition: playerState.position,
     );
 
     if (result != null && context.mounted) {

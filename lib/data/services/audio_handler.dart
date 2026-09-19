@@ -32,6 +32,15 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
     _broadcastState();
   }
 
+  /// Keep notification rewind/fast-forward in sync with Settings.
+  void setSkipDurations({
+    required int forwardSeconds,
+    required int backwardSeconds,
+  }) {
+    _skipForwardSeconds = forwardSeconds.clamp(5, 60);
+    _skipBackwardSeconds = backwardSeconds.clamp(5, 60);
+  }
+
   void _initPlaybackState() {
     // Initialize playback state for notification
     playbackState.add(
@@ -70,6 +79,8 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
   bool _playing = false;
   bool _hasLoadedMedia = false;
   String? _currentMediaPath;
+  int _skipForwardSeconds = 10;
+  int _skipBackwardSeconds = 10;
 
   Future<T> _runPlayerOperation<T>(
     String operationName,
@@ -404,13 +415,15 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
 
   @override
   Future<void> fastForward() async {
-    final newPosition = _position + const Duration(seconds: 10);
+    final newPosition =
+        _position + Duration(seconds: _skipForwardSeconds);
     await seek(newPosition);
   }
 
   @override
   Future<void> rewind() async {
-    final newPosition = _position - const Duration(seconds: 10);
+    final newPosition =
+        _position - Duration(seconds: _skipBackwardSeconds);
     await seek(newPosition.isNegative ? Duration.zero : newPosition);
   }
 

@@ -128,6 +128,10 @@ class _PlaylistList extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return BlocBuilder<PlayerBloc, PlayerState>(
+      buildWhen:
+          (previous, current) =>
+              previous.currentAudio?.path != current.currentAudio?.path ||
+              previous.isPlaying != current.isPlaying,
       builder: (context, playerState) {
         final currentTrackPath = playerState.currentAudio?.path;
 

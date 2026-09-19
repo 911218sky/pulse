@@ -31,7 +31,6 @@ class MiniPlayer extends StatelessWidget {
           (previous, current) =>
               previous.currentAudio != current.currentAudio ||
               previous.isPlaying != current.isPlaying ||
-              previous.position != current.position ||
               previous.duration != current.duration ||
               previous.status != current.status,
       builder: (context, state) {
@@ -170,16 +169,23 @@ class MiniPlayer extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(
-                      height: AppSpacing.progressBarHeight,
-                      width: double.infinity,
-                      child: LinearProgressIndicator(
-                        value: state.progress.clamp(0.0, 1.0),
-                        backgroundColor: palette.subtleBorder,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isDark ? AppColors.white : AppColors.accent,
-                        ),
-                      ),
+                    BlocBuilder<PlayerBloc, PlayerState>(
+                      buildWhen:
+                          (previous, current) =>
+                              previous.position != current.position ||
+                              previous.duration != current.duration,
+                      builder:
+                          (context, progressState) => SizedBox(
+                            height: AppSpacing.progressBarHeight,
+                            width: double.infinity,
+                            child: LinearProgressIndicator(
+                              value: progressState.progress.clamp(0.0, 1.0),
+                              backgroundColor: palette.subtleBorder,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isDark ? AppColors.white : AppColors.accent,
+                              ),
+                            ),
+                          ),
                     ),
                   ],
                 ),
@@ -215,6 +221,9 @@ class _MiniArt extends StatelessWidget {
       return SizedBox(width: size, height: size, child: placeholder);
     }
 
+    final cacheSize =
+        (size * MediaQuery.devicePixelRatioOf(context)).round();
+
     return SizedBox(
       width: size,
       height: size,
@@ -223,6 +232,8 @@ class _MiniArt extends StatelessWidget {
         child: Image.file(
           File(artworkPath!),
           fit: BoxFit.cover,
+          cacheWidth: cacheSize,
+          cacheHeight: cacheSize,
           errorBuilder: (_, _, _) => placeholder,
         ),
       ),

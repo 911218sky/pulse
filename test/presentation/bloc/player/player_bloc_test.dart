@@ -754,6 +754,88 @@ void main() {
       expect(playbackStateRepository.lastPlaybackState, isNull);
       expect(playbackStateRepository.savedPositions[audioFile.path], isNull);
     });
+
+    test(
+      'near-end playing=false resets position so Play restarts from zero',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-5',
+          path: '/music/track-5.mp3',
+          title: 'Track 5',
+          duration: Duration(minutes: 3),
+          fileSizeBytes: 1024,
+        );
+        final playbackStateRepository = _FakePlaybackStateRepository();
+        final completionBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(),
+        );
+        addTearDown(completionBloc.close);
+
+        completionBloc.add(const PlayerLoadAudio(audioFile));
+        await expectLater(
+          completionBloc.stream,
+          emitsThrough(
+            isA<PlayerState>().having(
+              (state) => state.status,
+              'status',
+              PlayerStatus.playing,
+            ),
+          ),
+        );
+
+        completionBloc.add(
+          const PlayerPositionUpdated(Duration(minutes: 2, seconds: 59, milliseconds: 500)),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        audioRepository.emitPlaying(isPlaying: false);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(completionBloc.state.status, PlayerStatus.paused);
+        expect(completionBloc.state.position, Duration.zero);
+        expect(playbackStateRepository.lastPlaybackState, isNull);
+
+        completionBloc.add(const PlayerPlay());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(audioRepository.seekCalls, contains(Duration.zero));
+        expect(completionBloc.state.status, PlayerStatus.playing);
+      },
+    );
+
+    test(
+      'clear completed uses canonicalized path comparison',
+      () async {
+        const audioFile = AudioFile(
+          id: 'track-6',
+          path: '/music/./track-6.mp3',
+          title: 'Track 6',
+          duration: Duration(minutes: 1),
+          fileSizeBytes: 1024,
+        );
+        final playbackStateRepository =
+            _FakePlaybackStateRepository()
+              ..lastPlaybackState = playback.PlaybackState.create(
+                audioFilePath: '/music/track-6.mp3',
+                position: const Duration(seconds: 59),
+              )
+              ..savedPositions[audioFile.path] = const Duration(seconds: 59);
+        final clearBloc = PlayerBloc(
+          audioRepository: audioRepository,
+          playbackStateRepository: playbackStateRepository,
+          settingsRepository: _FakeSettingsRepository(),
+        );
+        addTearDown(clearBloc.close);
+
+        clearBloc.add(PlayerClearCompletedTrackPosition(audioFile.path));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(playbackStateRepository.lastPlaybackState, isNull);
+        expect(playbackStateRepository.savedPositions[audioFile.path], isNull);
+      },
+    );
   });
 
   group('Skip Forward/Backward Bounds', () {
@@ -1024,6 +1106,18 @@ class _FakeAudioRepository implements AudioRepository {
 
   @override
   Future<void> setLoopMode(LoopMode mode) async {}
+
+  int? lastSkipForwardSeconds;
+  int? lastSkipBackwardSeconds;
+
+  @override
+  void setSkipDurations({
+    required int forwardSeconds,
+    required int backwardSeconds,
+  }) {
+    lastSkipForwardSeconds = forwardSeconds;
+    lastSkipBackwardSeconds = backwardSeconds;
+  }
 
   @override
   Future<void> dispose() async {
