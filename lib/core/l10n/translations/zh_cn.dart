@@ -389,6 +389,10 @@ class ZhCnTranslations extends Translations {
   @override
   String musicDeleted(String title) => '已删除“$title”';
   @override
+  String get musicDeleteFailed => '无法删除文件，请确认存储权限后再试一次。';
+  @override
+  String get musicDeleteCancelled => '已取消删除';
+  @override
   String get removeFromLibrary => '删除文件';
 
   // ============== Errors ==============

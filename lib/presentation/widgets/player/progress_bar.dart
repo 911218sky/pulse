@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:pulse/core/constants/colors.dart';
+import 'package:pulse/core/constants/durations.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/core/utils/time_parser.dart';
 
-/// A Vercel-style progress bar for audio playback
-/// Optimized for large files (100+ hours) with smooth dragging
-/// Features:
-/// - Click anywhere to seek
-/// - Drag to seek with time preview bubble
-/// - Smooth performance for large files
+/// A Vercel-style progress bar for audio playback.
+/// Optimized for large files with smooth dragging and a generous hit target.
 class ProgressBar extends StatefulWidget {
   const ProgressBar({
     required this.position,
@@ -17,7 +16,7 @@ class ProgressBar extends StatefulWidget {
     super.key,
     this.bufferedPosition = Duration.zero,
     this.showTimeLabels = true,
-    this.height = 6,
+    this.height = AppSpacing.progressBarHeightExpanded,
   });
 
   final Duration position;
@@ -111,7 +110,8 @@ class _ProgressBarState extends State<ProgressBar> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.appPalette;
+    final isDark = context.isDarkMode;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -131,18 +131,15 @@ class _ProgressBarState extends State<ProgressBar> {
                   onHorizontalDragUpdate:
                       (details) => _onDragUpdate(details, constraints),
                   onHorizontalDragEnd: _onDragEnd,
-                  child: Container(
-                    height: 64,
-                    color: Colors.transparent,
+                  child: SizedBox(
+                    height: 48,
                     child: Stack(
                       clipBehavior: Clip.none,
                       alignment: Alignment.center,
                       children: [
-                        // Track
-                        _buildTrack(constraints, isDark),
-                        // Time preview bubble when dragging
+                        _buildTrack(constraints, isDark, palette),
                         if (_isDragging)
-                          _buildPreviewBubble(constraints, isDark),
+                          _buildPreviewBubble(constraints, palette),
                       ],
                     ),
                   ),
@@ -155,26 +152,30 @@ class _ProgressBarState extends State<ProgressBar> {
     );
   }
 
-  Widget _buildTrack(BoxConstraints constraints, bool isDark) {
+  Widget _buildTrack(
+    BoxConstraints constraints,
+    bool isDark,
+    AppThemePalette palette,
+  ) {
     final clampedProgress = _progress.clamp(0.0, 1.0);
     final clampedBuffered = _bufferedProgress.clamp(0.0, 1.0);
-    // Larger track height for easier touch
-    final trackHeight = _isHovered || _isDragging ? 12.0 : 8.0;
+    final trackHeight =
+        _isHovered || _isDragging
+            ? AppSpacing.progressThumbSize
+            : widget.height;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
+      duration: AppDurations.fast,
       height: trackHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Background track
           Container(
             decoration: BoxDecoration(
               color: isDark ? AppColors.gray800 : AppColors.gray200,
               borderRadius: BorderRadius.circular(trackHeight / 2),
             ),
           ),
-          // Buffered progress
           FractionallySizedBox(
             widthFactor: clampedBuffered,
             child: Container(
@@ -184,34 +185,28 @@ class _ProgressBarState extends State<ProgressBar> {
               ),
             ),
           ),
-          // Current progress
           FractionallySizedBox(
             widthFactor: clampedProgress,
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? AppColors.white : AppColors.blue,
+                color: isDark ? AppColors.white : AppColors.accent,
                 borderRadius: BorderRadius.circular(trackHeight / 2),
               ),
             ),
           ),
-          // Thumb - larger for easier touch
           if (_isHovered || _isDragging)
             Positioned(
-              left: (clampedProgress * constraints.maxWidth) - 10,
-              top: (trackHeight - 20) / 2,
+              left:
+                  (clampedProgress * constraints.maxWidth) -
+                  (AppSpacing.progressThumbSize / 2),
+              top: (trackHeight - AppSpacing.progressThumbSize) / 2,
               child: Container(
-                width: 20,
-                height: 20,
+                width: AppSpacing.progressThumbSize,
+                height: AppSpacing.progressThumbSize,
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.white : AppColors.blue,
+                  color: isDark ? AppColors.white : AppColors.accent,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  border: Border.all(color: palette.subtleBorder),
                 ),
               ),
             ),
@@ -220,7 +215,10 @@ class _ProgressBarState extends State<ProgressBar> {
     );
   }
 
-  Widget _buildPreviewBubble(BoxConstraints constraints, bool isDark) {
+  Widget _buildPreviewBubble(
+    BoxConstraints constraints,
+    AppThemePalette palette,
+  ) {
     final bubbleX = (_dragValue * constraints.maxWidth).clamp(
       30.0,
       constraints.maxWidth - 30,
@@ -228,7 +226,7 @@ class _ProgressBarState extends State<ProgressBar> {
 
     return Positioned(
       left: bubbleX - 50,
-      top: -40,
+      top: -36,
       child: Container(
         width: 100,
         padding: const EdgeInsets.symmetric(
@@ -236,27 +234,13 @@ class _ProgressBarState extends State<ProgressBar> {
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.gray900 : AppColors.white,
+          color: palette.elevatedSurface,
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-          border: Border.all(
-            color: isDark ? AppColors.gray700 : AppColors.gray200,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: palette.subtleBorder),
         ),
         child: Text(
           TimeParser.formatDuration(_previewPosition),
-          style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.gray900,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
+          style: AppTypography.timeDisplay(palette.primaryText),
           textAlign: TextAlign.center,
         ),
       ),
@@ -264,7 +248,6 @@ class _ProgressBarState extends State<ProgressBar> {
   }
 }
 
-/// Time labels widget
 class _TimeLabels extends StatelessWidget {
   const _TimeLabels({required this.position, required this.duration});
 
@@ -273,26 +256,18 @@ class _TimeLabels extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.appPalette;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           TimeParser.formatDuration(position),
-          style: TextStyle(
-            color: isDark ? AppColors.gray400 : AppColors.gray600,
-            fontSize: 12,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
+          style: AppTypography.timeDisplay(palette.secondaryText),
         ),
         Text(
           TimeParser.formatDuration(duration),
-          style: TextStyle(
-            color: isDark ? AppColors.gray400 : AppColors.gray600,
-            fontSize: 12,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
+          style: AppTypography.timeDisplay(palette.secondaryText),
         ),
       ],
     );

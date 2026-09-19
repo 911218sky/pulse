@@ -62,6 +62,9 @@ class FileScannerScreen extends StatelessWidget {
                         },
                       );
                     case FileScannerStatus.completed:
+                    case FileScannerStatus.fileDeleted:
+                    case FileScannerStatus.deleteFailed:
+                    case FileScannerStatus.deleteCancelled:
                       return _CompletedState(
                         state: state,
                         isDark: isDark,
@@ -142,68 +145,52 @@ class _InitialState extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors:
-                      isDark
-                          ? [AppColors.gray800, AppColors.gray900]
-                          : [
-                            AppColors.accentLight.withValues(alpha: 0.2),
-                            AppColors.accent.withValues(alpha: 0.3),
-                          ],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
                 Icons.folder_open_rounded,
-                color: isDark ? AppColors.gray400 : AppColors.accent,
+                color: palette.mutedText,
                 size: 48,
               ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              l10n.addMusic,
-              style: AppTypography.displaySmall(
-                palette.primaryText,
-              ).copyWith(fontSize: 22),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              l10n.addMusicDesc,
-              style: AppTypography.bodyMedium(palette.secondaryText),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            VercelButton(
-              label: l10n.autoScan,
-              icon: Icons.search_rounded,
-              isDark: isDark,
-              onPressed: () async {
-                final hasPermission = await _requestPermissions(context);
-                if (hasPermission) {
-                  onStartScan();
-                }
-              },
-              fullWidth: true,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            VercelButton(
-              label: l10n.manualImport,
-              icon: Icons.add_rounded,
-              variant: VercelButtonVariant.secondary,
-              isDark: isDark,
-              fullWidth: true,
-              onPressed: () => _showImportDialog(context),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                l10n.addMusic,
+                textAlign: TextAlign.center,
+                style: AppTypography.headlineLarge(palette.primaryText),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                l10n.addMusicDesc,
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMedium(palette.secondaryText),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              VercelButton(
+                label: l10n.autoScan,
+                icon: Icons.search_rounded,
+                isDark: isDark,
+                fullWidth: true,
+                onPressed: () async {
+                  final hasPermission = await _requestPermissions(context);
+                  if (hasPermission) {
+                    onStartScan();
+                  }
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              VercelButton(
+                label: l10n.manualImport,
+                icon: Icons.add_rounded,
+                variant: VercelButtonVariant.secondary,
+                isDark: isDark,
+                fullWidth: true,
+                onPressed: () => _showImportDialog(context),
+              ),
+            ],
+          ),
         ),
       ),
     );

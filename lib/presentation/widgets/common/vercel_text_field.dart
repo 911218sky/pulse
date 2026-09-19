@@ -5,7 +5,7 @@ import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/theme/app_theme_tokens.dart';
 
-/// A Vercel-style text field widget
+/// Pill search / text field for Spotify-inspired chrome.
 class VercelTextField extends StatefulWidget {
   const VercelTextField({
     super.key,
@@ -81,18 +81,21 @@ class _VercelTextFieldState extends State<VercelTextField> {
 
   Color _borderColor(bool isDark) {
     if (widget.errorText != null) return AppColors.error;
-    if (_isFocused) return isDark ? AppColors.white : AppColors.accent;
-    return isDark ? AppColors.gray700 : AppColors.gray300;
+    if (_isFocused) return isDark ? AppColors.white : AppColors.black;
+    return Colors.transparent;
   }
 
-  Color _backgroundColor(bool isDark) {
-    if (!widget.enabled) return isDark ? AppColors.gray900 : AppColors.gray100;
-    return isDark ? AppColors.black : AppColors.white;
+  Color _backgroundColor(bool isDark, AppThemePalette palette) {
+    if (!widget.enabled) {
+      return isDark ? AppColors.gray800 : AppColors.gray100;
+    }
+    return palette.interactive;
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = _isDark(context);
+    final palette = context.appPalette;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,15 +105,15 @@ class _VercelTextFieldState extends State<VercelTextField> {
           Text(
             widget.label!,
             style: AppTypography.labelMedium(
-              isDark ? AppColors.gray300 : AppColors.gray600,
+              isDark ? AppColors.gray400 : AppColors.gray500,
             ).copyWith(fontSize: 13),
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
         DecoratedBox(
           decoration: BoxDecoration(
-            color: _backgroundColor(isDark),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            color: _backgroundColor(isDark, palette),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             border: Border.all(color: _borderColor(isDark)),
           ),
           child: TextField(
@@ -140,7 +143,7 @@ class _VercelTextFieldState extends State<VercelTextField> {
               suffixIconColor: isDark ? AppColors.gray400 : AppColors.gray500,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
+                vertical: AppSpacing.sm + 2,
               ),
               border: InputBorder.none,
               isDense: true,

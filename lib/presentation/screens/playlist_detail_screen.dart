@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/core/utils/time_parser.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/entities/playlist.dart';
@@ -16,6 +18,7 @@ import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
+import 'package:pulse/presentation/widgets/common/app_empty_state.dart';
 import 'package:pulse/presentation/widgets/common/app_screen_header.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/playing_indicator.dart';
@@ -33,11 +36,12 @@ class PlaylistDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDarkMode;
+    final palette = context.appPalette;
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.black : AppColors.white,
+      backgroundColor: palette.background,
       body: SafeArea(
         child: BlocBuilder<PlaylistBloc, PlaylistState>(
           builder: (context, state) {
@@ -48,35 +52,28 @@ class PlaylistDetailScreen extends StatelessWidget {
               return Center(
                 child: Text(
                   l10n.playlistNotFound,
-                  style: TextStyle(
-                    color: isDark ? AppColors.white : AppColors.black,
-                  ),
+                  style: AppTypography.bodyLarge(palette.primaryText),
                 ),
               );
             }
 
             return Column(
               children: [
-                _Header(
-                  playlistName: playlist.name,
-                  trackCount: playlist.fileCount,
-                  onBack: onBack,
+                AppScreenHeader(
+                  title: playlist.name,
+                  subtitle: l10n.songsCount(playlist.fileCount),
                   isDark: isDark,
+                  onBack: onBack,
+                  trailing: AppHeaderActionButton(
+                    icon: Icons.add_rounded,
+                    tooltip: l10n.addSongs,
+                    onPressed: () => _showAddSongsDialog(context),
+                  ),
                 ),
                 Expanded(child: _TrackList(playlist: playlist, isDark: isDark)),
               ],
             );
           },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: isDark ? AppColors.white : AppColors.accent,
-        foregroundColor: isDark ? AppColors.black : AppColors.white,
-        onPressed: () => _showAddSongsDialog(context),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(
-          l10n.addSongs,
-          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -94,29 +91,6 @@ class PlaylistDetailScreen extends StatelessWidget {
       );
     }
   }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({
-    required this.playlistName,
-    required this.trackCount,
-    required this.isDark,
-    this.onBack,
-  });
-
-  final String playlistName;
-  final int trackCount;
-  final bool isDark;
-  final VoidCallback? onBack;
-
-  @override
-  Widget build(BuildContext context) => AppScreenHeader(
-    title: playlistName,
-    subtitle: AppLocalizations.of(context).songsCount(trackCount),
-    icon: Icons.queue_music_rounded,
-    isDark: isDark,
-    onBack: onBack,
-  );
 }
 
 class _TrackList extends StatelessWidget {
@@ -149,27 +123,14 @@ class _TrackList extends StatelessWidget {
             final isCurrentlyPlaying = currentTrackPath == file.path;
             final isActuallyPlaying =
                 isCurrentlyPlaying && playerState.isPlaying;
-            return Container(
-              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isDark ? AppColors.black : AppColors.gray400)
-                        .withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: _TrackTile(
-                audioFile: file,
-                index: index,
-                playlistId: playlist.id,
-                isDark: isDark,
-                isCurrentlyPlaying: isCurrentlyPlaying,
-                isActuallyPlaying: isActuallyPlaying,
-              ),
+            return _TrackTile(
+              audioFile: file,
+              index: index,
+              playlistId: playlist.id,
+              isDark: isDark,
+              isCurrentlyPlaying: isCurrentlyPlaying,
+              isActuallyPlaying: isActuallyPlaying,
+              showDivider: index < playlist.files.length - 1,
             );
           },
         );
@@ -186,6 +147,7 @@ class _TrackTile extends StatefulWidget {
     required this.isDark,
     this.isCurrentlyPlaying = false,
     this.isActuallyPlaying = false,
+    this.showDivider = true,
   });
 
   final AudioFile audioFile;
@@ -194,6 +156,7 @@ class _TrackTile extends StatefulWidget {
   final bool isDark;
   final bool isCurrentlyPlaying;
   final bool isActuallyPlaying;
+  final bool showDivider;
 
   @override
   State<_TrackTile> createState() => _TrackTileState();
@@ -225,197 +188,157 @@ class _TrackTileState extends State<_TrackTile> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final isDark = widget.isDark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 600;
     final isPlaying = widget.isCurrentlyPlaying;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          // Select playlist with the correct start index
-          final currentPlaylistId =
-              context.read<PlaylistBloc>().state.currentPlaylist?.id;
-          if (currentPlaylistId != widget.playlistId) {
-            // Different playlist - select it with the start index
-            context.read<PlaylistBloc>().add(
-              PlaylistSelect(widget.playlistId, startIndex: widget.index),
-            );
-          } else {
-            // Same playlist - just jump to the track
-            context.read<PlaylistBloc>().add(PlaylistJumpToTrack(widget.index));
-          }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {
+              // Select playlist with the correct start index
+              final currentPlaylistId =
+                  context.read<PlaylistBloc>().state.currentPlaylist?.id;
+              if (currentPlaylistId != widget.playlistId) {
+                // Different playlist - select it with the start index
+                context.read<PlaylistBloc>().add(
+                  PlaylistSelect(widget.playlistId, startIndex: widget.index),
+                );
+              } else {
+                // Same playlist - just jump to the track
+                context.read<PlaylistBloc>().add(
+                  PlaylistJumpToTrack(widget.index),
+                );
+              }
 
-          context.read<PlayerBloc>().add(PlayerLoadAudio(widget.audioFile));
-          context.push('/player');
-        },
-        onLongPress: _showDeleteDialog,
-        onSecondaryTap: _showDeleteDialog,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(
-            horizontal: isCompact ? AppSpacing.sm : AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color:
-                isPlaying
-                    ? (isDark
-                        ? AppColors.accent.withValues(alpha: 0.15)
-                        : AppColors.accent.withValues(alpha: 0.1))
-                    : _isHovered
-                    ? (isDark
-                        ? AppColors.gray900
-                        : AppColors.accent.withValues(alpha: 0.05))
-                    : (isDark ? AppColors.gray900 : AppColors.white),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            border: Border.all(
-              color:
-                  isPlaying
-                      ? AppColors.accent.withValues(alpha: 0.5)
-                      : _isHovered
-                      ? (isDark
-                          ? AppColors.gray700
-                          : AppColors.accent.withValues(alpha: 0.3))
-                      : (isDark ? AppColors.gray800 : AppColors.gray200),
-            ),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: isCompact ? 28 : 32,
-                child:
+              context.read<PlayerBloc>().add(PlayerLoadAudio(widget.audioFile));
+              context.push('/player');
+            },
+            onLongPress: _showDeleteDialog,
+            onSecondaryTap: _showDeleteDialog,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: EdgeInsets.symmetric(
+                horizontal: isCompact ? AppSpacing.sm : AppSpacing.md,
+                vertical: AppSpacing.mdSm,
+              ),
+              decoration: BoxDecoration(
+                color:
                     isPlaying
-                        ? PlayingIndicator(
-                          color: AppColors.accent,
-                          size: isCompact ? 18 : 20,
-                          isAnimating: widget.isActuallyPlaying,
-                        )
+                        ? context.appPalette.rowHover
                         : _isHovered
-                        ? Icon(
-                          Icons.play_arrow_rounded,
-                          color: isDark ? AppColors.white : AppColors.accent,
-                          size: isCompact ? 18 : 20,
-                        )
-                        : Text(
-                          '${widget.index + 1}',
-                          style: TextStyle(
-                            color:
-                                isDark ? AppColors.gray500 : AppColors.gray400,
-                            fontSize: isCompact ? 12 : 14,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
+                        ? context.appPalette.rowHover
+                        : Colors.transparent,
               ),
-              SizedBox(width: isCompact ? AppSpacing.sm : AppSpacing.md),
-              Container(
-                width: isCompact ? 40 : 48,
-                height: isCompact ? 40 : 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors:
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: isCompact ? 28 : 32,
+                    child:
                         isPlaying
-                            ? [
-                              AppColors.accent.withValues(alpha: 0.3),
-                              AppColors.accentDark.withValues(alpha: 0.4),
-                            ]
-                            : isDark
-                            ? [AppColors.gray800, AppColors.gray900]
-                            : [
-                              AppColors.accentLight.withValues(alpha: 0.2),
-                              AppColors.accent.withValues(alpha: 0.3),
-                            ],
+                            ? PlayingIndicator(
+                              color: AppColors.accent,
+                              size: isCompact ? 18 : 20,
+                              isAnimating: widget.isActuallyPlaying,
+                            )
+                            : Text(
+                              '${widget.index + 1}',
+                              style: AppTypography.bodySmall(
+                                context.appPalette.mutedText,
+                              ).copyWith(
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
                   ),
-                  borderRadius: BorderRadius.circular(isCompact ? 4 : 6),
-                ),
-                child: Icon(
-                  Icons.music_note_rounded,
-                  color:
-                      isPlaying
-                          ? AppColors.accent
-                          : (isDark ? AppColors.gray600 : AppColors.accent),
-                  size: isCompact ? 20 : 24,
-                ),
-              ),
-              SizedBox(width: isCompact ? AppSpacing.sm : AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.audioFile.displayTitle,
-                      style: TextStyle(
-                        color:
-                            isPlaying
-                                ? AppColors.accent
-                                : _isHovered
-                                ? (isDark ? AppColors.white : AppColors.accent)
-                                : (isDark
-                                    ? AppColors.gray200
-                                    : AppColors.black),
-                        fontSize: isCompact ? 14 : 15,
-                        fontWeight:
-                            isPlaying ? FontWeight.w600 : FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  SizedBox(width: isCompact ? AppSpacing.sm : AppSpacing.md),
+                  Container(
+                    width: AppSpacing.trackArtSize,
+                    height: AppSpacing.trackArtSize,
+                    decoration: BoxDecoration(
+                      color: context.appPalette.interactive,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusArt),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.audioFile.artist ?? l10n.unknownArtist,
-                      style: TextStyle(
-                        color:
+                    child: Icon(
+                      Icons.music_note_rounded,
+                      color:
+                          isPlaying
+                              ? AppColors.accent
+                              : context.appPalette.mutedText,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.artTextGap),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.audioFile.displayTitle,
+                          style: AppTypography.labelLarge(
                             isPlaying
-                                ? AppColors.accent.withValues(alpha: 0.7)
-                                : (isDark
-                                    ? AppColors.gray500
-                                    : AppColors.gray600),
-                        fontSize: isCompact ? 11 : 13,
+                                ? AppColors.accentLight
+                                : context.appPalette.primaryText,
+                          ).copyWith(
+                            fontWeight:
+                                isPlaying ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.audioFile.artist ?? l10n.unknownArtist,
+                          style: AppTypography.bodySmall(
+                            context.appPalette.secondaryText,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!isCompact) ...[
+                    const SizedBox(width: AppSpacing.md),
+                    Text(
+                      widget.audioFile.duration > Duration.zero
+                          ? TimeParser.formatDuration(widget.audioFile.duration)
+                          : '--:--',
+                      style: AppTypography.timeDisplay(
+                        context.appPalette.mutedText,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-              ),
-              if (!isCompact) ...[
-                const SizedBox(width: AppSpacing.md),
-                Text(
-                  widget.audioFile.duration > Duration.zero
-                      ? TimeParser.formatDuration(widget.audioFile.duration)
-                      : '--:--',
-                  style: TextStyle(
-                    color: isDark ? AppColors.gray500 : AppColors.gray500,
-                    fontSize: 13,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+                  const SizedBox(width: AppSpacing.sm),
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline_rounded),
+                    color:
+                        _isHovered
+                            ? AppColors.error
+                            : context.appPalette.mutedText,
+                    iconSize: isCompact ? 18 : 20,
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: isCompact ? 28 : 32,
+                      minHeight: isCompact ? 28 : 32,
+                    ),
+                    onPressed: _showDeleteDialog,
+                    tooltip: l10n.removeFromPlaylist,
                   ),
-                ),
-              ],
-              const SizedBox(width: AppSpacing.sm),
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline_rounded),
-                color:
-                    _isHovered
-                        ? AppColors.error
-                        : (isDark ? AppColors.gray600 : AppColors.gray400),
-                iconSize: isCompact ? 18 : 20,
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: isCompact ? 28 : 32,
-                  minHeight: isCompact ? 28 : 32,
-                ),
-                onPressed: _showDeleteDialog,
-                tooltip: l10n.removeFromPlaylist,
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
+        if (widget.showDivider)
+          Divider(height: 1, thickness: 1, color: context.appPalette.divider),
+      ],
     );
   }
 }
@@ -428,59 +351,10 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors:
-                    isDark
-                        ? [AppColors.gray800, AppColors.gray900]
-                        : [
-                          AppColors.accentLight.withValues(alpha: 0.2),
-                          AppColors.accent.withValues(alpha: 0.3),
-                        ],
-              ),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color:
-                    isDark
-                        ? AppColors.gray700
-                        : AppColors.accent.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Icon(
-              Icons.queue_music_rounded,
-              color: isDark ? AppColors.gray500 : AppColors.accent,
-              size: 48,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            l10n.playlistEmpty,
-            style: TextStyle(
-              color: isDark ? AppColors.white : AppColors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            l10n.tapToAddSongs,
-            style: TextStyle(
-              color: isDark ? AppColors.gray500 : AppColors.gray600,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
+    return AppEmptyState(
+      icon: Icons.queue_music_rounded,
+      title: l10n.playlistEmpty,
+      message: l10n.tapToAddSongs,
     );
   }
 }

@@ -44,13 +44,19 @@ class _FileScannerSyncState extends State<FileScannerSync> {
         child: widget.child,
       );
 
-  /// Listen when scan completes or files change
+  /// Listen when scan completes, library deletes, or files change
   bool _shouldListen(FileScannerState previous, FileScannerState current) {
     if (_isInitialLoad &&
         previous.status == FileScannerStatus.loading &&
         (current.status == FileScannerStatus.initial ||
             current.status == FileScannerStatus.completed)) {
       return true;
+    }
+    // Disk/library delete updates lists under a dedicated status.
+    if (current.status == FileScannerStatus.fileDeleted) {
+      return previous.libraryFiles != current.libraryFiles ||
+          previous.folders != current.folders ||
+          previous.allFiles.length != current.allFiles.length;
     }
     if (current.status != FileScannerStatus.completed) return false;
     if (previous.status != FileScannerStatus.completed) return true;
@@ -70,6 +76,15 @@ class _FileScannerSyncState extends State<FileScannerSync> {
   /// Update SearchBloc and sync playlists
   void _onStateChanged(BuildContext context, FileScannerState state) {
     context.read<SearchBloc>().add(SearchSourceUpdated(state.allFiles));
+
+    if (state.status == FileScannerStatus.fileDeleted) {
+      // Playlist membership cascades with audio row deletes.
+      _syncExistingPlaylists(context);
+      if (_isInitialLoad) {
+        _isInitialLoad = false;
+      }
+      return;
+    }
 
     if (_isInitialLoad) {
       _isInitialLoad = false;

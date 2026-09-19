@@ -287,6 +287,8 @@ class AppLocalizations {
   String get deleteFile => _t.deleteFile;
   String deleteMusicConfirm(String title) => _t.deleteMusicConfirm(title);
   String musicDeleted(String title) => _t.musicDeleted(title);
+  String get musicDeleteFailed => _t.musicDeleteFailed;
+  String get musicDeleteCancelled => _t.musicDeleteCancelled;
   String get removeFromLibrary => _t.removeFromLibrary;
 
   // ============== Errors ==============
@@ -527,6 +529,8 @@ abstract class Translations {
   String get deleteFile;
   String deleteMusicConfirm(String title);
   String musicDeleted(String title);
+  String get musicDeleteFailed;
+  String get musicDeleteCancelled;
   String get removeFromLibrary;
 
   // ============== Errors ==============

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Vercel-style typography using Inter font family
+/// Typography for Spotify-inspired compact music hierarchy.
+///
+/// Prefer Inter (system). Hierarchy via weight more than huge size jumps.
 class AppTypography {
   AppTypography._();
 
@@ -34,28 +36,28 @@ class AppTypography {
   static TextStyle displaySmall(Color color) => TextStyle(
     fontFamily: fontFamily,
     fontSize: 24,
-    fontWeight: semiBold,
+    fontWeight: bold,
     color: color,
-    letterSpacing: -0.5,
-    height: 1.3,
+    letterSpacing: -0.4,
+    height: 1.25,
   );
 
   static TextStyle headlineLarge(Color color) => TextStyle(
     fontFamily: fontFamily,
-    fontSize: 20,
-    fontWeight: semiBold,
+    fontSize: 22,
+    fontWeight: bold,
     color: color,
     letterSpacing: -0.3,
-    height: 1.4,
+    height: 1.3,
   );
 
   static TextStyle headlineMedium(Color color) => TextStyle(
     fontFamily: fontFamily,
-    fontSize: 18,
-    fontWeight: medium,
+    fontSize: 16,
+    fontWeight: semiBold,
     color: color,
     letterSpacing: -0.2,
-    height: 1.4,
+    height: 1.35,
   );
 
   static TextStyle bodyLarge(Color color) => TextStyle(

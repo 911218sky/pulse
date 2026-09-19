@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/domain/entities/playlist.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
@@ -12,9 +14,11 @@ import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
 import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 import 'package:pulse/presentation/widgets/common/app_confirm_dialog.dart';
+import 'package:pulse/presentation/widgets/common/app_empty_state.dart';
 import 'package:pulse/presentation/widgets/common/app_screen_header.dart';
 import 'package:pulse/presentation/widgets/common/app_toast.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
+import 'package:pulse/presentation/widgets/common/vercel_card.dart';
 import 'package:pulse/presentation/widgets/common/vercel_text_field.dart';
 import 'package:pulse/presentation/widgets/playing_indicator.dart';
 
@@ -27,7 +31,9 @@ class PlaylistScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDarkMode;
+    final palette = context.appPalette;
+    final l10n = AppLocalizations.of(context);
 
     return BlocListener<PlaylistBloc, PlaylistState>(
       listenWhen:
@@ -38,11 +44,21 @@ class PlaylistScreen extends StatelessWidget {
         context.read<PlayerBloc>().add(const PlayerStop());
       },
       child: Scaffold(
-        backgroundColor: isDark ? AppColors.black : AppColors.white,
+        backgroundColor: palette.background,
         body: SafeArea(
           child: Column(
             children: [
-              _Header(onBack: onBack, isDark: isDark),
+              AppScreenHeader(
+                title: l10n.playlist,
+                subtitle: l10n.playlistDesc,
+                isDark: isDark,
+                onBack: onBack,
+                trailing: AppHeaderActionButton(
+                  icon: Icons.add_rounded,
+                  tooltip: l10n.createPlaylist,
+                  onPressed: () => _showCreatePlaylistDialog(context),
+                ),
+              ),
               Expanded(
                 child: BlocBuilder<PlaylistBloc, PlaylistState>(
                   builder: (context, state) {
@@ -58,7 +74,14 @@ class PlaylistScreen extends StatelessWidget {
                     }
 
                     if (state.playlists.isEmpty) {
-                      return _EmptyState(isDark: isDark);
+                      return AppEmptyState(
+                        icon: Icons.playlist_add_rounded,
+                        title: l10n.noPlaylists,
+                        message: l10n.noPlaylistsHint,
+                        actionLabel: l10n.createPlaylist,
+                        actionIcon: Icons.add_rounded,
+                        onAction: () => _showCreatePlaylistDialog(context),
+                      );
                     }
 
                     return _PlaylistList(
@@ -73,16 +96,6 @@ class PlaylistScreen extends StatelessWidget {
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          backgroundColor: isDark ? AppColors.white : AppColors.accent,
-          foregroundColor: isDark ? AppColors.black : AppColors.white,
-          onPressed: () => _showCreatePlaylistDialog(context),
-          icon: const Icon(Icons.add_rounded),
-          label: Text(
-            AppLocalizations.of(context).createPlaylist,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
       ),
     );
   }
@@ -92,25 +105,6 @@ class PlaylistScreen extends StatelessWidget {
     if (name != null && name.isNotEmpty && context.mounted) {
       context.read<PlaylistBloc>().add(PlaylistCreate(name));
     }
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.isDark, this.onBack});
-
-  final VoidCallback? onBack;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AppScreenHeader(
-      title: l10n.playlist,
-      subtitle: l10n.playlistDesc,
-      icon: Icons.queue_music_rounded,
-      isDark: isDark,
-      onBack: onBack,
-    );
   }
 }
 
@@ -131,6 +125,7 @@ class _PlaylistList extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 600;
+    final l10n = AppLocalizations.of(context);
 
     return BlocBuilder<PlayerBloc, PlayerState>(
       builder: (context, playerState) {
@@ -144,39 +139,108 @@ class _PlaylistList extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final playlist = playlists[index];
-            // Check if current playing track is in this playlist
             final isPlayingFromPlaylist =
                 currentTrackPath != null &&
                 playlist.containsPath(currentTrackPath);
             final isActuallyPlaying =
                 isPlayingFromPlaylist && playerState.isPlaying;
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isDark ? AppColors.black : AppColors.gray400)
-                        .withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+            return VercelListTile(
+              dense: true,
+              style: VercelListTileStyle.inset,
+              isSelected: isPlayingFromPlaylist,
+              showBottomDivider: index < playlists.length - 1,
+              onTap: () {
+                onPlaylistSelected?.call(playlist);
+                context.push('/playlist/${playlist.id}');
+              },
+              onLongPress: () => _showPlaylistOptions(context, playlist),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.mdSm,
               ),
-              child: _PlaylistCard(
-                playlist: playlist,
-                isSelected: isPlayingFromPlaylist,
+              leading: _PlaylistArt(
+                isPlaying: isPlayingFromPlaylist,
                 isActuallyPlaying: isActuallyPlaying,
-                onTap: () => onPlaylistSelected?.call(playlist),
-                onDelete: () => _confirmDelete(context, playlist),
-                onRename: () => _showRenameDialog(context, playlist),
-                isDark: isDark,
+              ),
+              title: Text(
+                playlist.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.labelLarge(
+                  isPlayingFromPlaylist
+                      ? AppColors.accentLight
+                      : context.appPalette.primaryText,
+                ).copyWith(
+                  fontWeight:
+                      isPlayingFromPlaylist ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+              subtitle: Text(l10n.songsCount(playlist.fileCount)),
+              trailing: IconButton(
+                icon: const Icon(Icons.more_horiz),
+                color: context.appPalette.mutedText,
+                iconSize: 18,
+                visualDensity: VisualDensity.compact,
+                tooltip: l10n.deletePlaylist,
+                onPressed: () => _showPlaylistOptions(context, playlist),
               ),
             );
           },
         );
       },
+    );
+  }
+
+  Future<void> _showPlaylistOptions(
+    BuildContext context,
+    Playlist playlist,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final palette = context.appPalette;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: palette.elevatedSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
+      ),
+      builder:
+          (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: AppSpacing.sm),
+                ListTile(
+                  leading: Icon(Icons.edit_rounded, color: palette.mutedText),
+                  title: Text(
+                    l10n.renamePlaylist,
+                    style: AppTypography.labelLarge(palette.primaryText),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showRenameDialog(context, playlist);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_rounded,
+                    color: AppColors.error,
+                  ),
+                  title: Text(
+                    l10n.deletePlaylist,
+                    style: AppTypography.labelLarge(AppColors.error),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _confirmDelete(context, playlist);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+            ),
+          ),
     );
   }
 
@@ -209,338 +273,43 @@ class _PlaylistList extends StatelessWidget {
   }
 }
 
-class _PlaylistCard extends StatefulWidget {
-  const _PlaylistCard({
-    required this.playlist,
-    required this.isDark,
-    this.isSelected = false,
-    this.isActuallyPlaying = false,
-    this.onTap,
-    this.onDelete,
-    this.onRename,
+class _PlaylistArt extends StatelessWidget {
+  const _PlaylistArt({
+    required this.isPlaying,
+    required this.isActuallyPlaying,
   });
 
-  final Playlist playlist;
-  final bool isSelected;
+  final bool isPlaying;
   final bool isActuallyPlaying;
-  final VoidCallback? onTap;
-  final VoidCallback? onDelete;
-  final VoidCallback? onRename;
-  final bool isDark;
-
-  @override
-  State<_PlaylistCard> createState() => _PlaylistCardState();
-}
-
-class _PlaylistCardState extends State<_PlaylistCard> {
-  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 600;
-    final isPlaying = widget.isSelected;
+    final palette = context.appPalette;
+    const size = AppSpacing.trackArtSize;
+    final radius = BorderRadius.circular(AppSpacing.radiusArt);
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () {
-          context.push('/playlist/${widget.playlist.id}');
-        },
-        onLongPress: isCompact ? () => _showPlaylistOptions(context) : null,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.symmetric(
-            horizontal: isCompact ? AppSpacing.sm : AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color:
-                isPlaying
-                    ? (widget.isDark
-                        ? AppColors.accent.withValues(alpha: 0.15)
-                        : AppColors.accent.withValues(alpha: 0.1))
-                    : _isHovered
-                    ? (widget.isDark
-                        ? AppColors.gray900
-                        : AppColors.accent.withValues(alpha: 0.05))
-                    : (widget.isDark ? AppColors.gray900 : AppColors.white),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            border: Border.all(
-              color:
-                  isPlaying
-                      ? AppColors.accent.withValues(alpha: 0.5)
-                      : _isHovered
-                      ? (widget.isDark
-                          ? AppColors.gray700
-                          : AppColors.accent.withValues(alpha: 0.3))
-                      : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
-            ),
-          ),
-          child: Row(
-            children: [
-              // Playing indicator
-              SizedBox(
-                width: isCompact ? 28 : 32,
-                child:
-                    isPlaying
-                        ? PlayingIndicator(
-                          color: AppColors.accent,
-                          size: isCompact ? 18 : 20,
-                          isAnimating: widget.isActuallyPlaying,
-                        )
-                        : _isHovered
-                        ? Icon(
-                          Icons.play_arrow_rounded,
-                          color:
-                              widget.isDark
-                                  ? AppColors.white
-                                  : AppColors.accent,
-                          size: isCompact ? 18 : 20,
-                        )
-                        : null,
-              ),
-              SizedBox(width: isCompact ? AppSpacing.xs : AppSpacing.sm),
-              // Playlist icon
-              Container(
-                width: isCompact ? 40 : 48,
-                height: isCompact ? 40 : 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors:
-                        isPlaying
-                            ? [
-                              AppColors.accent.withValues(alpha: 0.3),
-                              AppColors.accentDark.withValues(alpha: 0.4),
-                            ]
-                            : widget.isDark
-                            ? [AppColors.gray800, AppColors.gray900]
-                            : [
-                              AppColors.accentLight.withValues(alpha: 0.2),
-                              AppColors.accent.withValues(alpha: 0.3),
-                            ],
-                  ),
-                  borderRadius: BorderRadius.circular(isCompact ? 4 : 6),
-                ),
-                child: Icon(
-                  Icons.queue_music_rounded,
-                  color:
-                      isPlaying
-                          ? AppColors.accent
-                          : (widget.isDark
-                              ? AppColors.gray600
-                              : AppColors.accent),
-                  size: isCompact ? 20 : 24,
-                ),
-              ),
-              SizedBox(width: isCompact ? AppSpacing.sm : AppSpacing.md),
-              // Playlist name and song count
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.playlist.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color:
-                            isPlaying
-                                ? AppColors.accent
-                                : _isHovered
-                                ? (widget.isDark
-                                    ? AppColors.white
-                                    : AppColors.accent)
-                                : (widget.isDark
-                                    ? AppColors.gray200
-                                    : AppColors.black),
-                        fontSize: isCompact ? 14 : 15,
-                        fontWeight:
-                            isPlaying ? FontWeight.w600 : FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.songsCount(widget.playlist.fileCount),
-                      style: TextStyle(
-                        color:
-                            isPlaying
-                                ? AppColors.accent.withValues(alpha: 0.7)
-                                : (widget.isDark
-                                    ? AppColors.gray500
-                                    : AppColors.gray600),
-                        fontSize: isCompact ? 11 : 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              // Delete button - use remove_circle like music list
-              IconButton(
-                icon: const Icon(Icons.remove_circle_outline_rounded),
-                color:
-                    _isHovered
-                        ? AppColors.error
-                        : (widget.isDark
-                            ? AppColors.gray600
-                            : AppColors.gray400),
-                iconSize: isCompact ? 18 : 20,
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: isCompact ? 28 : 32,
-                  minHeight: isCompact ? 28 : 32,
-                ),
-                onPressed: widget.onDelete,
-                tooltip: l10n.deletePlaylist,
-              ),
-            ],
-          ),
+    return SizedBox(
+      width: size,
+      height: size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: palette.interactive,
+          borderRadius: radius,
         ),
-      ),
-    );
-  }
-
-  void _showPlaylistOptions(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final isDark = widget.isDark;
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: isDark ? AppColors.gray900 : AppColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusXl),
+        child: Center(
+          child:
+              isPlaying
+                  ? PlayingIndicator(
+                    color: AppColors.accent,
+                    size: 16,
+                    isAnimating: isActuallyPlaying,
+                  )
+                  : Icon(
+                    Icons.queue_music_rounded,
+                    color: palette.mutedText,
+                    size: 22,
+                  ),
         ),
-      ),
-      builder:
-          (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(top: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.gray700 : AppColors.gray300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Text(
-                    widget.playlist.name,
-                    style: TextStyle(
-                      color: isDark ? AppColors.white : AppColors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                ListTile(
-                  leading: Icon(
-                    Icons.edit_rounded,
-                    color: isDark ? AppColors.gray400 : AppColors.gray600,
-                  ),
-                  title: Text(
-                    l10n.renamePlaylist,
-                    style: TextStyle(
-                      color: isDark ? AppColors.white : AppColors.black,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.onRename?.call();
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.delete_rounded,
-                    color: AppColors.error,
-                  ),
-                  title: Text(
-                    l10n.deletePlaylist,
-                    style: const TextStyle(color: AppColors.error),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    widget.onDelete?.call();
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-            ),
-          ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.isDark});
-
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors:
-                    isDark
-                        ? [AppColors.gray800, AppColors.gray900]
-                        : [
-                          AppColors.accentLight.withValues(alpha: 0.2),
-                          AppColors.accent.withValues(alpha: 0.3),
-                        ],
-              ),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color:
-                    isDark
-                        ? AppColors.gray700
-                        : AppColors.accent.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Icon(
-              Icons.playlist_add_rounded,
-              color: isDark ? AppColors.gray500 : AppColors.accent,
-              size: 48,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            l10n.noPlaylists,
-            style: TextStyle(
-              color: isDark ? AppColors.white : AppColors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            l10n.noPlaylistsHint,
-            style: TextStyle(
-              color: isDark ? AppColors.gray500 : AppColors.gray600,
-              fontSize: 14,
-            ),
-          ),
-        ],
       ),
     );
   }

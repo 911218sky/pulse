@@ -186,6 +186,8 @@ void main() {
           l10n.deleteFile,
           l10n.deleteMusicConfirm('Track'),
           l10n.musicDeleted('Track'),
+          l10n.musicDeleteFailed,
+          l10n.musicDeleteCancelled,
           l10n.removeFromLibrary,
           l10n.unknownError,
         ];

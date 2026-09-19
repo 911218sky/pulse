@@ -132,7 +132,7 @@ class _SleepTimerDialogState extends State<SleepTimerDialog> {
     final isSmallScreen = screenSize.width < 400;
 
     return Dialog(
-      backgroundColor: isDark ? AppColors.black : AppColors.white,
+      backgroundColor: isDark ? AppColors.darkElevated : AppColors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
         side: BorderSide(color: isDark ? AppColors.gray800 : AppColors.gray200),

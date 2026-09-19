@@ -408,6 +408,11 @@ class EnTranslations extends Translations {
   @override
   String musicDeleted(String title) => 'Deleted "$title"';
   @override
+  String get musicDeleteFailed =>
+      'Could not delete the file. Check storage permission or try again.';
+  @override
+  String get musicDeleteCancelled => 'Delete cancelled';
+  @override
   String get removeFromLibrary => 'Delete file';
 
   // ============== Errors ==============

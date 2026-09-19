@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:pulse/core/services/media_file_delete_service.dart';
 import 'package:pulse/core/services/update_check_service.dart';
 import 'package:pulse/core/services/update_download_service.dart';
 import 'package:pulse/data/database/app_database.dart';
@@ -46,8 +47,9 @@ Future<void> initServiceLocator({
     ..registerLazySingleton<SettingsRepository>(
       () => SettingsRepositoryImpl(sl()),
     )
+    ..registerLazySingleton<MediaFileDeleteService>(MediaFileDeleteService.new)
     ..registerLazySingleton<FileScannerRepository>(
-      () => FileScannerRepositoryImpl(sl()),
+      () => FileScannerRepositoryImpl(sl(), mediaFileDeleteService: sl()),
     )
     ..registerLazySingleton<UpdateCheckService>(UpdateCheckService.new)
     ..registerLazySingleton<UpdateDownloadService>(UpdateDownloadService.new)

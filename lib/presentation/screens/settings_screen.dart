@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/core/utils/version_utils.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
@@ -34,7 +35,7 @@ class SettingsScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.black : AppColors.white,
+      backgroundColor: context.appPalette.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -396,9 +397,8 @@ class _SwitchTile extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: AppSpacing.sm),
     padding: const EdgeInsets.all(AppSpacing.md),
     decoration: BoxDecoration(
-      color: isDark ? AppColors.gray900 : AppColors.gray100,
+      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      border: Border.all(color: isDark ? AppColors.gray800 : AppColors.gray200),
     ),
     child: Row(
       children: [
@@ -465,11 +465,8 @@ class _LanguageTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.gray900 : AppColors.gray100,
+        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(
-          color: isDark ? AppColors.gray800 : AppColors.gray200,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -558,15 +555,9 @@ class _LanguageOption extends StatelessWidget {
       decoration: BoxDecoration(
         color:
             isSelected
-                ? (isDark ? colorScheme.primary : colorScheme.primary)
-                : (isDark ? AppColors.gray800 : AppColors.white),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-        border: Border.all(
-          color:
-              isSelected
-                  ? (isDark ? colorScheme.primary : colorScheme.primary)
-                  : (isDark ? AppColors.gray700 : AppColors.gray300),
-        ),
+                ? AppColors.accent
+                : (isDark ? AppColors.darkInteractive : AppColors.white),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
       ),
       child: Text(
         label,
@@ -574,7 +565,7 @@ class _LanguageOption extends StatelessWidget {
         style: TextStyle(
           color:
               isSelected
-                  ? (isDark ? AppColors.black : AppColors.white)
+                  ? AppColors.white
                   : (isDark ? AppColors.gray400 : AppColors.gray600),
           fontSize: 14,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -610,9 +601,8 @@ class _SliderTile extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: AppSpacing.sm),
     padding: const EdgeInsets.all(AppSpacing.md),
     decoration: BoxDecoration(
-      color: isDark ? AppColors.gray900 : AppColors.gray100,
+      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      border: Border.all(color: isDark ? AppColors.gray800 : AppColors.gray200),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -706,15 +696,13 @@ class _ActionTileState extends State<_ActionTile> {
           decoration: BoxDecoration(
             color:
                 _isHovered
-                    ? (widget.isDark ? AppColors.gray800 : AppColors.gray200)
-                    : (widget.isDark ? AppColors.gray900 : AppColors.gray100),
+                    ? (widget.isDark
+                        ? AppColors.darkInteractive
+                        : AppColors.gray200)
+                    : (widget.isDark
+                        ? AppColors.darkSurface
+                        : AppColors.lightSurface),
             borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            border: Border.all(
-              color:
-                  _isHovered
-                      ? (widget.isDark ? AppColors.gray700 : AppColors.gray300)
-                      : (widget.isDark ? AppColors.gray800 : AppColors.gray200),
-            ),
           ),
           child: Row(
             children: [

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as path_lib;
+import 'package:pulse/core/services/media_file_delete_service.dart';
 import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/entities/scanned_folder.dart';
@@ -259,16 +260,37 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
     Emitter<FileScannerState> emit,
   ) async {
     try {
+      final deletedTitle = _titleForFileId(event.fileId);
+
       if (event.deleteFromDisk && event.filePath != null) {
-        await _fileScannerRepository.deleteFileFromDisk(
+        final outcome = await _fileScannerRepository.deleteFileFromDisk(
           event.fileId,
           event.filePath!,
         );
+        if (outcome == MediaDeleteOutcome.cancelled) {
+          emit(
+            state.copyWith(
+              status: FileScannerStatus.deleteCancelled,
+              clearLastDeletedTitle: true,
+            ),
+          );
+          return;
+        }
+        if (outcome != MediaDeleteOutcome.deleted) {
+          emit(
+            state.copyWith(
+              status: FileScannerStatus.deleteFailed,
+              errorMessage: 'delete_failed',
+              clearLastDeletedTitle: true,
+            ),
+          );
+          return;
+        }
       } else {
         await _fileScannerRepository.deleteFromLibrary(event.fileId);
       }
 
-      // Update state
+      // Update state only after a successful delete.
       final updatedLibraryFiles =
           state.libraryFiles.where((f) => f.id != event.fileId).toList();
 
@@ -284,8 +306,10 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
 
       emit(
         state.copyWith(
+          status: FileScannerStatus.fileDeleted,
           folders: updatedFolders,
           libraryFiles: updatedLibraryFiles,
+          lastDeletedTitle: deletedTitle,
         ),
       );
     } on Exception catch (e) {
@@ -293,9 +317,20 @@ class FileScannerBloc extends Bloc<FileScannerEvent, FileScannerState> {
         state.copyWith(
           status: FileScannerStatus.error,
           errorMessage: e.toString(),
+          clearLastDeletedTitle: true,
         ),
       );
     }
+  }
+
+  String? _titleForFileId(String fileId) {
+    for (final file in state.libraryFiles) {
+      if (file.id == fileId) return file.displayTitle;
+    }
+    for (final file in state.folders.expand((folder) => folder.files)) {
+      if (file.id == fileId) return file.displayTitle;
+    }
+    return null;
   }
 
   Future<void> _onDeleteFiles(

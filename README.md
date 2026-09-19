@@ -23,6 +23,7 @@
 - Sleep timer, playback speed, volume, and skip interval controls
 - Built-in update checks from GitHub Releases
 - Interface languages: English, Traditional Chinese, Simplified Chinese
+- Spotify-inspired dark music UI with Pulse blue accent (see [`docs/UI.md`](docs/UI.md))
 
 ## Screenshots
 
@@ -93,6 +94,8 @@ flutter build appbundle --release
 ## Project Structure
 
 ```text
+docs/
+|-- UI.md           Spotify-inspired design system for Pulse
 lib/
 |-- core/           Shared theme, routing, localization, utilities, DI
 |-- data/           Database, repositories, services, persistence models

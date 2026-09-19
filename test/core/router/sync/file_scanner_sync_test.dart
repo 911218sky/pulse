@@ -107,4 +107,76 @@ void main() {
       expect(searchBloc.state.sourceFiles, [audioFile]);
     },
   );
+
+  testWidgets('fileDeleted status syncs search and reloads playlists', (
+    tester,
+  ) async {
+    final fileScannerBloc = _MockFileScannerBloc();
+    final playerBloc = _MockPlayerBloc();
+    final playlistBloc = _MockPlaylistBloc();
+    final searchBloc = SearchBloc();
+    const audioFile = AudioFile(
+      id: 'keep',
+      path: '/music/keep.mp3',
+      title: 'Keep',
+      duration: Duration(minutes: 2),
+      fileSizeBytes: 1024,
+    );
+    const before = FileScannerState(
+      status: FileScannerStatus.completed,
+      libraryFiles: [
+        AudioFile(
+          id: 'gone',
+          path: '/music/gone.mp3',
+          title: 'Gone',
+          duration: Duration(minutes: 1),
+          fileSizeBytes: 512,
+        ),
+        audioFile,
+      ],
+    );
+    const after = FileScannerState(
+      status: FileScannerStatus.fileDeleted,
+      libraryFiles: [audioFile],
+      lastDeletedTitle: 'Gone',
+    );
+
+    when(() => fileScannerBloc.state).thenReturn(after);
+    whenListen(
+      fileScannerBloc,
+      Stream<FileScannerState>.fromIterable([after]),
+      initialState: before,
+    );
+    when(() => playerBloc.state).thenReturn(const PlayerState());
+    whenListen(
+      playerBloc,
+      const Stream<PlayerState>.empty(),
+      initialState: const PlayerState(),
+    );
+    when(() => playlistBloc.state).thenReturn(const PlaylistState());
+    whenListen(
+      playlistBloc,
+      const Stream<PlaylistState>.empty(),
+      initialState: const PlaylistState(),
+    );
+
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider<FileScannerBloc>.value(value: fileScannerBloc),
+          BlocProvider<PlayerBloc>.value(value: playerBloc),
+          BlocProvider<PlaylistBloc>.value(value: playlistBloc),
+          BlocProvider<SearchBloc>.value(value: searchBloc),
+        ],
+        child: const MaterialApp(
+          home: FileScannerSync(child: SizedBox.shrink()),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(searchBloc.state.sourceFiles, [audioFile]);
+    verify(() => playlistBloc.add(const PlaylistLoadAll())).called(1);
+  });
 }

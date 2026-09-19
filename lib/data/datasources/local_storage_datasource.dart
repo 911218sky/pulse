@@ -32,6 +32,11 @@ class LocalStorageDataSource {
     return rows.map(AudioFileModel.fromDrift).toList();
   }
 
+  Future<AudioFileModel?> getAudioFileById(String id) async {
+    final row = await _db.getAudioFileById(id);
+    return row != null ? AudioFileModel.fromDrift(row) : null;
+  }
+
   Future<void> deleteAudioFile(String id) async {
     await _db.deleteAudioFile(id);
   }

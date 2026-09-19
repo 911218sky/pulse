@@ -11,7 +11,7 @@ Core responsibilities:
 - Background playback with Android/system media controls
 - Folder scanning, library import, and playlist management
 - Persistent playback position, settings, playlists, and library data
-- Minimal Vercel-inspired UI with black/white surfaces and blue accent color
+- Minimal Spotify-inspired UI: charcoal dark chrome, Pulse blue accent (see [`docs/UI.md`](docs/UI.md))
 
 ## Multi-Agent Collaboration
 
@@ -172,17 +172,20 @@ Rules:
 
 ## UI And Design System
 
+Canonical design reference: [`docs/UI.md`](docs/UI.md) (Spotify-inspired charcoal music chrome; Pulse `#0070F3` accent — never Spotify Green).
+
 Use the shared design tokens:
 - `AppColors` for colors
-- `AppSpacing` for spacing and radii
-- `AppTypography` for text styles
-- theme helpers from `core/theme/` where available
+- `AppSpacing` for spacing and radii (`radiusArt` 4, cards 8, pill `radiusFull`)
+- `AppTypography` for text styles (Inter)
+- theme helpers from `core/theme/` (`context.appPalette`)
 
 Prefer shared components:
 - `VercelButton`
-- `VercelCard`
-- `VercelListTile`
+- `VercelCard` / `VercelListTile` (`inset` for music rows)
 - `VercelTextField`
+- `AppScreenHeader`
+- `AppEmptyState`
 - `AppToast`
 - `AppConfirmDialog`
 
@@ -192,13 +195,15 @@ Avoid:
 - one-off tile/card/button styling when an existing common widget fits
 - adding user-facing strings without localization
 - mixing platform-specific visual styles unless the screen already has a documented platform exception
+- Spotify Green, proprietary Spotify fonts/logos, or heavy glassmorphism / neon glows
 
-The visual style should remain minimal, high-contrast, and consistent with the existing black/white/blue Vercel-inspired language.
+The visual style must stay dark-first, charcoal-layered, and music-content-forward with sparse Pulse blue accent.
 
 When changing UI:
 - Reuse shared components first, then extend them if the pattern repeats.
 - Keep loading, empty, error, and destructive-confirmation states visually consistent.
 - Check narrow mobile layouts before release when the changed screen is responsive.
+- Update `docs/UI.md` when tokens, radii, or shared chrome patterns change.
 
 ## Localization
 

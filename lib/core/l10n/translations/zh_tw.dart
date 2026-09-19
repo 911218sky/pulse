@@ -390,6 +390,10 @@ class ZhTwTranslations extends Translations {
   @override
   String musicDeleted(String title) => '已刪除「$title」';
   @override
+  String get musicDeleteFailed => '無法刪除檔案，請確認儲存權限後再試一次。';
+  @override
+  String get musicDeleteCancelled => '已取消刪除';
+  @override
   String get removeFromLibrary => '刪除檔案';
 
   // ============== Errors ==============

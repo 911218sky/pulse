@@ -41,8 +41,8 @@ class PlaybackControls extends StatelessWidget {
   };
 
   double get _secondaryButtonSize => switch (size) {
-    PlaybackControlsSize.small => 32,
-    PlaybackControlsSize.medium => 40,
+    PlaybackControlsSize.small => 40,
+    PlaybackControlsSize.medium => 48,
     PlaybackControlsSize.large => 48,
   };
 

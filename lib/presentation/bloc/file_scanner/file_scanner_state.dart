@@ -4,7 +4,16 @@ import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/entities/scanned_folder.dart';
 
 /// Status of file scanning
-enum FileScannerStatus { initial, loading, scanning, completed, error }
+enum FileScannerStatus {
+  initial,
+  loading,
+  scanning,
+  completed,
+  error,
+  fileDeleted,
+  deleteFailed,
+  deleteCancelled,
+}
 
 /// State for FileScannerBloc
 class FileScannerState extends Equatable {
@@ -14,6 +23,7 @@ class FileScannerState extends Equatable {
     this.libraryFiles = const [],
     this.scanProgress,
     this.errorMessage,
+    this.lastDeletedTitle,
   });
 
   final FileScannerStatus status;
@@ -21,6 +31,7 @@ class FileScannerState extends Equatable {
   final List<AudioFile> libraryFiles;
   final ScanProgress? scanProgress;
   final String? errorMessage;
+  final String? lastDeletedTitle;
 
   /// Whether a scan is in progress
   bool get isScanning => status == FileScannerStatus.scanning;
@@ -30,7 +41,7 @@ class FileScannerState extends Equatable {
 
   /// Total number of files found across all folders
   int get totalFilesFound =>
-      folders.fold(0, (sum, folder) => sum + folder.fileCount);
+      folders.fold(0, (sum, folder) => folder.fileCount + sum);
 
   /// Number of selected folders
   int get selectedFolderCount => folders.where((f) => f.isSelected).length;
@@ -63,12 +74,18 @@ class FileScannerState extends Equatable {
     List<AudioFile>? libraryFiles,
     ScanProgress? scanProgress,
     String? errorMessage,
+    String? lastDeletedTitle,
+    bool clearLastDeletedTitle = false,
   }) => FileScannerState(
     status: status ?? this.status,
     folders: folders ?? this.folders,
     libraryFiles: libraryFiles ?? this.libraryFiles,
     scanProgress: scanProgress ?? this.scanProgress,
     errorMessage: errorMessage ?? this.errorMessage,
+    lastDeletedTitle:
+        clearLastDeletedTitle
+            ? null
+            : (lastDeletedTitle ?? this.lastDeletedTitle),
   );
 
   @override
@@ -78,5 +95,6 @@ class FileScannerState extends Equatable {
     libraryFiles,
     scanProgress,
     errorMessage,
+    lastDeletedTitle,
   ];
 }

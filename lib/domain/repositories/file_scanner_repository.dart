@@ -1,3 +1,4 @@
+import 'package:pulse/core/services/media_file_delete_service.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
 import 'package:pulse/domain/entities/scanned_folder.dart';
 
@@ -40,8 +41,11 @@ abstract class FileScannerRepository {
   /// Deletes multiple audio files from the music library
   Future<void> deleteMultipleFromLibrary(List<String> fileIds);
 
-  /// Deletes an audio file from disk and library
-  Future<bool> deleteFileFromDisk(String fileId, String filePath);
+  /// Deletes an audio file from disk and, on success, from the library.
+  ///
+  /// Returns [MediaDeleteOutcome.deleted] only when the on-disk file is gone
+  /// (or was already missing) and library rows were cleaned up.
+  Future<MediaDeleteOutcome> deleteFileFromDisk(String fileId, String filePath);
 
   /// Clears entire music library
   Future<void> clearLibrary();

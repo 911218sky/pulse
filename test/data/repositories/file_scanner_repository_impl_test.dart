@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:pulse/core/services/media_file_delete_service.dart';
 import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/data/datasources/local_storage_datasource.dart';
 import 'package:pulse/data/models/audio_file_model.dart';
+import 'package:pulse/data/models/playback_state_model.dart';
 import 'package:pulse/data/models/settings_model.dart';
 import 'package:pulse/data/repositories/file_scanner_repository_impl.dart';
 import 'package:pulse/domain/entities/audio_file.dart';
@@ -205,6 +207,96 @@ void main() {
 
       expect(await repository.getSavedFolderPreferences(), [folder]);
     });
+
+    test(
+      'deleteFileFromDisk removes library row only after disk delete succeeds',
+      () async {
+        final audioPath = AudioPathUtils.canonicalize(
+          '${tempDir.path}${Platform.pathSeparator}keep.mp3',
+        );
+        final deleteService = MediaFileDeleteService(
+          ioDelete: (_) async => true,
+        );
+        final repo = FileScannerRepositoryImpl(
+          dataSource,
+          mediaFileDeleteService: deleteService,
+        );
+
+        when(() => dataSource.deleteAudioFile('id-1')).thenAnswer((_) async {});
+        when(
+          () => dataSource.clearFilePosition(audioPath),
+        ).thenAnswer((_) async {});
+        when(
+          () => dataSource.getLastPlaybackState(),
+        ).thenAnswer((_) async => null);
+
+        final outcome = await repo.deleteFileFromDisk('id-1', audioPath);
+
+        expect(outcome, MediaDeleteOutcome.deleted);
+        verify(() => dataSource.deleteAudioFile('id-1')).called(1);
+        verify(() => dataSource.clearFilePosition(audioPath)).called(1);
+      },
+    );
+
+    test(
+      'deleteFileFromDisk does not touch library when disk delete fails',
+      () async {
+        final audioPath = AudioPathUtils.canonicalize(
+          '${tempDir.path}${Platform.pathSeparator}keep.mp3',
+        );
+        final deleteService = MediaFileDeleteService(
+          ioDelete: (_) async => false,
+        );
+        final repo = FileScannerRepositoryImpl(
+          dataSource,
+          mediaFileDeleteService: deleteService,
+        );
+
+        final outcome = await repo.deleteFileFromDisk('id-1', audioPath);
+
+        expect(outcome, MediaDeleteOutcome.failed);
+        verifyNever(() => dataSource.deleteAudioFile(any()));
+        verifyNever(() => dataSource.clearFilePosition(any()));
+      },
+    );
+
+    test(
+      'deleteFromLibrary also clears matching playback position/state',
+      () async {
+        final audioPath = AudioPathUtils.canonicalize(
+          '${tempDir.path}${Platform.pathSeparator}track.mp3',
+        );
+        when(() => dataSource.getAudioFileById('id-1')).thenAnswer(
+          (_) async => AudioFileModel(
+            id: 'id-1',
+            path: audioPath,
+            title: 'Track',
+            durationMilliseconds: 0,
+            fileSizeBytes: 10,
+          ),
+        );
+        when(() => dataSource.deleteAudioFile('id-1')).thenAnswer((_) async {});
+        when(
+          () => dataSource.clearFilePosition(audioPath),
+        ).thenAnswer((_) async {});
+        when(() => dataSource.getLastPlaybackState()).thenAnswer(
+          (_) async => PlaybackStateModel(
+            audioFilePath: audioPath,
+            positionMilliseconds: 0,
+            savedAt: DateTime.utc(2024),
+            volume: 1,
+            playbackSpeed: 1,
+          ),
+        );
+        when(() => dataSource.clearPlaybackState()).thenAnswer((_) async {});
+
+        await repository.deleteFromLibrary('id-1');
+
+        verify(() => dataSource.deleteAudioFile('id-1')).called(1);
+        verify(() => dataSource.clearFilePosition(audioPath)).called(1);
+        verify(() => dataSource.clearPlaybackState()).called(1);
+      },
+    );
   });
 }
 

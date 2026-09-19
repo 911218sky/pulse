@@ -31,8 +31,8 @@ class AppTheme {
     textTheme: _textTheme(AppColors.white, AppColors.gray400),
     scaffoldBackgroundColor: AppColors.darkBackground,
     colorScheme: const ColorScheme.dark(
-      primary: AppColors.white,
-      secondary: AppColors.accent,
+      primary: AppColors.accent,
+      secondary: AppColors.accentLight,
       surface: AppColors.darkSurface,
       error: AppColors.error,
     ),
@@ -48,22 +48,21 @@ class AppTheme {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        side: const BorderSide(color: AppColors.darkBorder),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.black,
+        backgroundColor: AppColors.accent,
+        foregroundColor: AppColors.white,
         elevation: 0,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.buttonPaddingH,
           vertical: AppSpacing.buttonPaddingV,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
         ),
-        textStyle: AppTypography.labelLarge(AppColors.black),
+        textStyle: AppTypography.labelLarge(AppColors.white),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -75,7 +74,7 @@ class AppTheme {
           vertical: AppSpacing.buttonPaddingV,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
         ),
         side: const BorderSide(color: AppColors.darkBorder),
         textStyle: AppTypography.labelLarge(AppColors.white),
@@ -96,7 +95,7 @@ class AppTheme {
     ),
     sliderTheme: SliderThemeData(
       activeTrackColor: AppColors.white,
-      inactiveTrackColor: AppColors.gray800,
+      inactiveTrackColor: AppColors.gray700,
       thumbColor: AppColors.white,
       overlayColor: AppColors.white.withValues(alpha: 0.1),
       trackHeight: AppSpacing.progressBarHeight,
@@ -104,31 +103,31 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.darkSurface,
+      fillColor: AppColors.darkInteractive,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.darkBorder),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.darkBorder),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
         borderSide: const BorderSide(color: AppColors.white),
       ),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
-      hintStyle: AppTypography.bodyMedium(AppColors.gray600),
+      hintStyle: AppTypography.bodyMedium(AppColors.gray500),
     ),
     dividerTheme: const DividerThemeData(
       color: AppColors.darkBorder,
       thickness: 1,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: AppColors.darkElevated,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusLg),
@@ -136,7 +135,7 @@ class AppTheme {
       ),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: AppColors.darkElevated,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
       ),
@@ -147,7 +146,7 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.light,
     fontFamily: AppTypography.fontFamily,
-    textTheme: _textTheme(AppColors.black, AppColors.gray600),
+    textTheme: _textTheme(AppColors.black, AppColors.gray500),
     scaffoldBackgroundColor: AppColors.lightBackground,
     colorScheme: const ColorScheme.light(
       primary: AppColors.accent,
@@ -180,18 +179,17 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.lightSurface,
+      fillColor: AppColors.lightInteractive,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.lightBorder),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.lightBorder),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: const BorderSide(color: AppColors.accent),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
       ),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,

@@ -5,13 +5,13 @@ import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/theme/app_theme_tokens.dart';
 
-/// Vercel-style button variants
+/// Button variants for Pulse music chrome.
 enum VercelButtonVariant { primary, secondary, ghost, danger }
 
-/// Vercel-style button sizes
+/// Button sizes
 enum VercelButtonSize { small, medium, large }
 
-/// A Vercel-style button widget
+/// Pill-shaped action button (Spotify-inspired primary CTA).
 class VercelButton extends StatefulWidget {
   const VercelButton({
     required this.onPressed,
@@ -83,7 +83,7 @@ class _VercelButtonState extends State<VercelButton> {
       return switch (widget.variant) {
         VercelButtonVariant.primary => AppColors.gray700,
         VercelButtonVariant.secondary =>
-          isDark ? AppColors.gray900 : AppColors.gray200,
+          isDark ? AppColors.darkInteractive : AppColors.gray200,
         VercelButtonVariant.ghost => Colors.transparent,
         VercelButtonVariant.danger => AppColors.gray700,
       };
@@ -91,8 +91,7 @@ class _VercelButtonState extends State<VercelButton> {
 
     if (_isPressed) {
       return switch (widget.variant) {
-        VercelButtonVariant.primary =>
-          isDark ? AppColors.gray200 : AppColors.accentDark,
+        VercelButtonVariant.primary => AppColors.accentDark,
         VercelButtonVariant.secondary =>
           isDark ? AppColors.gray700 : AppColors.gray300,
         VercelButtonVariant.ghost =>
@@ -103,8 +102,7 @@ class _VercelButtonState extends State<VercelButton> {
 
     if (_isHovered) {
       return switch (widget.variant) {
-        VercelButtonVariant.primary =>
-          isDark ? AppColors.gray100 : AppColors.accentLight,
+        VercelButtonVariant.primary => AppColors.accentLight,
         VercelButtonVariant.secondary =>
           isDark ? AppColors.gray800 : AppColors.gray200,
         VercelButtonVariant.ghost =>
@@ -114,10 +112,9 @@ class _VercelButtonState extends State<VercelButton> {
     }
 
     return switch (widget.variant) {
-      VercelButtonVariant.primary =>
-        isDark ? AppColors.white : AppColors.accent,
+      VercelButtonVariant.primary => AppColors.accent,
       VercelButtonVariant.secondary =>
-        isDark ? AppColors.gray900 : AppColors.gray100,
+        isDark ? AppColors.darkInteractive : AppColors.gray100,
       VercelButtonVariant.ghost => Colors.transparent,
       VercelButtonVariant.danger => AppColors.error,
     };
@@ -127,11 +124,11 @@ class _VercelButtonState extends State<VercelButton> {
     if (!_isEnabled) return AppColors.gray500;
 
     return switch (widget.variant) {
-      VercelButtonVariant.primary => isDark ? AppColors.black : AppColors.white,
+      VercelButtonVariant.primary => AppColors.white,
       VercelButtonVariant.secondary =>
         isDark ? AppColors.white : AppColors.black,
       VercelButtonVariant.ghost =>
-        isDark ? AppColors.gray300 : AppColors.gray700,
+        isDark ? AppColors.gray400 : AppColors.gray700,
       VercelButtonVariant.danger => AppColors.white,
     };
   }
@@ -142,9 +139,7 @@ class _VercelButtonState extends State<VercelButton> {
     return switch (widget.variant) {
       VercelButtonVariant.primary => Colors.transparent,
       VercelButtonVariant.secondary =>
-        _isHovered
-            ? (isDark ? AppColors.gray600 : AppColors.gray400)
-            : (isDark ? AppColors.gray700 : AppColors.gray300),
+        isDark ? AppColors.darkBorder : AppColors.gray300,
       VercelButtonVariant.ghost => Colors.transparent,
       VercelButtonVariant.danger => Colors.transparent,
     };
@@ -174,7 +169,7 @@ class _VercelButtonState extends State<VercelButton> {
           padding: _padding,
           decoration: BoxDecoration(
             color: _backgroundColor(isDark),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             border: Border.all(color: _borderColor(isDark)),
           ),
           child: Row(
@@ -208,7 +203,10 @@ class _VercelButtonState extends State<VercelButton> {
                     widget.label!,
                     style: AppTypography.labelLarge(
                       _foregroundColor(isDark),
-                    ).copyWith(fontSize: _fontSize),
+                    ).copyWith(
+                      fontSize: _fontSize,
+                      fontWeight: FontWeight.w700,
+                    ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),

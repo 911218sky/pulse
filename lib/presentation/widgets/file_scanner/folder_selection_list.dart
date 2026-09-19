@@ -271,10 +271,7 @@ class FolderSelectionSummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: dark ? AppColors.gray900 : AppColors.gray100,
-        border: Border(
-          top: BorderSide(color: dark ? AppColors.gray800 : AppColors.gray200),
-        ),
+        color: dark ? AppColors.darkElevated : AppColors.lightSurface,
       ),
       child: Row(
         children: [

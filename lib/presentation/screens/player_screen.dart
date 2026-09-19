@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
+import 'package:pulse/core/constants/typography.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
+import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/core/utils/time_parser.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
@@ -18,6 +21,7 @@ import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_bloc.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_event.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_state.dart';
 import 'package:pulse/presentation/widgets/common/animated_equalizer.dart';
+import 'package:pulse/presentation/widgets/common/vercel_button.dart';
 import 'package:pulse/presentation/widgets/player/playback_controls.dart';
 import 'package:pulse/presentation/widgets/player/progress_bar.dart';
 import 'package:pulse/presentation/widgets/player/time_input_dialog.dart';
@@ -67,47 +71,67 @@ class _PlayerScreenState extends State<PlayerScreen> {
       listener: (context, state) => _showResumePromptIfNeeded(state),
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        body: SafeArea(
-          child: BlocBuilder<PlayerBloc, PlayerState>(
-            builder:
-                (context, state) => Stack(
-                  children: [
-                    Column(
-                      children: [
-                        _Header(onBack: widget.onBack, isDark: isDark),
-                        Expanded(
-                          child: _TrackInfo(state: state, isDark: isDark),
-                        ),
-                        _PlayerControls(state: state, isDark: isDark),
-                        const SizedBox(height: AppSpacing.xl),
+        body: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors:
+                  isDark
+                      ? const [
+                        AppColors.darkElevated,
+                        AppColors.darkBackground,
+                        AppColors.darkBackground,
+                      ]
+                      : const [
+                        AppColors.lightInteractive,
+                        AppColors.lightBackground,
+                        AppColors.lightBackground,
                       ],
-                    ),
-                    if (state.pendingResumePosition != null &&
-                        state.currentAudio != null)
-                      Positioned(
-                        left: AppSpacing.md,
-                        right: AppSpacing.md,
-                        bottom: AppSpacing.xl,
-                        child: _ResumePromptCard(
-                          trackTitle:
-                              state.currentAudio?.displayTitle ??
-                              AppLocalizations.of(context).noTrackSelected,
-                          position: state.pendingResumePosition!,
-                          isDark: isDark,
-                          onResume: () {
-                            context.read<PlayerBloc>().add(
-                              const PlayerResumeFromSavedPosition(),
-                            );
-                          },
-                          onStartOver: () {
-                            context.read<PlayerBloc>().add(
-                              const PlayerDismissResumePrompt(),
-                            );
-                          },
-                        ),
+            ),
+          ),
+          child: SafeArea(
+            child: BlocBuilder<PlayerBloc, PlayerState>(
+              builder:
+                  (context, state) => Stack(
+                    children: [
+                      Column(
+                        children: [
+                          _Header(onBack: widget.onBack, isDark: isDark),
+                          Expanded(
+                            child: _TrackInfo(state: state, isDark: isDark),
+                          ),
+                          _PlayerControls(state: state, isDark: isDark),
+                          const SizedBox(height: AppSpacing.xl),
+                        ],
                       ),
-                  ],
-                ),
+                      if (state.pendingResumePosition != null &&
+                          state.currentAudio != null)
+                        Positioned(
+                          left: AppSpacing.md,
+                          right: AppSpacing.md,
+                          bottom: AppSpacing.xl,
+                          child: _ResumePromptCard(
+                            trackTitle:
+                                state.currentAudio?.displayTitle ??
+                                AppLocalizations.of(context).noTrackSelected,
+                            position: state.pendingResumePosition!,
+                            isDark: isDark,
+                            onResume: () {
+                              context.read<PlayerBloc>().add(
+                                const PlayerResumeFromSavedPosition(),
+                              );
+                            },
+                            onStartOver: () {
+                              context.read<PlayerBloc>().add(
+                                const PlayerDismissResumePrompt(),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+            ),
           ),
         ),
       ),
@@ -159,24 +183,16 @@ class _ResumePromptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = context.appPalette;
 
     return Material(
       color: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.gray900 : AppColors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          border: Border.all(
-            color: isDark ? AppColors.gray800 : AppColors.gray200,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: palette.elevatedSurface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(color: palette.subtleBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,11 +200,7 @@ class _ResumePromptCard extends StatelessWidget {
           children: [
             Text(
               l10n.resumePlaybackPromptTitle,
-              style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.gray900,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
+              style: AppTypography.labelLarge(palette.primaryText),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -196,24 +208,23 @@ class _ResumePromptCard extends StatelessWidget {
                 trackTitle,
                 TimeParser.formatDuration(position),
               ),
-              style: TextStyle(
-                color: isDark ? AppColors.gray300 : AppColors.gray700,
-                fontSize: 13,
-                height: 1.4,
-              ),
+              style: AppTypography.bodySmall(palette.secondaryText),
             ),
             const SizedBox(height: AppSpacing.md),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
+                VercelButton(
+                  label: l10n.resumePlaybackPromptStartOver,
                   onPressed: onStartOver,
-                  child: Text(l10n.resumePlaybackPromptStartOver),
+                  variant: VercelButtonVariant.ghost,
+                  size: VercelButtonSize.small,
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                FilledButton(
+                VercelButton(
+                  label: l10n.resumePlaybackPromptResume,
                   onPressed: onResume,
-                  child: Text(l10n.resumePlaybackPromptResume),
+                  size: VercelButtonSize.small,
                 ),
               ],
             ),
@@ -254,11 +265,8 @@ class _Header extends StatelessWidget {
               vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.gray900 : AppColors.gray100,
+              color: isDark ? AppColors.darkInteractive : AppColors.gray100,
               borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-              border: Border.all(
-                color: isDark ? AppColors.gray800 : AppColors.gray200,
-              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -271,10 +279,8 @@ class _Header extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   l10n.nowPlaying,
-                  style: TextStyle(
-                    color: isDark ? AppColors.gray400 : AppColors.gray600,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                  style: AppTypography.labelMedium(
+                    isDark ? AppColors.gray400 : AppColors.gray500,
                   ),
                 ),
               ],
@@ -373,10 +379,11 @@ class _TrackInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final palette = context.appPalette;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxArtSize = (constraints.maxHeight - 140).clamp(150.0, 320.0);
+        final maxArtSize = (constraints.maxHeight - 120).clamp(140.0, 280.0);
 
         return ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -385,119 +392,53 @@ class _TrackInfo extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: AppSpacing.xl),
-                // Album art with glow effect
-                DecoratedBox(
+                const SizedBox(height: AppSpacing.lg),
+                Container(
+                  width: maxArtSize,
+                  height: maxArtSize,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            isDark
-                                ? AppColors.gray700.withValues(alpha: 0.3)
-                                : AppColors.blue.withValues(alpha: 0.2),
-                        blurRadius: 60,
-                        spreadRadius: 10,
-                      ),
-                    ],
+                    color: palette.elevatedSurface,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   ),
-                  child: Container(
-                    width: maxArtSize,
-                    height: maxArtSize,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors:
-                            isDark
-                                ? [AppColors.gray800, AppColors.gray900]
-                                : [AppColors.gray100, AppColors.gray200],
-                      ),
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
-                      border: Border.all(
-                        color: isDark ? AppColors.gray700 : AppColors.gray300,
-                      ),
-                    ),
-                    child:
-                        state.currentAudio?.artworkPath != null
-                            ? ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.radiusXl - 1,
-                              ),
-                              child: Image.asset(
-                                state.currentAudio!.artworkPath!,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                            : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        isDark
-                                            ? AppColors.gray800
-                                            : AppColors.gray200,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color:
-                                          isDark
-                                              ? AppColors.gray700
-                                              : AppColors.gray300,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.music_note_rounded,
-                                    color:
-                                        isDark
-                                            ? AppColors.gray500
-                                            : AppColors.gray400,
-                                    size: 40,
-                                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child:
+                      state.currentAudio?.artworkPath != null &&
+                              state.currentAudio!.artworkPath!.isNotEmpty
+                          ? Image.file(
+                            File(state.currentAudio!.artworkPath!),
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (_, _, _) => Icon(
+                                  Icons.music_note_rounded,
+                                  color: palette.mutedText,
+                                  size: 48,
                                 ),
-                              ],
-                            ),
-                  ),
+                          )
+                          : Icon(
+                            Icons.music_note_rounded,
+                            color: palette.mutedText,
+                            size: 48,
+                          ),
                 ),
-                const SizedBox(height: AppSpacing.xxl),
-                // Track title with animation
+                const SizedBox(height: AppSpacing.xl),
                 Text(
                   state.currentAudio?.displayTitle ?? l10n.noTrackSelected,
-                  style: TextStyle(
-                    color: isDark ? AppColors.white : AppColors.gray900,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
+                  style: AppTypography.displaySmall(
+                    palette.primaryText,
+                  ).copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.6),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                // Artist with subtle styling
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.gray900 : AppColors.gray100,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-                  ),
-                  child: Text(
-                    state.currentAudio?.artist ?? l10n.unknownArtist,
-                    style: TextStyle(
-                      color: isDark ? AppColors.gray400 : AppColors.gray600,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                Text(
+                  state.currentAudio?.artist ?? l10n.unknownArtist,
+                  style: AppTypography.bodyMedium(palette.secondaryText),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md),
               ],
             ),
           ),
@@ -539,64 +480,60 @@ class _PlayerControls extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        // Playback controls
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: BlocBuilder<SettingsBloc, SettingsState>(
-            builder:
-                (
-                  context,
-                  settingsState,
-                ) => BlocBuilder<PlaylistBloc, PlaylistState>(
-                  builder:
-                      (context, playlistState) => PlaybackControls(
-                        isPlaying: state.isPlaying,
-                        onPlayPause: () {
-                          if (state.isPlaying) {
-                            context.read<PlayerBloc>().add(const PlayerPause());
-                          } else {
-                            context.read<PlayerBloc>().add(const PlayerPlay());
-                          }
-                        },
-                        onPrevious: () {
-                          context.read<PlaylistBloc>().add(
-                            const PlaylistPlayPrevious(),
-                          );
-                        },
-                        onNext: () {
-                          context.read<PlaylistBloc>().add(
-                            const PlaylistPlayNext(),
-                          );
-                        },
-                        onSkipBackward: () {
-                          context.read<PlayerBloc>().add(
-                            const PlayerSkipBackward(),
-                          );
-                        },
-                        onSkipForward: () {
-                          context.read<PlayerBloc>().add(
-                            const PlayerSkipForward(),
-                          );
-                        },
-                        hasPrevious: playlistState.hasPrevious,
-                        hasNext: playlistState.hasNext,
-                        skipBackwardSeconds:
-                            settingsState.settings.skipBackwardSeconds,
-                        skipForwardSeconds:
-                            settingsState.settings.skipForwardSeconds,
-                        size: PlaybackControlsSize.large,
-                      ),
-                ),
-          ),
+        // Playback controls — fixed size, no scale-down on narrow phones
+        BlocBuilder<SettingsBloc, SettingsState>(
+          builder:
+              (
+                context,
+                settingsState,
+              ) => BlocBuilder<PlaylistBloc, PlaylistState>(
+                builder:
+                    (context, playlistState) => PlaybackControls(
+                      isPlaying: state.isPlaying,
+                      onPlayPause: () {
+                        if (state.isPlaying) {
+                          context.read<PlayerBloc>().add(const PlayerPause());
+                        } else {
+                          context.read<PlayerBloc>().add(const PlayerPlay());
+                        }
+                      },
+                      onPrevious: () {
+                        context.read<PlaylistBloc>().add(
+                          const PlaylistPlayPrevious(),
+                        );
+                      },
+                      onNext: () {
+                        context.read<PlaylistBloc>().add(
+                          const PlaylistPlayNext(),
+                        );
+                      },
+                      onSkipBackward: () {
+                        context.read<PlayerBloc>().add(
+                          const PlayerSkipBackward(),
+                        );
+                      },
+                      onSkipForward: () {
+                        context.read<PlayerBloc>().add(
+                          const PlayerSkipForward(),
+                        );
+                      },
+                      hasPrevious: playlistState.hasPrevious,
+                      hasNext: playlistState.hasNext,
+                      skipBackwardSeconds:
+                          settingsState.settings.skipBackwardSeconds,
+                      skipForwardSeconds:
+                          settingsState.settings.skipForwardSeconds,
+                      size: PlaybackControlsSize.large,
+                    ),
+              ),
         ),
         const SizedBox(height: AppSpacing.lg),
         // Volume and speed controls
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              VolumeSlider(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: VolumeSlider(
                 volume: state.volume,
                 isMuted: state.isMuted,
                 onChanged: (volume) {
@@ -606,10 +543,10 @@ class _PlayerControls extends StatelessWidget {
                   context.read<PlayerBloc>().add(const PlayerToggleMute());
                 },
               ),
-              const SizedBox(width: AppSpacing.xl),
-              _SpeedButton(speed: state.speed, isDark: isDark),
-            ],
-          ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            _SpeedButton(speed: state.speed, isDark: isDark),
+          ],
         ),
       ],
     ),
@@ -659,19 +596,13 @@ class _TimeJumpButtonState extends State<_TimeJumpButton> {
             decoration: BoxDecoration(
               color:
                   _isHovered
-                      ? (widget.isDark ? AppColors.gray700 : AppColors.gray200)
-                      : (widget.isDark ? AppColors.gray900 : AppColors.gray100),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-              border: Border.all(
-                color:
-                    _isHovered
-                        ? (widget.isDark
-                            ? AppColors.gray600
-                            : AppColors.gray300)
-                        : (widget.isDark
-                            ? AppColors.gray800
-                            : AppColors.gray200),
-              ),
+                      ? (widget.isDark
+                          ? AppColors.darkInteractive
+                          : AppColors.gray200)
+                      : (widget.isDark
+                          ? AppColors.darkSurface
+                          : AppColors.lightSurface),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
             ),
             child: Icon(
               Icons.timer_outlined,
@@ -766,7 +697,7 @@ class _SpeedButtonState extends State<_SpeedButton> {
 
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: isDark ? AppColors.black : AppColors.white,
+      backgroundColor: isDark ? AppColors.darkElevated : AppColors.white,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(

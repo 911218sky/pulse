@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pulse/core/constants/colors.dart';
@@ -8,8 +10,11 @@ import 'package:pulse/core/theme/app_theme_tokens.dart';
 import 'package:pulse/presentation/bloc/player/player_bloc.dart';
 import 'package:pulse/presentation/bloc/player/player_event.dart';
 import 'package:pulse/presentation/bloc/player/player_state.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_bloc.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_event.dart';
+import 'package:pulse/presentation/bloc/playlist/playlist_state.dart';
 
-/// Mini player bar shown at the bottom of screens when audio is playing
+/// Floating mini player — Spotify-inspired elevated bar with bottom progress.
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({required this.onTap, super.key});
 
@@ -18,8 +23,8 @@ class MiniPlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.appPalette;
-    final isDark = context.isDarkMode;
     final l10n = AppLocalizations.of(context);
+    final isDark = context.isDarkMode;
 
     return BlocBuilder<PlayerBloc, PlayerState>(
       buildWhen:
@@ -30,125 +35,258 @@ class MiniPlayer extends StatelessWidget {
               previous.duration != current.duration ||
               previous.status != current.status,
       builder: (context, state) {
-        // Don't show if no audio loaded
         if (state.currentAudio == null ||
             state.status == PlayerStatus.initial ||
             state.status == PlayerStatus.stopped) {
           return const SizedBox.shrink();
         }
 
-        return GestureDetector(
-          onTap: onTap,
-          child: Container(
-            height: 64,
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-              border: Border(top: BorderSide(color: palette.subtleBorder)),
+        final artworkPath = state.currentAudio!.artworkPath;
+
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.sm,
+              0,
+              AppSpacing.sm,
+              AppSpacing.sm,
             ),
-            child: Column(
-              children: [
-                // Progress bar at top
-                SizedBox(
-                  height: 3,
-                  child: LinearProgressIndicator(
-                    value: state.progress.clamp(0.0, 1.0),
-                    backgroundColor:
-                        isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.accent,
-                    ),
-                  ),
-                ),
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                    ),
-                    child: Row(
-                      children: [
-                        // Music icon
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color:
-                                isDark ? AppColors.darkCard : AppColors.gray100,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(
-                            Icons.music_note_rounded,
-                            color: AppColors.accent,
-                            size: 20,
-                          ),
+            child: Material(
+              color: palette.elevatedSurface,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                height: AppSpacing.miniPlayerHeight,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        // Track info
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                state.currentAudio!.title,
-                                style: AppTypography.labelLarge(
-                                  palette.primaryText,
-                                ).copyWith(decoration: TextDecoration.none),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                state.currentAudio!.artist ??
-                                    l10n.unknownArtist,
-                                style: AppTypography.bodySmall(
-                                  palette.secondaryText,
-                                ).copyWith(decoration: TextDecoration.none),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Play/Pause button
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              if (state.isPlaying) {
-                                context.read<PlayerBloc>().add(
-                                  const PlayerPause(),
-                                );
-                              } else {
-                                context.read<PlayerBloc>().add(
-                                  const PlayerPlay(),
-                                );
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(24),
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              alignment: Alignment.center,
-                              child: Icon(
-                                state.isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: palette.primaryText,
-                                size: 32,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: onTap,
+                                  child: Row(
+                                    children: [
+                                      _MiniArt(
+                                        artworkPath: artworkPath,
+                                        palette: palette,
+                                      ),
+                                      const SizedBox(
+                                        width: AppSpacing.artTextGap,
+                                      ),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              state.currentAudio!.title,
+                                              style: AppTypography.labelLarge(
+                                                palette.primaryText,
+                                              ).copyWith(
+                                                decoration: TextDecoration.none,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              state.currentAudio!.artist ??
+                                                  l10n.unknownArtist,
+                                              style: AppTypography.bodySmall(
+                                                palette.secondaryText,
+                                              ).copyWith(
+                                                decoration: TextDecoration.none,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            BlocBuilder<PlaylistBloc, PlaylistState>(
+                              buildWhen:
+                                  (previous, current) =>
+                                      previous.hasPrevious !=
+                                          current.hasPrevious ||
+                                      previous.hasNext != current.hasNext ||
+                                      previous.currentTrackIndex !=
+                                          current.currentTrackIndex,
+                              builder:
+                                  (context, playlistState) => Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _TransportButton(
+                                        icon: Icons.skip_previous_rounded,
+                                        enabled: playlistState.hasPrevious,
+                                        onPressed: () {
+                                          context.read<PlaylistBloc>().add(
+                                            const PlaylistPlayPrevious(),
+                                          );
+                                        },
+                                      ),
+                                      _PlayPauseButton(
+                                        isPlaying: state.isPlaying,
+                                        onPressed: () {
+                                          if (state.isPlaying) {
+                                            context.read<PlayerBloc>().add(
+                                              const PlayerPause(),
+                                            );
+                                          } else {
+                                            context.read<PlayerBloc>().add(
+                                              const PlayerPlay(),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                      _TransportButton(
+                                        icon: Icons.skip_next_rounded,
+                                        enabled: playlistState.hasNext,
+                                        onPressed: () {
+                                          context.read<PlaylistBloc>().add(
+                                            const PlaylistPlayNext(),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                    SizedBox(
+                      height: AppSpacing.progressBarHeight,
+                      width: double.infinity,
+                      child: LinearProgressIndicator(
+                        value: state.progress.clamp(0.0, 1.0),
+                        backgroundColor: palette.subtleBorder,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          isDark ? AppColors.white : AppColors.accent,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _MiniArt extends StatelessWidget {
+  const _MiniArt({required this.artworkPath, required this.palette});
+
+  final String? artworkPath;
+  final AppThemePalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = AppSpacing.miniPlayerArtSize;
+    final radius = BorderRadius.circular(AppSpacing.radiusArt);
+
+    final placeholder = DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.interactive,
+        borderRadius: radius,
+      ),
+      child: Icon(Icons.music_note_rounded, color: palette.mutedText, size: 18),
+    );
+
+    if (artworkPath == null || artworkPath!.isEmpty) {
+      return SizedBox(width: size, height: size, child: placeholder);
+    }
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Image.file(
+          File(artworkPath!),
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => placeholder,
+        ),
+      ),
+    );
+  }
+}
+
+class _PlayPauseButton extends StatelessWidget {
+  const _PlayPauseButton({required this.isPlaying, required this.onPressed});
+
+  final bool isPlaying;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDarkMode;
+
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Material(
+        color: isDark ? AppColors.white : AppColors.black,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: Icon(
+            isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            color: isDark ? AppColors.black : AppColors.white,
+            size: 22,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TransportButton extends StatelessWidget {
+  const _TransportButton({
+    required this.icon,
+    required this.onPressed,
+    required this.enabled,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.appPalette;
+
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: IconButton(
+        onPressed: enabled ? onPressed : null,
+        padding: EdgeInsets.zero,
+        icon: Icon(
+          icon,
+          size: 22,
+          color: enabled ? palette.primaryText : palette.disabledText,
+        ),
+      ),
     );
   }
 }

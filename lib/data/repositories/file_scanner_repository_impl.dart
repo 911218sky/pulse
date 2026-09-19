@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as path_lib;
+import 'package:pulse/core/services/media_file_delete_service.dart';
 import 'package:pulse/core/utils/audio_path_utils.dart';
 import 'package:pulse/data/datasources/local_storage_datasource.dart';
 import 'package:pulse/data/models/audio_file_model.dart';
@@ -14,9 +15,14 @@ import 'package:uuid/uuid.dart';
 /// Implementation of FileScannerRepository
 /// 使用檔案系統掃描音樂檔案（跨平台）
 class FileScannerRepositoryImpl implements FileScannerRepository {
-  FileScannerRepositoryImpl(this._dataSource);
+  FileScannerRepositoryImpl(
+    this._dataSource, {
+    MediaFileDeleteService? mediaFileDeleteService,
+  }) : _mediaFileDeleteService =
+           mediaFileDeleteService ?? MediaFileDeleteService();
 
   final LocalStorageDataSource _dataSource;
+  final MediaFileDeleteService _mediaFileDeleteService;
   final _uuid = const Uuid();
   List<ScannedFolder> _lastScannedFolders = const [];
   @override
@@ -215,25 +221,54 @@ class FileScannerRepositoryImpl implements FileScannerRepository {
 
   @override
   Future<void> deleteFromLibrary(String fileId) async {
+    final path = await _pathForAudioFileId(fileId);
     await _dataSource.deleteAudioFile(fileId);
+    if (path != null) {
+      await _cleanupRelatedPersistence(path);
+    }
   }
 
   @override
   Future<void> deleteMultipleFromLibrary(List<String> fileIds) async {
+    final paths = <String>[];
+    for (final id in fileIds) {
+      final path = await _pathForAudioFileId(id);
+      if (path != null) paths.add(path);
+    }
     await _dataSource.deleteAudioFiles(fileIds);
+    for (final path in paths) {
+      await _cleanupRelatedPersistence(path);
+    }
   }
 
   @override
-  Future<bool> deleteFileFromDisk(String fileId, String filePath) async {
-    try {
-      final file = File(filePath);
-      if (file.existsSync()) {
-        file.deleteSync();
-      }
-      await _dataSource.deleteAudioFile(fileId);
-      return true;
-    } on Exception {
-      return false;
+  Future<MediaDeleteOutcome> deleteFileFromDisk(
+    String fileId,
+    String filePath,
+  ) async {
+    final canonicalPath = AudioPathUtils.canonicalize(filePath);
+    final outcome = await _mediaFileDeleteService.deleteFile(canonicalPath);
+    if (outcome != MediaDeleteOutcome.deleted) {
+      return outcome;
+    }
+
+    await _dataSource.deleteAudioFile(fileId);
+    await _cleanupRelatedPersistence(canonicalPath);
+    return MediaDeleteOutcome.deleted;
+  }
+
+  Future<String?> _pathForAudioFileId(String fileId) async {
+    final file = await _dataSource.getAudioFileById(fileId);
+    if (file == null) return null;
+    return AudioPathUtils.canonicalize(file.path);
+  }
+
+  Future<void> _cleanupRelatedPersistence(String canonicalPath) async {
+    await _dataSource.clearFilePosition(canonicalPath);
+    final lastState = await _dataSource.getLastPlaybackState();
+    if (lastState != null &&
+        AudioPathUtils.canonicalize(lastState.audioFilePath) == canonicalPath) {
+      await _dataSource.clearPlaybackState();
     }
   }
 
