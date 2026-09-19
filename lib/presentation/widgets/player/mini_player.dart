@@ -221,8 +221,7 @@ class _MiniArt extends StatelessWidget {
       return SizedBox(width: size, height: size, child: placeholder);
     }
 
-    final cacheSize =
-        (size * MediaQuery.devicePixelRatioOf(context)).round();
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
 
     return SizedBox(
       width: size,

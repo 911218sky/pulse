@@ -423,15 +423,11 @@ class _TrackInfo extends StatelessWidget {
                             fit: BoxFit.cover,
                             cacheWidth:
                                 (maxArtSize *
-                                        MediaQuery.devicePixelRatioOf(
-                                          context,
-                                        ))
+                                        MediaQuery.devicePixelRatioOf(context))
                                     .round(),
                             cacheHeight:
                                 (maxArtSize *
-                                        MediaQuery.devicePixelRatioOf(
-                                          context,
-                                        ))
+                                        MediaQuery.devicePixelRatioOf(context))
                                     .round(),
                             errorBuilder:
                                 (_, _, _) => Icon(

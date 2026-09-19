@@ -786,7 +786,9 @@ void main() {
         );
 
         completionBloc.add(
-          const PlayerPositionUpdated(Duration(minutes: 2, seconds: 59, milliseconds: 500)),
+          const PlayerPositionUpdated(
+            Duration(minutes: 2, seconds: 59, milliseconds: 500),
+          ),
         );
         await Future<void>.delayed(Duration.zero);
 
@@ -805,37 +807,34 @@ void main() {
       },
     );
 
-    test(
-      'clear completed uses canonicalized path comparison',
-      () async {
-        const audioFile = AudioFile(
-          id: 'track-6',
-          path: '/music/./track-6.mp3',
-          title: 'Track 6',
-          duration: Duration(minutes: 1),
-          fileSizeBytes: 1024,
-        );
-        final playbackStateRepository =
-            _FakePlaybackStateRepository()
-              ..lastPlaybackState = playback.PlaybackState.create(
-                audioFilePath: '/music/track-6.mp3',
-                position: const Duration(seconds: 59),
-              )
-              ..savedPositions[audioFile.path] = const Duration(seconds: 59);
-        final clearBloc = PlayerBloc(
-          audioRepository: audioRepository,
-          playbackStateRepository: playbackStateRepository,
-          settingsRepository: _FakeSettingsRepository(),
-        );
-        addTearDown(clearBloc.close);
+    test('clear completed uses canonicalized path comparison', () async {
+      const audioFile = AudioFile(
+        id: 'track-6',
+        path: '/music/./track-6.mp3',
+        title: 'Track 6',
+        duration: Duration(minutes: 1),
+        fileSizeBytes: 1024,
+      );
+      final playbackStateRepository =
+          _FakePlaybackStateRepository()
+            ..lastPlaybackState = playback.PlaybackState.create(
+              audioFilePath: '/music/track-6.mp3',
+              position: const Duration(seconds: 59),
+            )
+            ..savedPositions[audioFile.path] = const Duration(seconds: 59);
+      final clearBloc = PlayerBloc(
+        audioRepository: audioRepository,
+        playbackStateRepository: playbackStateRepository,
+        settingsRepository: _FakeSettingsRepository(),
+      );
+      addTearDown(clearBloc.close);
 
-        clearBloc.add(PlayerClearCompletedTrackPosition(audioFile.path));
-        await Future<void>.delayed(Duration.zero);
+      clearBloc.add(PlayerClearCompletedTrackPosition(audioFile.path));
+      await Future<void>.delayed(Duration.zero);
 
-        expect(playbackStateRepository.lastPlaybackState, isNull);
-        expect(playbackStateRepository.savedPositions[audioFile.path], isNull);
-      },
-    );
+      expect(playbackStateRepository.lastPlaybackState, isNull);
+      expect(playbackStateRepository.savedPositions[audioFile.path], isNull);
+    });
   });
 
   group('Skip Forward/Backward Bounds', () {

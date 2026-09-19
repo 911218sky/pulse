@@ -415,15 +415,13 @@ class MusicPlayerAudioHandler extends BaseAudioHandler
 
   @override
   Future<void> fastForward() async {
-    final newPosition =
-        _position + Duration(seconds: _skipForwardSeconds);
+    final newPosition = _position + Duration(seconds: _skipForwardSeconds);
     await seek(newPosition);
   }
 
   @override
   Future<void> rewind() async {
-    final newPosition =
-        _position - Duration(seconds: _skipBackwardSeconds);
+    final newPosition = _position - Duration(seconds: _skipBackwardSeconds);
     await seek(newPosition.isNegative ? Duration.zero : newPosition);
   }
 

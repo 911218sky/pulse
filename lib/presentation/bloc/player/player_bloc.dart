@@ -511,10 +511,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     if (_isNearEnd(state.position, state.duration)) {
       _suppressPlaybackSave = true;
       emit(
-        state.copyWith(
-          status: PlayerStatus.paused,
-          position: Duration.zero,
-        ),
+        state.copyWith(status: PlayerStatus.paused, position: Duration.zero),
       );
       try {
         await _playbackStateRepository.clearPlaybackState();
@@ -699,9 +696,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   }
 
   Future<void> _saveCurrentPlaybackState() async {
-    if (_isHardResetInProgress ||
-        _skipSaveOnClose ||
-        _suppressPlaybackSave) {
+    if (_isHardResetInProgress || _skipSaveOnClose || _suppressPlaybackSave) {
       return;
     }
 

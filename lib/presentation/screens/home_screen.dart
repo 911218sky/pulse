@@ -656,8 +656,7 @@ class _TrackArt extends StatelessWidget {
       return SizedBox(width: size, height: size, child: fallback);
     }
 
-    final cacheSize =
-        (size * MediaQuery.devicePixelRatioOf(context)).round();
+    final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
 
     return SizedBox(
       width: size,
