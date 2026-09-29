@@ -81,7 +81,7 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   ) async => _updateSettings(
     emit,
     state.settings.copyWith(
-      defaultPlaybackSpeed: PlaybackSpeedUtils.clamp(event.speed),
+      defaultPlaybackSpeed: PlaybackSpeedUtils.quantize(event.speed),
     ),
   );
 

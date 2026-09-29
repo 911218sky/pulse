@@ -93,6 +93,8 @@ class ZhTwTranslations extends Translations {
   @override
   String get normalSpeed => '正常';
   @override
+  String get speedPresets => '快速預設';
+  @override
   String sleepTimerDisplay(String time) => '睡眠定時器: $time';
 
   // ============== Settings Screen ==============

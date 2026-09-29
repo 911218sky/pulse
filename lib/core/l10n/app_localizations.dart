@@ -126,6 +126,7 @@ class AppLocalizations {
   String get timeExceedsDuration => _t.timeExceedsDuration;
   String get jump => _t.jump;
   String get normalSpeed => _t.normalSpeed;
+  String get speedPresets => _t.speedPresets;
   String sleepTimerDisplay(String time) => _t.sleepTimerDisplay(time);
 
   // ============== Settings Screen ==============
@@ -373,6 +374,7 @@ abstract class Translations {
   String get timeExceedsDuration;
   String get jump;
   String get normalSpeed;
+  String get speedPresets;
   String sleepTimerDisplay(String time);
 
   // ============== Settings Screen ==============

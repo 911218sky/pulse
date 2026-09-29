@@ -95,6 +95,8 @@ class EnTranslations extends Translations {
   @override
   String get normalSpeed => 'Normal';
   @override
+  String get speedPresets => 'Quick presets';
+  @override
   String sleepTimerDisplay(String time) => 'Sleep Timer: $time';
 
   // ============== Settings Screen ==============

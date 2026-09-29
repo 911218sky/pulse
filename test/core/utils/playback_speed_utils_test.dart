@@ -64,16 +64,40 @@ void main() {
     );
 
     group('increase/decrease', () {
-      test('increase adds step and clamps to max', () {
-        expect(PlaybackSpeedUtils.increase(1), equals(1.25));
-        expect(PlaybackSpeedUtils.increase(1.75), equals(2));
+      test('increase adds fine step and clamps to max', () {
+        expect(PlaybackSpeedUtils.increase(1), equals(1.05));
+        expect(PlaybackSpeedUtils.increase(1.95), equals(2));
         expect(PlaybackSpeedUtils.increase(2), equals(2));
       });
 
-      test('decrease subtracts step and clamps to min', () {
-        expect(PlaybackSpeedUtils.decrease(1), equals(0.75));
-        expect(PlaybackSpeedUtils.decrease(0.75), equals(0.5));
+      test('decrease subtracts fine step and clamps to min', () {
+        expect(PlaybackSpeedUtils.decrease(1), equals(0.95));
+        expect(PlaybackSpeedUtils.decrease(0.55), equals(0.5));
         expect(PlaybackSpeedUtils.decrease(0.5), equals(0.5));
+      });
+
+      test('increase/decrease can use coarse speedStep', () {
+        expect(
+          PlaybackSpeedUtils.increase(1, step: PlaybackSpeedUtils.speedStep),
+          equals(1.25),
+        );
+        expect(
+          PlaybackSpeedUtils.decrease(1, step: PlaybackSpeedUtils.speedStep),
+          equals(0.75),
+        );
+      });
+    });
+
+    group('quantize', () {
+      test('snaps to nearest fine step', () {
+        expect(PlaybackSpeedUtils.quantize(1.02), equals(1));
+        expect(PlaybackSpeedUtils.quantize(1.03), equals(1.05));
+        expect(PlaybackSpeedUtils.quantize(0.51), equals(0.5));
+        expect(PlaybackSpeedUtils.quantize(1.99), equals(2));
+      });
+
+      test('sliderDivisions covers fine steps from min to max', () {
+        expect(PlaybackSpeedUtils.sliderDivisions, equals(30));
       });
     });
 

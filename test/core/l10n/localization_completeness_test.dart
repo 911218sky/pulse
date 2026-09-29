@@ -50,6 +50,7 @@ void main() {
           l10n.timeExceedsDuration,
           l10n.jump,
           l10n.normalSpeed,
+          l10n.speedPresets,
           l10n.sleepTimerDisplay('10:00'),
           l10n.settings,
           l10n.settingsDesc,

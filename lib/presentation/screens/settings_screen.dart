@@ -4,6 +4,7 @@ import 'package:pulse/core/constants/colors.dart';
 import 'package:pulse/core/constants/spacing.dart';
 import 'package:pulse/core/l10n/app_localizations.dart';
 import 'package:pulse/core/theme/app_theme_tokens.dart';
+import 'package:pulse/core/utils/playback_speed_utils.dart';
 import 'package:pulse/core/utils/version_utils.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_bloc.dart';
 import 'package:pulse/presentation/bloc/file_scanner/file_scanner_event.dart';
@@ -123,11 +124,13 @@ class _SettingsContent extends StatelessWidget {
       ),
       _SliderTile(
         title: l10n.defaultSpeed,
-        value: state.settings.defaultPlaybackSpeed,
-        min: 0.5,
-        max: 2,
-        divisions: 6,
-        valueLabel: '${state.settings.defaultPlaybackSpeed}x',
+        value: PlaybackSpeedUtils.quantize(state.settings.defaultPlaybackSpeed),
+        min: PlaybackSpeedUtils.minSpeed,
+        max: PlaybackSpeedUtils.maxSpeed,
+        divisions: PlaybackSpeedUtils.sliderDivisions,
+        valueLabel: PlaybackSpeedUtils.format(
+          state.settings.defaultPlaybackSpeed,
+        ),
         isDark: isDark,
         onChanged: (value) {
           context.read<SettingsBloc>().add(SettingsUpdateDefaultSpeed(value));

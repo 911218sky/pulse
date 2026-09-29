@@ -22,7 +22,9 @@ import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_event.dart';
 import 'package:pulse/presentation/bloc/sleep_timer/sleep_timer_state.dart';
 import 'package:pulse/presentation/widgets/common/animated_equalizer.dart';
 import 'package:pulse/presentation/widgets/common/vercel_button.dart';
+import 'package:pulse/core/utils/playback_speed_utils.dart';
 import 'package:pulse/presentation/widgets/player/playback_controls.dart';
+import 'package:pulse/presentation/widgets/player/playback_speed_sheet.dart';
 import 'package:pulse/presentation/widgets/player/progress_bar.dart';
 import 'package:pulse/presentation/widgets/player/time_input_dialog.dart';
 import 'package:pulse/presentation/widgets/player/volume_slider.dart';
@@ -668,7 +670,7 @@ class _SpeedButtonState extends State<_SpeedButton> {
     onExit: (_) => setState(() => _isHovered = false),
     cursor: SystemMouseCursors.click,
     child: GestureDetector(
-      onTap: () => _showSpeedMenu(context),
+      onTap: () => PlaybackSpeedSheet.show(context, speed: widget.speed),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(
@@ -694,17 +696,17 @@ class _SpeedButtonState extends State<_SpeedButton> {
             Icon(
               Icons.speed_rounded,
               color:
-                  widget.speed != 1.0
+                  !PlaybackSpeedUtils.isNormalSpeed(widget.speed)
                       ? (widget.isDark ? AppColors.white : AppColors.blue)
                       : (widget.isDark ? AppColors.gray500 : AppColors.gray400),
               size: 16,
             ),
             const SizedBox(width: AppSpacing.xs),
             Text(
-              '${widget.speed}x',
+              PlaybackSpeedUtils.format(widget.speed),
               style: TextStyle(
                 color:
-                    widget.speed != 1.0
+                    !PlaybackSpeedUtils.isNormalSpeed(widget.speed)
                         ? (widget.isDark ? AppColors.white : AppColors.blue)
                         : (widget.isDark
                             ? AppColors.gray400
@@ -718,171 +720,4 @@ class _SpeedButtonState extends State<_SpeedButton> {
       ),
     ),
   );
-
-  void _showSpeedMenu(BuildContext context) {
-    final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final l10n = AppLocalizations.of(context);
-
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: isDark ? AppColors.darkElevated : AppColors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusXl),
-        ),
-      ),
-      builder:
-          (context) => SafeArea(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.7,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(top: AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.gray700 : AppColors.gray300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Text(
-                      l10n.playbackSpeed,
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.gray900,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children:
-                            speeds
-                                .map(
-                                  (speed) => _SpeedOption(
-                                    speed: speed,
-                                    isSelected: speed == widget.speed,
-                                    isDark: isDark,
-                                    onTap: () {
-                                      context.read<PlayerBloc>().add(
-                                        PlayerSetSpeed(speed),
-                                      );
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                )
-                                .toList(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                ],
-              ),
-            ),
-          ),
-    );
-  }
-}
-
-class _SpeedOption extends StatefulWidget {
-  const _SpeedOption({
-    required this.speed,
-    required this.isSelected,
-    required this.onTap,
-    required this.isDark,
-  });
-
-  final double speed;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final bool isDark;
-
-  @override
-  State<_SpeedOption> createState() => _SpeedOptionState();
-}
-
-class _SpeedOptionState extends State<_SpeedOption> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.md,
-          ),
-          color:
-              _isHovered
-                  ? (widget.isDark ? AppColors.gray900 : AppColors.gray100)
-                  : Colors.transparent,
-          child: Row(
-            children: [
-              Text(
-                '${widget.speed}x',
-                style: TextStyle(
-                  color:
-                      widget.isSelected
-                          ? (widget.isDark ? AppColors.white : AppColors.blue)
-                          : (widget.isDark
-                              ? AppColors.gray400
-                              : AppColors.gray600),
-                  fontSize: 16,
-                  fontWeight:
-                      widget.isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-              if (widget.speed == 1.0) ...[
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        widget.isDark ? AppColors.gray800 : AppColors.gray200,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                  ),
-                  child: Text(
-                    l10n.normalSpeed,
-                    style: TextStyle(
-                      color:
-                          widget.isDark ? AppColors.gray500 : AppColors.gray500,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ],
-              const Spacer(),
-              if (widget.isSelected)
-                Icon(
-                  Icons.check_rounded,
-                  color: widget.isDark ? AppColors.white : AppColors.blue,
-                  size: 20,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

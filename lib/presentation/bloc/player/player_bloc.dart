@@ -435,7 +435,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     Emitter<PlayerState> emit,
   ) async {
     try {
-      final clampedSpeed = PlaybackSpeedUtils.clamp(event.speed);
+      final clampedSpeed = PlaybackSpeedUtils.quantize(event.speed);
       await _audioRepository.setPlaybackSpeed(clampedSpeed);
       emit(state.copyWith(speed: clampedSpeed));
     } on Exception catch (e) {
