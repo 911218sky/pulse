@@ -62,10 +62,16 @@ For most Android users, install `pulse-android-universal.apk`.
 
 ## Development
 
+Android Studio is **not** required. Install Flutter + JDK 17 + Android SDK command-line tools.
+
+Full Windows / Linux setup (including automatic Android SDK install): see [`docs/DEV_SETUP.md`](docs/DEV_SETUP.md).
+
 ### Requirements
 
-- Flutter stable
+- Flutter stable (verified with **3.47.5**)
 - Dart `3.7.2` or newer
+- JDK **17**
+- Android SDK (`platform-tools`, platforms, build-tools)
 
 ### Setup
 
@@ -74,6 +80,19 @@ git clone https://github.com/911218sky/pulse.git
 cd pulse
 flutter pub get
 flutter run
+```
+
+Install Android SDK without Android Studio:
+
+```powershell
+# Windows (minimal = build + adb)
+powershell -ExecutionPolicy Bypass -File .\scripts\install_android_sdk.ps1 -Minimal
+```
+
+```bash
+# Linux (minimal = build + adb)
+chmod +x scripts/install_android_sdk.sh
+./scripts/install_android_sdk.sh --minimal
 ```
 
 ### Verification
@@ -95,7 +114,11 @@ flutter build appbundle --release
 
 ```text
 docs/
+|-- DEV_SETUP.md    Windows / Linux toolchain setup (no Android Studio)
 |-- UI.md           Spotify-inspired design system for Pulse
+scripts/
+|-- install_android_sdk.ps1   Windows Android SDK installer
+|-- install_android_sdk.sh    Linux Android SDK installer
 lib/
 |-- core/           Shared theme, routing, localization, utilities, DI
 |-- data/           Database, repositories, services, persistence models

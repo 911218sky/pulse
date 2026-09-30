@@ -1,5 +1,13 @@
 $ErrorActionPreference = 'Stop'
 # Native stderr from sdkmanager is noisy under Java 25; run package steps via cmd.exe.
+#
+# Usage:
+#   .\scripts\install_android_sdk.ps1           # full (includes emulator)
+#   .\scripts\install_android_sdk.ps1 -Minimal  # build + adb only
+
+param(
+    [switch]$Minimal
+)
 
 $sdkRoot = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
 $cmdToolsZip = Join-Path $env:TEMP 'cmdline-tools-win.zip'
@@ -62,13 +70,18 @@ cmd /c "for /l %i in (1,1,20) do @echo y| sdkmanager --sdk_root=$sdkRoot --licen
 
 $packages = @(
     'platform-tools',
-    'emulator',
     'platforms;android-35',
     'platforms;android-36',
     'build-tools;35.0.0',
-    'build-tools;28.0.3',
-    'system-images;android-35;google_apis;x86_64'
+    'build-tools;28.0.3'
 )
+
+if (-not $Minimal) {
+    $packages += @(
+        'emulator',
+        'system-images;android-35;google_apis;x86_64'
+    )
+}
 
 Write-Output "Installing SDK packages: $($packages -join ', ')"
 cmd /c "sdkmanager --sdk_root=$sdkRoot $($packages -join ' ')" | Select-Object -Last 30
@@ -77,5 +90,14 @@ Write-Output "Installed SDK components:"
 Get-ChildItem $sdkRoot | Select-Object Name
 
 Write-Output "sdkmanager location: $sdkManager"
-Write-Output "adb location:"
-Get-Command adb -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+$adbPath = Join-Path $sdkRoot 'platform-tools\adb.exe'
+Write-Output "adb location: $adbPath"
+if (Test-Path $adbPath) {
+    & $adbPath version
+}
+
+Write-Output ""
+Write-Output "Suggested user env (run once in PowerShell):"
+Write-Output "  [Environment]::SetEnvironmentVariable('ANDROID_HOME', '$sdkRoot', 'User')"
+Write-Output "  [Environment]::SetEnvironmentVariable('ANDROID_SDK_ROOT', '$sdkRoot', 'User')"
+Write-Output "  # then prepend $sdkRoot\platform-tools and cmdline-tools\latest\bin to User Path"
